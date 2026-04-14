@@ -121,7 +121,7 @@ The operational workflow to maintain the **CIA Triad**.
 | **Password Cracking**| **John the Ripper** / **Hashcat** |
 | **Defense/Monitoring**| Firewalls, IDS/IPS, **SIEM** |
 
-# 02_Network_Foundations: Network Security Overview
+# 01_General_Info_Security: Network Security Overview
 
 Network security acts as the "security system" for digital infrastructure. It is a subset of Information Security focused specifically on protecting the network fabric and the data in transit.
 
