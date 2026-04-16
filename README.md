@@ -1,3 +1,11 @@
+---
+### ⚠️ Disclaimer
+This repository contains personal study notes, technical summaries, and documentation created during my learning path toward the **HTB Certified Junior Cybersecurity Associate (CJCA)**. 
+
+* **No Copyright Infringement:** These notes are my own interpretations and summaries. No literal content from HTB Academy modules is reproduced here.
+* **Ethical Hacking:** All techniques and tools documented are for educational purposes within controlled environments (HTB Labs). I do not support or encourage unauthorized access to any systems.
+---
+
 # 🛡️ HTB Certified Junior Cybersecurity Associate (CJCA) | Notes & Labs
 
 Este repositorio contiene mi documentación técnica y laboratorios del path de certificación **CJCA** en HTB Academy. Como **Técnico Superior ASIR**, mi objetivo es centralizar aquí el conocimiento adquirido en administración segura de sistemas y pentesting.
