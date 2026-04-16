@@ -176,3 +176,91 @@ Security is a collaborative effort between defensive and offensive teams.
 * **Attack Surface:**
     * **EN:** The total sum of all possible points (vulnerabilities) where an unauthorized user can try to enter data to or extract data from an environment.
     * **ES:** La suma total de todos los puntos posibles (vulnerabilidades) donde un usuario no autorizado puede intentar introducir o extraer datos de un entorno.
+
+# Module 01: Introduction to Information Security
+
+## Operational Security (OpSec)
+
+**OpSec** is the analytical process that classifies information assets and determines the controls required to protect them. It involves viewing your operations from the perspective of an adversary to identify vulnerabilities.
+
+### The OpSec Process
+1.  **Asset Identification:** Determining what critical information needs protection (the "crown jewels").
+2.  **Threat Identification:** Recognizing potential adversaries and their capabilities.
+3.  **Vulnerability Identification:** Detecting weaknesses in the current security posture.
+4.  **Risk Assessment:** Analyzing the likelihood and impact of a vulnerability being exploited.
+5.  **Implementation of Countermeasures:** Executing a plan to mitigate identified risks.
+
+> **Technical Insight (Bilingual):**
+> **"At its core, OpSec is about identifying critical information, analyzing threats, assessing vulnerabilities, and implementing appropriate protective measures."**
+> * **En español:** En su esencia, OpSec trata de identificar información crítica, analizar amenazas, evaluar vulnerabilidades e implementar las medidas de protección adecuadas.
+> * **Concept:** It is a proactive strategy to prevent sensitive data from falling into the wrong hands by identifying "bread crumbs" that an attacker could use.
+
+### Key Pillars
+* **Access Control:** Limiting resource access to authorized users only.
+* **Asset Management:** Maintaining an up-to-date inventory of all hardware and software.
+* **Change Management:** A systematic approach to handling all changes to an IT system to ensure no new vulnerabilities are introduced.
+
+### Responsibility
+Typically managed by the Information Security team, led by the **CISO**.
+
+> **Term Definition: CISO (Chief Information Security Officer)**
+> * **English:** The senior-level executive responsible for establishing and maintaining the enterprise vision, strategy, and program to ensure information assets and technologies are adequately protected.
+> * **Español:** Director de Seguridad de la Información. Es el ejecutivo de alto nivel responsable de la estrategia y ejecución de los programas para proteger los activos tecnológicos de la empresa.
+
+---
+
+## Disaster Recovery (DR) & Business Continuity (BC)
+
+* **Disaster Recovery (DR):** Focuses on the technical recovery of specific IT systems, data, and infrastructure after a catastrophic event. Goal: **Minimize downtime.**
+* **Business Continuity (BC):**
+    > **Term Definition: BC (Business Continuity)**
+    > * **English:** The broader strategic framework that ensures an organization can continue operating its essential functions during and after a disaster.
+    > * **Español:** Continuidad de Negocio. Es el marco estratégico que garantiza que una organización pueda seguir operando sus funciones esenciales durante y después de un desastre.
+
+### Metrics and Strategy
+* **RTO (Recovery Time Objective):** The maximum tolerable duration of a service outage.
+* **RPO (Recovery Point Objective):** The maximum amount of data loss measured in time (e.g., "we can afford to lose 4 hours of data").
+
+---
+
+## Cloud Security & Shared Responsibility Model
+
+Cloud security relies on the **Shared Responsibility Model**. The provider (AWS, Azure, GCP) secures the infrastructure, while the customer secures what they put *in* the cloud.
+
+> **Term Definition: Shared Responsibility Model**
+> * **English:** A security framework where the Cloud Service Provider (CSP) manages the security *of* the cloud, and the customer manages security *in* the cloud (data, OS, and access).
+> * **Español:** Modelo de Responsabilidad Compartida. Marco donde el proveedor asegura la infraestructura base y el cliente es responsable de asegurar sus datos, sistemas operativos y configuraciones.
+
+### Key Focus Areas
+* **Data Protection:** Utilizing encryption (at rest and in transit).
+* **Identity and Access Management (IAM):** Managing digital identities and permissions.
+* **Network Security:** Implementing Firewalls and VPNs to segment traffic.
+* **Compliance and Governance:** Ensuring cloud usage meets legal and regulatory standards.
+
+---
+
+## Physical Security
+
+Physical security involves the protection of personnel, hardware, and software from physical actions and events that could cause serious loss or damage.
+
+> **Term Definition: Physical Security (Hardware protection)**
+> * **English:** The implementation of physical barriers and control systems to protect IT assets like server racks, workstations, and cabling from unauthorized physical access or environmental hazards.
+> * **Español:** Seguridad Física. Implementación de barreras y sistemas de control para proteger equipos (racks, servidores, cableado) de accesos no autorizados o daños ambientales.
+
+### Regulatory Compliance
+> **Term Definition: Regulatory Compliance**
+> * **English:** The process of ensuring that an organization adheres to laws, regulations, and guidelines relevant to its business processes (e.g., GDPR, PCI-DSS, ISO 27001).
+> * **Español:** Cumplimiento Normativo. Proceso de asegurar que la empresa cumple con las leyes y estándares técnicos aplicables a su sector.
+
+### Vulnerability Assessment: Physical Layer
+
+| Vulnerability | Description |
+| :--- | :--- |
+| **Unsecured Access Points** | Doors or windows left unlocked or easily bypassed. |
+| **Weak Locks** | Outdated or low-quality hardware prone to lock-picking. |
+| **Inadequate Perimeter** | Lack of fencing, barriers, or CCTV around the facility. |
+| **Poor Key Management** | Improper storage of access cards or physical keys. |
+| **Insufficient Lighting** | Dark areas that conceal unauthorized activity. |
+| **Exposed Infrastructure** | Physically accessible server rooms or network closets. |
+| **Lack of Visitor Logs** | Weak protocols for monitoring non-employees. |
+| **Unattended Devices** | Workstations left unlocked in public/shared spaces. |
