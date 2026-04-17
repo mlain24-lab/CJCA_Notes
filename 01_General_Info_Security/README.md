@@ -386,3 +386,84 @@ A sophisticated, stealthy, and continuous cyberattack orchestration process. In 
 ### Impact
 * **EN:** Complete compromise of IT infrastructure, massive exfiltration of classified or proprietary data, long-term espionage, and devastating national security implications.
 * **ES:** Compromiso total de la infraestructura IT, exfiltración masiva de datos clasificados o patentados, espionaje a largo plazo y consecuencias devastadoras para la seguridad nacional.
+
+# Module 01: Introduction to Information Security - Roles & Threat Actors
+
+## 1. Threat Actors
+A **Threat Actor** (or malicious actor) is an entity responsible for an event or incident that impacts, or has the potential to impact, the safety or security of another entity. 
+
+> **Concept Explain: Individual vs. Organized Groups**
+> * **EN:** While a threat actor can be a "lone wolf" operating independently (like a rogue hacker), Advanced Persistent Threats (APTs) usually consist of highly organized groups with specialized skills collaborating to execute complex cyberattacks.
+> * **ES:** Aunque un actor de amenazas puede ser un "lobo solitario" operando de forma independiente, las Amenazas Persistentes Avanzadas (APTs) suelen estar formadas por grupos muy organizados donde cada miembro tiene habilidades especializadas.
+
+### The "Heist Team" Analogy
+In organized cybercrime or state-sponsored attacks, threat actors operate like a coordinated heist team:
+* **The Scout (Reconnaissance):** Gathers intelligence, performs OSINT (Open-Source Intelligence), and identifies vulnerabilities. *(ES: Busca vulnerabilidades e inteligencia de fuentes abiertas).*
+* **The Lockpicker (Initial Access):** Develops exploits or uses social engineering to breach the perimeter. *(ES: Desarrolla exploits o usa ingeniería social para penetrar el perímetro).*
+* **The Getaway Driver (Persistence & Evasion):** Clears system logs, creates backdoors, and ensures the team maintains access without being detected. *(ES: Borra logs, crea puertas traseras y mantiene el acceso sin ser detectado).*
+* **The Exfiltration Specialist:** Packages sensitive data and establishes Covert Channels (C2 - Command and Control) to steal the data safely. *(ES: Empaqueta datos sensibles y establece canales de Comando y Control para robar la información).*
+
+### Objectives
+1. **Financial Gain:** Ransomware, selling data on the Dark Web.
+2. **Espionage:** Stealing intellectual property (IP) or state secrets.
+3. **Hacktivism:** Ideologically motivated attacks (e.g., defacing websites).
+4. **Disruption:** Sabotaging critical infrastructure or business operations.
+
+---
+
+## 2. Red Team (Offensive Security)
+
+> **Concept Explain: Red Team**
+> * **EN:** A group of highly skilled offensive security professionals authorized to simulate real-world cyberattacks against an organization to test its defenses.
+> * **ES:** Profesionales de seguridad ofensiva (hackers éticos) autorizados para simular ataques cibernéticos reales contra una organización para poner a prueba sus defensas.
+
+* **Purpose:** To blindly test the effectiveness of the organization's security posture, policies, and the Blue Team's detection and response capabilities in a real-world scenario.
+* **Objectives:** Identify vulnerabilities, bypass perimeter defenses, compromise target systems, and achieve predefined goals (like capturing a specific "flag" or database) **without being detected**.
+
+---
+
+## 3. Blue Team (Defensive Security)
+
+> **Concept Explain: Blue Team**
+> * **EN:** The internal security team responsible for actively defending the organization's infrastructure against both real attackers and Red Team simulations.
+> * **ES:** El equipo de seguridad interno responsable de defender activamente la infraestructura de la organización contra atacantes reales y simulaciones del Red Team.
+
+### Key Roles
+* **Security Analysts:** Monitor systems (like SIEMs) and triage security alerts. *(ES: Monitorizan alertas de seguridad).*
+* **Incident Responders (IR):** The "firefighters" who react to breaches, contain the damage, and eradicate the threat. *(ES: Responden a incidentes, contienen y erradican la amenaza).*
+* **Threat Hunters:** Proactively search through networks to detect isolated threats that bypassed traditional security tools. *(ES: Buscan proactivamente amenazas ocultas en la red).*
+* **Security Engineers:** Build, implement, and maintain security architectures (Firewalls, IDS/IPS, Endpoint protection). *(ES: Diseñan y mantienen la arquitectura de seguridad).*
+
+* **Purpose:** To maintain and continuously improve the organizational security posture.
+* **Objectives:** Detect, prevent, and respond to cyber incidents, while minimizing the attack surface.
+
+---
+
+## 4. Purple Team (Collaborative Security)
+
+> **Concept Explain: Purple Team**
+> * **EN:** Not necessarily a standalone team, but a collaborative methodology. It integrates the offensive tactics of the Red Team with the defensive strategies of the Blue Team to maximize the effectiveness of security testing.
+> * **ES:** No es un equipo físico per se, sino una metodología colaborativa. Integra las tácticas ofensivas (Red) con las estrategias defensivas (Blue) para maximizar la eficacia de las pruebas.
+
+* **Composition:** Members from both the Red and Blue teams working transparently together.
+* **Purpose:** To ensure continuous feedback. Instead of the Red Team hiding, they execute an attack and immediately tell the Blue Team: *"Did you see that? No? Let's tune your SIEM rules so you catch it next time."*
+
+---
+
+## 5. Security Roles & Infrastructure (Theory)
+
+### Chief Information Security Officer (CISO)
+* **EN:** A senior-level (C-suite) executive responsible for aligning security initiatives with enterprise programs and business objectives. They focus on risk management, regulatory compliance, and overall security strategy rather than daily technical tasks.
+* **ES:** Ejecutivo de alto nivel responsable de alinear la seguridad con los objetivos del negocio. Se centra en la gestión de riesgos, el cumplimiento normativo y la estrategia global, no en tareas técnicas diarias.
+
+### Penetration Testers (Pentesters)
+* **EN:** Security professionals hired to legally exploit vulnerabilities in specific systems, applications, or networks. Unlike Red Teams (who test the *response* of the organization), Pentesters focus primarily on finding as many technical flaws as possible within a defined scope and timeframe.
+* **ES:** Profesionales contratados para explotar legalmente vulnerabilidades en sistemas específicos. A diferencia del Red Team (que evalúa la respuesta global), los pentesters se enfocan en encontrar todos los fallos técnicos posibles dentro de un alcance definido.
+
+### Security Operations Center (SOC)
+* **EN:** A centralized command center where the IT security team (Blue Team) continuously monitors, detects, analyzes, and responds to cybersecurity incidents 24/7/365.
+* **ES:** Centro de mando centralizado donde el equipo de seguridad (Blue Team) monitoriza, detecta, analiza y responde a incidentes cibernéticos las 24 horas del día.
+
+### Bug Bounty Hunter
+* **EN:** Independent security researchers (often freelancers) who discover and report vulnerabilities to organizations through formal "Bug Bounty Programs" in exchange for financial rewards (bounties).
+* **ES:** Investigadores de seguridad independientes que descubren y reportan vulnerabilidades a las empresas a través de programas oficiales a cambio de recompensas económicas.
