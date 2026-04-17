@@ -264,3 +264,125 @@ Physical security involves the protection of personnel, hardware, and software f
 | **Exposed Infrastructure** | Physically accessible server rooms or network closets. |
 | **Lack of Visitor Logs** | Weak protocols for monitoring non-employees. |
 | **Unattended Devices** | Workstations left unlocked in public/shared spaces. |
+
+# Module 01: Introduction to Information Security Fundamentals
+
+## 1. Mobile Security
+Think of a mobile device as a physical chest filled with your most valuable possessions: personal letters, ID, contacts, and passwords. To protect it, this chest requires multiple layers of defense:
+
+* **Device Security:** Physical and hardware-level protections (biometrics, screen locks).
+* **Data Security:** Encryption of data at rest and in transit.
+* **Network Security:** Secure connections (VPNs, avoiding public/open Wi-Fi).
+* **Application Security:** Secure coding practices and app permission management.
+
+### Primary Responsibilities
+1. IT Departments
+2. CISOs (Chief Information Security Officers)
+3. Security Teams / SOC (Security Operations Center)
+4. IT Security Managers
+
+---
+
+## 2. Internet of Things (IoT)
+Everyday physical objects connected to the internet. **IoT Security** is the practice of safeguarding these interconnected devices and the networks they reside on.
+
+### Roles & Responsibilities
+
+| Player | Responsibility |
+| :--- | :--- |
+| **Device Manufacturers** | The "architects and builders". They must design devices following secure-by-design principles, minimizing unnecessary features (reducing the attack surface) and providing timely firmware/security updates. |
+| **Network Administrators** | The "guards". They secure the networks IoT devices connect to by implementing measures like **Network Segmentation** (isolating IoT devices on a separate VLAN to contain breaches) and Intrusion Detection Systems (IDS). |
+| **Application Developers** | The "scribes". They ensure the software interacting with IoT devices is secure, implementing robust authentication methods and protecting data via encryption. |
+
+---
+
+## 3. Distributed Denial of Service (DDoS)
+Unlike a traditional DoS attack, a **DDoS** is a malicious attempt to interrupt the normal traffic of a targeted server, service, or network by overwhelming the target or its surrounding infrastructure with a flood of internet traffic. The attack originates from multiple compromised sources simultaneously.
+
+### How it Works
+* **The Attacker:** The threat actor coordinating the attack.
+* **The Botnet:** A network of compromised devices (often IoT devices) infected with malware, spread across various locations, acting as the attacking army.
+* **The Victim:** The targeted server, service, or network.
+
+> **Case Study:** In 2016, a massive DDoS attack targeted **Dyn**, a DNS provider, disrupting critical internet services like Netflix and Twitter.
+
+### Impact of a DDoS Attack
+* **Financial Impact:** Loss of revenue during downtime.
+* **Reputational Damage:** Loss of customer trust.
+* **Operational Disruption:** Users and employees cannot access necessary tools or services to work.
+
+---
+
+## 4. Ransomware
+Malware designed to encrypt an organization's valuable files, rendering them inaccessible. The threat actors then demand a ransom payment (typically in cryptocurrency like Bitcoin) in exchange for the decryption key.
+
+> **Concept Explain: WannaCry (2017)**
+> * **EN:** A massive, global ransomware attack that exploited a critical Windows SMBv1 vulnerability known as 'EternalBlue'. It spread autonomously like a worm, devastating networks worldwide.
+> * **ES:** Ataque masivo de ransomware a nivel global que explotó una vulnerabilidad crítica de Windows SMBv1 llamada 'EternalBlue'. Se propagó de forma autónoma como un gusano, colapsando redes en todo el mundo.
+
+### Impact
+Operational shutdowns, massive financial losses, permanent data loss, and severe reputational damage.
+
+---
+
+## 5. Social Engineering
+Psychological manipulation to deceive individuals into revealing confidential information, bypassing security protocols, or taking actions that compromise security. *It targets the human element, often the weakest link in cybersecurity.*
+
+### Common Attack Vectors
+
+* **1. Phishing**
+    * *EN:* Sending fraudulent communications (usually emails) that appear to come from a reputable source to steal sensitive data like login credentials.
+    * *ES:* Envío de comunicaciones fraudulentas (generalmente emails) suplantando a una entidad de confianza para robar credenciales o datos sensibles.
+* **2. Pretexting**
+    * *EN:* Fabricating a false scenario (a pretext) to manipulate a victim into handing over valuable information.
+    * *ES:* Inventar un escenario o historia falsa (un pretexto) para manipular a la víctima y convencerla de que entregue información valiosa.
+* **3. Baiting**
+    * *EN:* Luring victims with a false promise or reward, such as leaving a malware-infected USB drive in a parking lot labeled "Payroll 2026".
+    * *ES:* Atraer a las víctimas con una promesa o recompensa falsa, como dejar un USB infectado con malware en un aparcamiento etiquetado como "Nóminas 2026".
+* **4. Tailgating**
+    * *EN:* Also known as "piggybacking", it involves an unauthorized person physically following an authorized employee into a secure, restricted area.
+    * *ES:* También conocido como "piggybacking", consiste en que una persona no autorizada siga físicamente de cerca a un empleado para colarse en un área de acceso restringido.
+* **5. Quid Pro Quo**
+    * *EN:* Offering a benefit or service in exchange for information or access (e.g., a hacker posing as IT Support offering to "fix" an issue if the user provides their password).
+    * *ES:* Ofrecer un beneficio o servicio a cambio de información o acceso (ej: un atacante que se hace pasar por Soporte IT y ofrece "arreglar" un problema a cambio de la contraseña).
+
+### Impact
+Data breaches, financial losses, reputational damage, and operational disruptions.
+
+---
+
+## 6. Insider Threat
+
+> **Concept Explain: Insider Threat Definition**
+> * **EN:** A security risk that originates from within the targeted organization. It involves current or former employees, contractors, or business partners who have inside information concerning the organization's security practices, data, and computer systems.
+> * **ES:** Riesgo de seguridad cibernética que proviene de dentro de la propia organización. Involucra a empleados actuales, exempleados o contratistas que tienen acceso legítimo a los sistemas y datos de la empresa.
+
+### Types of Insiders
+1.  **Malicious Insiders:** Intentionally cause harm or steal data (e.g., a disgruntled employee stealing IP before quitting).
+2.  **Negligent Insiders:** Unintentionally cause breaches through carelessness (e.g., leaving a laptop unlocked or falling for a phishing scam).
+3.  **Compromised Insiders:** Legitimate users whose accounts have been taken over by external attackers.
+
+### How it Works
+* **EN:** The insider uses their authorized access (or privileges) to bypass perimeter defenses like firewalls. Because they are already inside the network, their malicious or negligent actions are much harder for traditional security tools to detect.
+* **ES:** El usuario utiliza su acceso legítimo (o privilegios) para saltarse las defensas perimetrales como los firewalls. Al estar ya dentro de la red, sus acciones maliciosas o negligentes son mucho más difíciles de detectar por las herramientas de seguridad tradicionales.
+
+### Impact
+* **EN:** Theft of Intellectual Property (IP), corporate espionage, regulatory compliance violations, and critical system sabotage.
+* **ES:** Robo de Propiedad Intelectual, espionaje corporativo, violaciones de cumplimiento normativo (GDPR) y sabotaje de sistemas críticos.
+
+---
+
+## 7. Advanced Persistent Threat (APT)
+A sophisticated, stealthy, and continuous cyberattack orchestration process. In an APT, an intruder (often state-sponsored groups) gains unauthorized access to a network and remains undetected for an extended period. The primary objective is establishing **long-term access** to exfiltrate highly sensitive information or disrupt critical infrastructure.
+
+### How it Works
+* **EN:** Attackers use initial compromise vectors (like spear-phishing or zero-day exploits) to enter the network. Once inside, they establish a foothold, deploy custom malware, escalate privileges, and move laterally across the network to find their target data, all while erasing their tracks to maintain persistence.
+* **ES:** Los atacantes usan vectores iniciales (como spear-phishing o exploits zero-day) para entrar en la red. Una vez dentro, establecen un punto de apoyo, despliegan malware personalizado, escalan privilegios y se mueven lateralmente por la red para encontrar los datos objetivo, borrando sus huellas para mantener la persistencia.
+
+> **Case Study: SolarWinds Attack (2020)**
+> * **EN:** A highly sophisticated supply-chain APT attack. Hackers compromised the build environment of SolarWinds' 'Orion' IT monitoring software, injecting a backdoor. When SolarWinds distributed regular updates, thousands of top-tier organizations and US government agencies unknowingly installed the malware, granting attackers deep network access.
+> * **ES:** Ataque APT de cadena de suministro muy sofisticado. Los hackers comprometieron el entorno de desarrollo del software de monitorización 'Orion' de SolarWinds, inyectando una puerta trasera (backdoor). Cuando SolarWinds distribuyó actualizaciones normales, miles de empresas y agencias del gobierno de EE.UU. instalaron el malware sin saberlo, dando a los atacantes acceso profundo a sus redes.
+
+### Impact
+* **EN:** Complete compromise of IT infrastructure, massive exfiltration of classified or proprietary data, long-term espionage, and devastating national security implications.
+* **ES:** Compromiso total de la infraestructura IT, exfiltración masiva de datos clasificados o patentados, espionaje a largo plazo y consecuencias devastadoras para la seguridad nacional.
