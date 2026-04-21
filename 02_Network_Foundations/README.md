@@ -272,3 +272,104 @@ The DNS system operates in a distributed, hierarchical tree structure:
 | **5** | **TLD Server Contact** | The recursive server queries the **TLD Name Server**, which in turn directs the query to the specific Authoritative Name Server for `example.com`. |
 | **6** | **Authoritative Server** | The **Authoritative Name Server** responds to the recursive server with the exact IP address mapped to `www.example.com`. |
 | **7** | **Final Connection** | The recursive server returns this IP address to the user's computer (caching it for future use), and the browser initiates a direct connection to the target web server. |
+
+# Internet and Network Architectures
+
+> **Internet Architecture**
+> * **EN:** The overarching design and structural model that dictates how computer networks and devices communicate, share resources, and process data across the global internet or within enterprise environments.
+> * **ES:** El diseño general y modelo estructural que dicta cómo las redes informáticas y los dispositivos se comunican, comparten recursos y procesan datos a través de internet o en entornos empresariales.
+
+---
+
+## 1. Peer-to-Peer (P2P) Architecture
+
+> **What is P2P?**
+> * **EN:** A decentralized network model where all nodes (peers) have equal privileges and responsibilities. They act as both clients (requesting data) and servers (supplying data) simultaneously, without a central administrative authority.
+> * **ES:** Un modelo de red descentralizado donde todos los nodos (pares) tienen los mismos privilegios y responsabilidades. Actúan como clientes (solicitando datos) y servidores (suministrando datos) simultáneamente, sin una autoridad administrativa central.
+
+| P2P Architecture | Advantages (Pros) | Disadvantages (Cons) |
+| :--- | :--- | :--- |
+| **Analysis** | - **Fault Tolerance:** No single point of failure. <br> - **Scalability:** Adding more peers increases total network capacity. <br> - **Cost-Effective:** No need for expensive dedicated server hardware. | - **Security:** Hard to enforce centralized security policies. <br> - **Management:** Backups and updates must be done per node. <br> - **Performance:** Relies on the individual bandwidth and processing power of peers. |
+
+---
+
+## 2. Client-Server Architecture
+One of the most widely used architectures on the Internet. Clients (user devices, like a web browser) send requests for resources or services, and centralized servers process and respond to these requests.
+
+### Architectural Tiers
+
+> **Single-Tier Architecture**
+> * **EN:** All components (User Interface, Business Logic, and Database) reside on the same machine. No network access is required.
+> * **ES:** Todos los componentes (Interfaz de usuario, Lógica de negocio y Base de datos) residen en la misma máquina. No requiere acceso a red.
+
+> **Two-Tier Architecture**
+> * **EN:** The client contains the User Interface, and the server hosts the Database. The client communicates directly with the database server.
+> * **ES:** El cliente contiene la interfaz de usuario y el servidor aloja la base de datos. El cliente se comunica directamente con el servidor de base de datos.
+
+> **Three-Tier Architecture**
+> * **EN:** Introduces a middle tier. The structure is: Client (UI) -> Application Server (Business Logic) -> Database Server (Data storage). Highly secure and scalable.
+> * **ES:** Introduce una capa intermedia. La estructura es: Cliente (Interfaz) -> Servidor de Aplicaciones (Lógica) -> Servidor de Base de Datos. Altamente seguro y escalable.
+
+> **N-Tier Architecture**
+> * **EN:** Scales beyond three tiers by distributing the application logic across multiple isolated servers or microservices to handle massive enterprise loads.
+> * **ES:** Escala más allá de tres capas distribuyendo la lógica de aplicación en múltiples servidores aislados o microservicios para soportar cargas empresariales masivas.
+
+| Client-Server | Advantages (Pros) | Disadvantages (Cons) |
+| :--- | :--- | :--- |
+| **Analysis** | - **Centralized Management:** Easy to apply security, backups, and updates. <br> - **Performance:** Dedicated servers can handle heavy processing. <br> - **Data Integrity:** Centralized databases avoid data inconsistency. | - **Single Point of Failure:** If the server goes down, the network halts. <br> - **Cost:** Requires expensive hardware and specialized IT staff. <br> - **Bottlenecks:** High traffic can overwhelm the central server. |
+
+---
+
+## 3. Hybrid Architecture
+
+> **What is Hybrid Architecture?**
+> * **EN:** A model that combines elements of both P2P and Client-Server architectures. Typically, a central server is used for authentication or locating resources, while the actual data transfer happens peer-to-peer (e.g., BitTorrent trackers or VoIP protocols).
+> * **ES:** Modelo que combina elementos P2P y Cliente-Servidor. Típicamente, se usa un servidor central para la autenticación o localización de recursos, mientras que la transferencia de datos ocurre entre pares.
+
+| Hybrid Architecture | Advantages (Pros) | Disadvantages (Cons) |
+| :--- | :--- | :--- |
+| **Analysis** | - **Best of Both Worlds:** Combines centralized security with decentralized scalability. <br> - **Bandwidth Efficiency:** Reduces the load on the central server. | - **Complexity:** Difficult to design, deploy, and maintain. <br> - **Troubleshooting:** Harder to isolate faults due to mixed routing paths. |
+
+---
+
+## 4. Cloud Architecture
+Distributes IT resources over the internet, commonly delivering them via models like SaaS (Software as a Service - e.g., Google Drive, Dropbox), PaaS, or IaaS. 
+
+### Five Essential NIST Characteristics
+
+1. **On-demand self-service:** * *EN:* Users can automatically provision computing capabilities as needed without human interaction from the provider.
+   * *ES:* Los usuarios pueden aprovisionar recursos informáticos automáticamente según sus necesidades sin interacción humana del proveedor.
+2. **Broad network access:** * *EN:* Capabilities are available over the network and accessed through standard mechanisms (mobile phones, tablets, laptops).
+   * *ES:* Los recursos están disponibles en red y se accede a ellos mediante mecanismos estándar.
+3. **Resource pooling:** * *EN:* The provider's computing resources are pooled to serve multiple consumers using a multi-tenant model.
+   * *ES:* Los recursos del proveedor se agrupan para dar servicio a múltiples consumidores mediante un modelo multi-inquilino.
+4. **Rapid elasticity:** * *EN:* Capabilities can be elastically provisioned and released, scaling rapidly outward and inward commensurate with demand.
+   * *ES:* Los recursos se pueden aprovisionar y liberar de forma elástica, escalando rápidamente en función de la demanda.
+5. **Measured service:** * *EN:* Cloud systems automatically control and optimize resource use by leveraging a metering capability (pay-as-you-go).
+   * *ES:* Los sistemas cloud controlan y optimizan automáticamente el uso de recursos mediante capacidades de medición (pago por uso).
+
+| Cloud Architecture | Advantages (Pros) | Disadvantages (Cons) |
+| :--- | :--- | :--- |
+| **Analysis** | - **CapEx to OpEx:** Shifts upfront hardware costs to operational expenses. <br> - **High Availability:** Built-in redundancy across geographical regions. <br> - **Elasticity:** Scales resources dynamically based on load. | - **Vendor Lock-in:** Difficult to migrate away from a specific provider. <br> - **Internet Dependency:** Requires a constant, reliable network connection. <br> - **Privacy/Compliance:** Storing sensitive data on third-party servers. |
+
+---
+
+## 5. Software-Defined Networking (SDN) Architecture
+> **What is SDN?**
+> * **EN:** An architecture primarily used in large enterprises that decouples the network's control plane (the brains making routing decisions) from the data plane (the underlying infrastructure forwarding packets), enabling centralized, programmable network management.
+> * **ES:** Una arquitectura usada en grandes empresas que desacopla el plano de control (el "cerebro" de enrutamiento) del plano de datos (la infraestructura que reenvía paquetes), permitiendo una gestión de red centralizada y programable.
+
+| SDN Architecture | Advantages (Pros) | Disadvantages (Cons) |
+| :--- | :--- | :--- |
+| **Analysis** | - **Agility & Automation:** Network configurations can be pushed via software (APIs). <br> - **Microsegmentation:** Extremely granular security controls. <br> - **Centralized Provisioning:** Complete visibility from a single controller. | - **Implementation Cost:** High initial investment in SDN-compatible hardware/software. <br> - **Controller Vulnerability:** The centralized SDN controller becomes a massive single point of failure and a prime target for attackers. |
+
+---
+
+## 6. Key Comparisons Summary
+
+| Feature | Peer-to-Peer | Client-Server | Cloud | SDN |
+| :--- | :--- | :--- | :--- | :--- |
+| **Control** | Decentralized | Centralized | Provider Managed | Centralized (Software via Controller) |
+| **Scalability** | High (Ad-hoc) | Moderate (Requires hardware) | Extremely High (Elastic) | High (Automated provisioning) |
+| **Setup Cost** | Very Low | High (CapEx) | Low initial (OpEx model) | Very High (Enterprise hardware) |
+| **Best Use Case**| File sharing, small LANs | Enterprise Active Directory, Web Servers | SaaS, scalable web apps, remote storage | Massive enterprise datacenters, ISPs |
