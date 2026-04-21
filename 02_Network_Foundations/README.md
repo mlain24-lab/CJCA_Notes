@@ -187,3 +187,47 @@ DHCP is a network management protocol used to dynamically assign IP addresses an
 To manually trigger the DHCP DORA process on a specific wireless interface in Linux (e.g., renewing an IP lease):
 ```bash
 sudo dhclient wlan0
+
+# Network Address Translation (NAT)
+
+> **What is NAT?**
+> * **EN:** A technique used to remap a private IP address space into a public one by modifying network address information in the IP header of packets while they are in transit across a traffic routing device.
+> * **ES:** Técnica que permite remapear un espacio de direcciones IP privadas a uno público, modificando la información de red en la cabecera IP de los paquetes mientras transitan por un enrutador.
+
+## 1. Public vs. Private IP Addresses
+
+### Public IP Addresses
+Public IP addresses are globally unique identifiers assigned by Internet Service Providers (ISPs). Devices equipped with these IP addresses are directly routable and can be accessed from anywhere on the public internet.
+
+### Private IP Addresses (RFC 1918)
+Private IP addresses are designated for internal use within local area networks (LANs), such as corporate offices, schools, and home environments. These addresses are **not** routable on the global internet. 
+
+The IETF established **RFC 1918**, which reserves the following IPv4 address ranges for private networks:
+* **Class A:** `10.0.0.0` to `10.255.255.255`
+* **Class B:** `172.16.0.0` to `172.31.255.255`
+* **Class C:** `192.168.0.0` to `192.168.255.255`
+
+---
+
+## 2. How NAT Works
+
+> **The NAT Process:**
+> * **EN:** When a local device wants to send traffic to the internet, the router intercepts the packet, replaces the private source IP address with its own external public IP address, and records this translation in a NAT table. When the return traffic arrives, the router checks the NAT table to map the public IP back to the original internal private IP, forwarding the packet to the correct device.
+> * **ES:** Cuando un equipo local envía tráfico a internet, el router intercepta el paquete, sustituye la IP origen privada por su propia IP pública externa y registra esta traducción en una tabla NAT. Al recibir el tráfico de vuelta, el router consulta la tabla NAT para mapear de nuevo la IP pública a la IP privada original, entregando el paquete al dispositivo correcto.
+
+---
+
+## 3. Types of NAT
+
+### Static NAT
+> * **EN:** A strict one-to-one mapping between a specific private IP address and a specific public IP address. Often used for servers hosted internally that must be accessible from the outside.
+> * **ES:** Un mapeo estricto de uno a uno entre una dirección IP privada específica y una IP pública específica. Se usa habitualmente para servidores alojados internamente que deben ser accesibles desde el exterior.
+
+### Dynamic NAT
+> * **EN:** Maps an unregistered private IP address to a registered public IP address selected from a pool of available public IPs provided by the ISP.
+> * **ES:** Asigna una dirección IP privada no registrada a una IP pública registrada, seleccionándola de un grupo (*pool*) de direcciones públicas disponibles proporcionadas por el ISP.
+
+### Port Address Translation (PAT) / NAT Overload
+> * **EN:** A many-to-one mapping technique. It maps multiple private IP addresses to a single public IP address by assigning unique source ports to distinguish the different traffic sessions. This is the most common configuration in home and small business networks.
+> * **ES:** Una técnica de mapeo de muchos a uno. Asigna múltiples direcciones IP privadas a una única IP pública utilizando puertos de origen únicos para distinguir las diferentes sesiones de tráfico. Es la configuración más común en redes domésticas y pymes.
+
