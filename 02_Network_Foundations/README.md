@@ -119,3 +119,71 @@ A more practical, condensed version of the OSI Model that is the foundation of t
 | **Network Protocols** | **Protocolos de Red** | Rules governing data transmission (e.g., TCP/IP, HTTP, FTP). / *Reglas que rigen la transmisión de datos.* |
 | **Software Firewall** | **Cortafuegos de Software** | Host-based security filtering incoming/outgoing traffic (e.g., Linux IPTables). / *Seguridad a nivel de host que filtra tráfico (ej. IPTables).* |
 | **Server** | **Servidor** | Powerful host providing centralized resources/services (Client-Server Model). / *Host potente que provee recursos centralizados (Modelo Cliente-Servidor).* |
+
+# Network Communication Foundations
+
+## 1. MAC Addresses (Media Access Control)
+A MAC address is a unique, hardcoded physical identifier assigned to the Network Interface Card (NIC) of a device. It operates at the Data Link Layer (Layer 2 of the OSI model).
+
+### Useful Commands
+* `getmac`: A Windows command-line utility that returns the physical MAC address of every NIC present on the host system.
+
+---
+
+## 2. IP Addresses & Ports
+
+> **IP Addresses:** > * **EN:** A unique numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication. It operates at the Network Layer (Layer 3).
+> * **ES:** Una etiqueta numérica única asignada a cada dispositivo conectado a una red informática que utiliza el Protocolo de Internet para comunicarse. Opera en la Capa de Red (Capa 3).
+
+> **Ports:**
+> * **EN:** A virtual point where network connections start and end. Ports are associated with specific processes or services, operating at the Transport Layer (Layer 4).
+> * **ES:** Un punto virtual donde comienzan y terminan las conexiones de red. Los puertos se asocian a procesos o servicios específicos, operando en la Capa de Transporte (Capa 4).
+
+### Port Categories
+* **Well-known Ports (0 - 1023):** * *EN:* System or standard ports assigned by IANA to widely used protocols and core services (e.g., 80/HTTP, 443/HTTPS, 22/SSH).
+    * *ES:* Puertos del sistema asignados por la IANA a protocolos y servicios fundamentales ampliamente utilizados.
+* **Registered Ports (1024 - 49151):** * *EN:* Ports assigned by IANA for specific applications, vendor services, or custom software upon request.
+    * *ES:* Puertos asignados por la IANA para aplicaciones específicas o servicios de software de terceros bajo petición.
+* **Dynamic / Private Ports (49152 - 65535):** * *EN:* Also known as ephemeral ports. They are used temporarily by client applications to initiate an outbound connection to a server.
+    * *ES:* También conocidos como puertos efímeros. Las aplicaciones cliente los usan de forma temporal para iniciar conexiones de salida hacia un servidor.
+
+### Useful Commands
+* `netstat`: Displays active network connections, routing tables, and listening ports (Layer 3/Layer 4).
+
+---
+
+## 3. Browsing the Internet: The Workflow
+When navigating to a webpage, the sequence of events is as follows:
+1.  **DNS Lookup:** The domain name is resolved to an IP address.
+2.  **Data Encapsulation:** The data payload is wrapped with necessary protocol headers (TCP, IP, MAC).
+3.  **Data Transmission:** The packets are routed across the network to the destination.
+4.  **Server Processing:** The target web server receives the request, processes it, and fetches the required resources.
+5.  **Response Transmission:** The server sends the encapsulated web page data back to the client.
+
+---
+
+## 4. DHCP (Dynamic Host Configuration Protocol)
+DHCP is a network management protocol used to dynamically assign IP addresses and other core network configuration parameters (like subnet mask and default gateway) to devices, heavily simplifying administration.
+
+### How DHCP Works (The D.O.R.A. Process)
+
+> **1. Discover**
+> * **EN:** The client broadcasts a `DHCP Discover` message across the local network to locate available DHCP servers.
+> * **ES:** El cliente envía un mensaje de difusión (*broadcast*) `DHCP Discover` por la red local para localizar servidores DHCP disponibles.
+
+> **2. Offer**
+> * **EN:** The DHCP server responds with a `DHCP Offer` message, proposing an available IP address and lease terms to the client.
+> * **ES:** El servidor DHCP responde con un mensaje `DHCP Offer`, proponiendo al cliente una dirección IP disponible y los términos de la concesión.
+
+> **3. Request**
+> * **EN:** The client replies with a `DHCP Request` message, formally requesting the offered IP address from that specific DHCP server.
+> * **ES:** El cliente contesta con un mensaje `DHCP Request`, solicitando formalmente la dirección IP ofrecida a ese servidor DHCP en concreto.
+
+> **4. Acknowledge (ACK)**
+> * **EN:** The server sends a `DHCP Acknowledge` message, finalizing the IP lease and allowing the client to apply the network configuration.
+> * **ES:** El servidor envía un mensaje `DHCP Acknowledge`, finalizando la asignación de la IP y permitiendo al cliente aplicar la configuración de red.
+
+### Useful Commands
+To manually trigger the DHCP DORA process on a specific wireless interface in Linux (e.g., renewing an IP lease):
+```bash
+sudo dhclient wlan0
