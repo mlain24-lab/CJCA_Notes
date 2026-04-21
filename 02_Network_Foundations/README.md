@@ -187,7 +187,7 @@ DHCP is a network management protocol used to dynamically assign IP addresses an
 To manually trigger the DHCP DORA process on a specific wireless interface in Linux (e.g., renewing an IP lease):
 ```bash
 sudo dhclient wlan0
-
+```
 # Network Address Translation (NAT)
 
 > **What is NAT?**
