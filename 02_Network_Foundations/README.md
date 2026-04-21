@@ -231,3 +231,44 @@ The IETF established **RFC 1918**, which reserves the following IPv4 address ran
 > * **EN:** A many-to-one mapping technique. It maps multiple private IP addresses to a single public IP address by assigning unique source ports to distinguish the different traffic sessions. This is the most common configuration in home and small business networks.
 > * **ES:** Una técnica de mapeo de muchos a uno. Asigna múltiples direcciones IP privadas a una única IP pública utilizando puertos de origen únicos para distinguir las diferentes sesiones de tráfico. Es la configuración más común en redes domésticas y pymes.
 
+# Domain Name System (DNS)
+DNS is widely regarded as the "phonebook of the internet." It translates human-readable domain names into machine-readable IP addresses, allowing browsers and systems to load internet resources.
+
+## 1. Domain Names vs. IP Addresses
+
+> **Domain Name**
+> * **EN:** A human-friendly naming system used to identify resources on the internet (e.g., `google.com`). It abstracts the underlying infrastructure to make network navigation accessible for users.
+> * **ES:** Un sistema de nombres legible para humanos utilizado para identificar recursos en internet (ej. `google.com`). Abstrae la infraestructura subyacente para hacer accesible la navegación de red a los usuarios.
+
+> **IP Address**
+> * **EN:** The unique numerical identifier assigned to a device on a network. While users type domain names, machines strictly rely on IP addresses to route traffic across the network.
+> * **ES:** El identificador numérico único asignado a un dispositivo en una red. Mientras que los usuarios escriben nombres de dominio, las máquinas dependen estrictamente de las direcciones IP para enrutar el tráfico.
+
+---
+
+## 2. DNS Hierarchy
+The DNS system operates in a distributed, hierarchical tree structure:
+
+* **Root Servers (`.`):** The absolute top of the DNS hierarchy. They serve as the starting point for resolving domain names and direct queries to the appropriate TLD server.
+* **Top-Level Domains (TLDs):** The highest level of domain names in the root zone. Examples include generic TLDs (`.com`, `.org`, `.net`) and Country-Code TLDs (ccTLDs like `.es`, `.uk`, `.de`).
+* **Second-Level Domains (SLD):** The specific, registered name directly below the TLD. For example, `example` in `example.com`.
+* **Subdomain or Hostname:** A prefix added to the domain name to navigate to different sections of a website or infrastructure. For example, `www` or `api` in `www.example.com`.
+
+---
+
+## 3. DNS Resolution Process (Domain Translation)
+
+> **What is DNS Resolution?**
+> * **EN:** The step-by-step process of converting a hostname into a computer-friendly IP address. It involves multiple DNS servers working together sequentially behind the scenes.
+> * **ES:** El proceso paso a paso de convertir un nombre de host en una dirección IP comprensible para las máquinas. Implica que múltiples servidores DNS trabajen de forma secuencial en segundo plano.
+
+### Execution Workflow
+| Step | Action | Description |
+| :--- | :--- | :--- |
+| **1** | **Query Initiation** | The user types `www.example.com` into their web browser. |
+| **2** | **Local Cache Check** | The host computer checks its local DNS cache (OS or browser-level) to see if it already knows the corresponding IP address. |
+| **3** | **Recursive Query** | If not found locally, the system queries a **Recursive DNS Server** (typically provided by the ISP, or public resolvers like Google `8.8.8.8`). |
+| **4** | **Root Server Contact** | The recursive server contacts a **Root Server**, which points it to the appropriate TLD Name Server (e.g., the `.com` infrastructure). |
+| **5** | **TLD Server Contact** | The recursive server queries the **TLD Name Server**, which in turn directs the query to the specific Authoritative Name Server for `example.com`. |
+| **6** | **Authoritative Server** | The **Authoritative Name Server** responds to the recursive server with the exact IP address mapped to `www.example.com`. |
+| **7** | **Final Connection** | The recursive server returns this IP address to the user's computer (caching it for future use), and the browser initiates a direct connection to the target web server. |
