@@ -373,3 +373,69 @@ Distributes IT resources over the internet, commonly delivering them via models 
 | **Scalability** | High (Ad-hoc) | Moderate (Requires hardware) | Extremely High (Elastic) | High (Automated provisioning) |
 | **Setup Cost** | Very Low | High (CapEx) | Low initial (OpEx model) | Very High (Enterprise hardware) |
 | **Best Use Case**| File sharing, small LANs | Enterprise Active Directory, Web Servers | SaaS, scalable web apps, remote storage | Massive enterprise datacenters, ISPs |
+
+# Wireless Networks Fundamentals
+
+A sophisticated communication system that leverages radio waves or other electromagnetic signals to transmit and exchange data seamlessly without relying on physical cabling infrastructure.
+
+## Advantages and Disadvantages
+
+| Feature | English Description | Explicación en Español |
+| :--- | :--- | :--- |
+| **Advantages (Pros)** | **Mobility:** Unrestricted device movement within coverage.<br>**Scalability:** Easy to add new hosts without physical constraints.<br>**Cost-Effectiveness:** Reduces cabling and infrastructure deployment costs. | **Movilidad:** Movimiento libre dentro del área de cobertura.<br>**Escalabilidad:** Fácil integración de nuevos equipos sin cablear.<br>**Rentabilidad:** Ahorro en infraestructura y despliegue físico. |
+| **Disadvantages (Cons)** | **Security Risks:** Vulnerable to interception (sniffing), rogue APs, and deauth attacks.<br>**Interference:** Signal attenuation due to physical obstacles or overlapping channels.<br>**Bandwidth:** Generally lower throughput and higher latency compared to wired ethernet. | **Riesgos de Seguridad:** Susceptible a intercepción, APs falsos y ataques de desautenticación.<br>**Interferencias:** Atenuación de la señal por obstáculos o solapamiento de canales.<br>**Ancho de banda:** Menor rendimiento y mayor latencia frente a redes cableadas. |
+
+---
+
+## Wireless Router
+
+A fundamental networking edge device responsible for forwarding data packets between distinct computer networks while simultaneously providing wireless connectivity to endpoint devices.
+
+### Core Functions
+
+| Function | Technical Description (EN) | Explicación en Español (ES) |
+| :--- | :--- | :--- |
+| **Routing** | Forwards IP packets between different subnets (e.g., local LAN to ISP's WAN) using routing tables and NAT (Network Address Translation). | Enruta paquetes IP entre diferentes subredes (ej. tu LAN hacia la WAN del ISP) usando tablas de enrutamiento y NAT. |
+| **Wireless Access Point (WAP)** | Acts as a bridge, converting wired Ethernet signals into wireless radio frequencies to connect Wi-Fi compliant devices to the network. | Actúa como puente, convirtiendo las señales cableadas en radiofrecuencias para conectar dispositivos Wi-Fi a la red. |
+
+### Hardware Components
+
+| Component | Functionality (EN) | Funcionalidad (ES) |
+| :--- | :--- | :--- |
+| **WAN Port** | Interface connecting the router to the external network/internet (usually linked to a modem). | Interfaz que conecta el router con la red externa/internet (suele ir al módem del proveedor). |
+| **LAN Ports** | Integrated switch interfaces for connecting local wired end-devices via RJ45. | Puertos de switch integrados para conectar dispositivos locales por cable (RJ45). |
+| **Antennae** | Transceivers (Tx/Rx) that broadcast and receive wireless radio frequencies. | Transceptores que emiten y reciben las frecuencias de radio inalámbricas. |
+| **Processor (CPU) & Memory (RAM)** | Handles packet inspection, routing protocols, firewall rules, NAT tables, and encryption overhead (e.g., WPA3). | Gestiona la inspección de paquetes, reglas de firewall, NAT y la carga de procesamiento del cifrado (ej. WPA3). |
+
+---
+
+## Mobile Hotspot
+
+A feature or standalone device that allows a smartphone to tether and share its cellular data connection (4G/5G) via a local Wi-Fi interface, effectively acting as a portable Wireless Access Point.
+
+---
+
+## Cell Tower Architecture
+
+A physical structure housing antennas and electronic communications equipment designed to establish a cellular network cell. These base transceiver stations are centrally managed by **Base Station Controllers (BSC)**.
+
+### Cell Types
+
+* **Macro Cells:** * *EN:* Provide wide-area coverage (measuring in kilometers). Typically mounted on tall towers or rooftops, they are ideal for rural areas, highways, or providing a broad umbrella of coverage.
+    * *ES:* Proporcionan cobertura de área amplia (kilómetros). Se montan en torres altas o tejados y son ideales para zonas rurales o para dar una cobertura base general.
+* **Micro Cells:**
+    * *EN:* Provide localized, high-capacity coverage (measuring in hundreds of meters). Used in dense urban environments, stadiums, or smart cities to offload traffic from macro cells and improve network density.
+    * *ES:* Proporcionan cobertura localizada de alta capacidad (cientos de metros). Se usan en entornos urbanos densos para descongestionar las macroceldas y mejorar la capacidad de la red.
+
+---
+
+## Frequencies in Wireless Communications
+
+Wireless networks operate across various frequency bands within the electromagnetic spectrum, balancing range, penetration, and data throughput.
+
+| Frequency Band | Characteristics (EN) | Características (ES) |
+| :--- | :--- | :--- |
+| **Wi-Fi: 2.4 GHz** | High physical penetration and longer range, but lower data speeds and highly congested (prone to interference from Bluetooth, microwaves, etc.). | Alta penetración de obstáculos y mayor alcance, pero menor velocidad y banda muy saturada (interferencias). |
+| **Wi-Fi: 5 GHz** | Higher data throughput and less congestion, but suffers from shorter range and poor obstacle penetration. | Mayor velocidad de transmisión y menos saturación, pero menor alcance y baja penetración de muros. |
+| **Cellular: 4G / LTE** | Operates across various sub-bands (700 MHz to 2.6 GHz). Balances reliable long-range coverage with high-speed mobile data. | Opera en varias bandas (700 MHz a 2.6 GHz). Equilibra una cobertura fiable a larga distancia con datos móviles de alta velocidad. |
+| **Cellular: 5G (Sub-6 & mmWave)** | Sub-6 GHz provides wide coverage similar to 4G but faster. mmWave (24 GHz - 100 GHz) delivers ultra-high speeds and ultra-low latency, but requires direct line-of-sight and micro-cell density. | Sub-6 GHz da gran cobertura; mmWave (ondas milimétricas) da velocidades ultra altas y baja latencia, pero requiere visión directa y celdas muy cercanas. |
