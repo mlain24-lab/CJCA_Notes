@@ -439,3 +439,70 @@ Wireless networks operate across various frequency bands within the electromagne
 | **Wi-Fi: 5 GHz** | Higher data throughput and less congestion, but suffers from shorter range and poor obstacle penetration. | Mayor velocidad de transmisión y menos saturación, pero menor alcance y baja penetración de muros. |
 | **Cellular: 4G / LTE** | Operates across various sub-bands (700 MHz to 2.6 GHz). Balances reliable long-range coverage with high-speed mobile data. | Opera en varias bandas (700 MHz a 2.6 GHz). Equilibra una cobertura fiable a larga distancia con datos móviles de alta velocidad. |
 | **Cellular: 5G (Sub-6 & mmWave)** | Sub-6 GHz provides wide coverage similar to 4G but faster. mmWave (24 GHz - 100 GHz) delivers ultra-high speeds and ultra-low latency, but requires direct line-of-sight and micro-cell density. | Sub-6 GHz da gran cobertura; mmWave (ondas milimétricas) da velocidades ultra altas y baja latencia, pero requiere visión directa y celdas muy cercanas. |
+
+# Network Security Fundamentals
+
+## The CIA Triad
+The foundational model for information security policies within an organization, consisting of three core principles:
+* **Confidentiality:** Ensuring that sensitive information is accessed only by authorized individuals (e.g., via encryption, access controls).
+* **Integrity:** Guaranteeing the accuracy, completeness, and trustworthiness of data over its lifecycle (e.g., via hashing, file integrity monitoring).
+* **Availability:** Ensuring that systems, networks, and data are consistently accessible to authorized users when needed (e.g., via redundancy, DDoS mitigation).
+
+---
+
+## Firewalls
+
+A critical network security perimeter device (hardware, software, or virtualized) that monitors and filters incoming and outgoing network traffic. It enforces a strict set of rules—known as **Access Control Lists (ACLs)** or firewall policies—to permit or deny traffic based on specific criteria.
+
+### Notable Solutions
+| Technology | Technical Description (EN) | Explicación en Español (ES) |
+| :--- | :--- | :--- |
+| **pfSense** | A widely deployed open-source firewall and routing software distribution based on FreeBSD. Highly regarded in both enterprise environments and homelabs for its enterprise-grade features (VPN, IDS/IPS integration, traffic shaping) without licensing costs. | Un firewall y router de código abierto basado en FreeBSD. Muy usado en empresas y homelabs porque ofrece funciones de nivel corporativo (VPN, balanceo de carga, integración con IDS) de forma gratuita. |
+
+### Types of Firewalls
+
+| Firewall Type | Operation & Mechanics (EN) | Explicación Técnica (ES) |
+| :--- | :--- | :--- |
+| **1. Packet-Filtering** | Operates at the Network Layer (Layer 3). Inspects individual packets in isolation against a set of rules (IP addresses, ports, protocols) without analyzing the payload or connection state. | Opera en la Capa 3 (Red). Filtra paquetes basándose únicamente en las cabeceras (IP de origen/destino, puertos), sin tener en cuenta el estado de la conexión ni el contenido. Es rápido pero muy básico. |
+| **2. Stateful Inspection** | Operates at the Transport Layer (Layer 4). Dynamically tracks the operating state and characteristics of active network connections (e.g., TCP handshakes) in a state table, ensuring incoming packets belong to an established session. | Rastrea el estado de las conexiones activas (ej. el saludo TCP). Si envías una petición (salida), el firewall abre temporalmente el puerto de entrada para la respuesta. Es más seguro que el filtrado simple. |
+| **3. Application Layer (Proxy)** | Operates at the Application Layer (Layer 7). Acts as an intermediary between the client and the server, deeply inspecting the packet payload to block application-specific attacks (e.g., Web Application Firewalls / WAF). | Opera en la Capa 7 (Aplicación). Actúa de intermediario inspeccionando el contenido real del paquete (el "payload"). Puede bloquear ataques específicos como inyecciones SQL o XSS (ej. WAF). |
+| **4. Next-Generation (NGFW)** | A comprehensive security appliance that combines traditional stateful inspection with advanced features like Deep Packet Inspection (DPI), integrated IDS/IPS, TLS/SSL decryption, and application awareness. | Combina el firewall tradicional con funciones avanzadas como inspección profunda de paquetes (DPI), antivirus de red, desencriptado SSL y sistemas de prevención de intrusos (IPS) integrados. |
+
+---
+
+## Intrusion Detection and Prevention Systems (IDS/IPS)
+
+Security solutions engineered to continuously monitor and respond to suspicious network traffic or system activity. 
+* **IDS (Passive):** Observes traffic to identify malicious behavior or policy violations, generating alerts and logging events without actively disrupting the traffic stream.
+* **IPS (Active):** Placed inline with traffic flow; it takes immediate action to prevent, block, or drop malicious packets in real-time before they reach the target.
+
+### Notable Solutions
+| Technology | Technical Description (EN) | Explicación en Español (ES) |
+| :--- | :--- | :--- |
+| **Suricata** | A robust, high-performance open-source network analysis and threat detection engine developed by OISF. It functions as an IDS, IPS, and Network Security Monitoring (NSM) tool, renowned for its multi-threading capabilities. | Motor de código abierto de alto rendimiento para análisis de red. Puede actuar como IDS o IPS. Destaca por su capacidad de procesar múltiples hilos (multi-threading), haciéndolo muy rápido en redes con mucho tráfico. |
+
+### Detection Methodologies
+
+| Technique | How it Works (EN) | Pros / Cons (EN) | Explicación en Español (ES) |
+| :--- | :--- | :--- | :--- |
+| **Signature-Based** | Compares network traffic against a predefined database of known exploit hashes, byte sequences, or malicious patterns (similar to legacy antivirus). | **Pros:** Fast, highly accurate for known threats.<br>**Cons:** Blind to zero-day attacks. | Compara el tráfico con una base de datos de firmas (huellas) de ataques conocidos. Es muy preciso pero no detecta ataques nuevos (zero-days). |
+| **Anomaly-Based** | Uses machine learning or statistical analysis to establish a baseline of "normal" network behavior. Alerts are triggered when traffic deviates significantly from this baseline. | **Pros:** Can detect unknown/zero-day threats.<br>**Cons:** Prone to high false-positive rates. | Aprende cuál es el comportamiento "normal" de la red y hace saltar la alarma si hay algo inusual (anomalías). Ideal para cazar ataques nuevos, pero genera muchos falsos positivos. |
+
+### Deployment Architectures
+
+| Type | Technical Description (EN) | Explicación en Español (ES) |
+| :--- | :--- | :--- |
+| **1. NIDS / NIPS** | **Network-Based:** Deployed at strategic points within the infrastructure (e.g., via SPAN/mirror ports) to monitor ingress, egress, and lateral traffic across entire subnets. | **Basado en Red:** Se instala en puntos estratégicos (como un switch perimetral) para escuchar todo el tráfico que entra, sale o se mueve por la red entera. |
+| **2. HIDS / HIPS** | **Host-Based:** Software agents installed on individual endpoints (servers, workstations). They monitor local OS events, system logs, running processes, and file integrity modifications. | **Basado en Host:** Es un agente (software) que se instala en un equipo concreto (ej. un servidor de Windows) para vigilar sus logs internos, procesos y cambios en los archivos del sistema. |
+
+---
+
+## Security Best Practices (Defense in Depth)
+
+| Practice | Description & Implementation |
+| :--- | :--- |
+| **Define Clear Policies** | Establish rigorous access control models (RBAC/PoLP - Principle of Least Privilege) and network segmentation to limit lateral movement. |
+| **Regular Updates** | Implement automated patch management systems to remediate known vulnerabilities in OS, firmware, and third-party software. |
+| **Monitor and Log Events** | Centralize logs using a SIEM (Security Information and Event Management) solution for real-time threat hunting and forensic analysis. |
+| **Layered Security** | Employ a "Defense in Depth" strategy: combining firewalls, Endpoint Detection and Response (EDR), MFA, and network segmentation. |
+| **Periodic Penetration Testing** | Conduct routine vulnerability assessments and authorized Red Team exercises to validate security posture and identify misconfigurations. |
