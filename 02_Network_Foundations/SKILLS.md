@@ -42,7 +42,7 @@ Based on this enumeration, we can determine that the system is listening on port
 
 Connecting to the private HTB Academy lab network requires a VPN tunnel from our Kali Linux environment.
 
-![Kali VPN Connection](img/kali_vpn.jpg)
+![Kali VPN Connection](img/kali_vpn.png)
 
 Following the interface enumeration in Chapter 1, we identified `lo` (internal traffic) and `ens3` (public traffic). The VPN connection introduces a third interface: `tun0`. We can verify that traffic destined for the target network routes through this tunnel:
 
