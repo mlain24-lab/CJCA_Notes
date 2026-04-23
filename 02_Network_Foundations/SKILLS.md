@@ -92,7 +92,7 @@ To gain a granular understanding of the protocol syntax, we bypass standard FTP 
 
 `nc 10.129.233.197 21`
 
-![Netcat Port 21](img/netcatport21.jpg)
+![Netcat Port 21](img/netcatport21.png)
 
 Upon connection, the server returns a `220 Microsoft FTP Service` banner. We then proceed to authenticate manually:
 
@@ -118,17 +118,17 @@ To determine the actual TCP port, we apply the standard FTP formula:
 
 After calculating the dynamic port, we establish a secondary netcat connection to the Data Channel while simultaneously issuing retrieval commands (`RETR`) in our Control Channel.
 
-![FTP Files](img/ftp_files.jpg)
+![FTP Files](img/ftp_files.png)
 
 Successfully pulling the directory contents reveals a file named `Note-From-IT.txt`. Reading this file uncovers critical administrative information: the web server on port 80 is configured to drop requests unless they include a specific `User-Agent: Server Administrator` header. 
 
-![Retrieving Note](img/retr.jpg)
+![Retrieving Note](img/retr.png)
 
-![Note Response](img/note_response.jpg)
+![Note Response](img/note_response.png)
 
 Unlike web browsers that automatically format and send HTTP headers, we must manually craft the HTTP `GET` request using netcat to bypass this restriction. 
 
-![HTTP Request Custom User-Agent](img/httprequest.jpg)
+![HTTP Request Custom User-Agent](img/httprequest.png)
 
 By manually injecting the required `User-Agent` header into our raw HTTP request, the web server processes our query and returns the HTML structure. Within the raw HTML output (which would normally be parsed and hidden by a browser), we successfully uncover the target flag hidden inside the source code comments.
 
