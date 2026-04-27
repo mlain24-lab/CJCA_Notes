@@ -171,3 +171,30 @@ Each layer is strictly siloed; it provides services exclusively to the layer dir
 When two systems communicate, the payload traverses the entire OSI stack at least twice to ensure secure, reliable, and high-performance communication:
 1. **Encapsulation (Sender):** The transmitting host processes the data top-down, starting at Layer 7 (Application) and wrapping the payload with specific headers at each step until it is transmitted as raw bits at Layer 1 (Physical).
 2. **De-encapsulation (Receiver):** The receiving host processes the incoming bits bottom-up, starting at Layer 1 and unpacking the headers layer by layer until the original data payload reaches the target application at Layer 7.
+
+## The TCP/IP Reference Model
+
+The TCP/IP model, commonly referred to as the Internet Protocol Suite, is a streamlined, four-layer reference model that serves as the architectural backbone of the modern Internet. Named after its two foundational protocols—Transmission Control Protocol (TCP) and Internet Protocol (IP)—it focuses on practicality and implementation over the rigid theoretical boundaries of the OSI model. Structurally, IP operates at the Network level (OSI Layer 3), while TCP operates at the Transport level (OSI Layer 4).
+
+### The 4 Layers of the TCP/IP Model
+
+| Layer | Name | Core Functionality |
+| :---: | :--- | :--- |
+| **4** | **Application** | Consolidates OSI Layers 5, 6, and 7. It defines the protocols (e.g., HTTP, FTP, SSH) that software applications use to interact with the network and exchange payload data. |
+| **3** | **Transport** | Maps directly to OSI Layer 4. Responsible for host-to-host communication, providing either reliable, connection-oriented sessions (TCP) or fast, connectionless datagram delivery (UDP). |
+| **2** | **Internet** | Maps to OSI Layer 3. Handles logical addressing (IP addresses), packet encapsulation, and the routing of data across multiple independent networks to its final destination. |
+| **1** | **Link** | Also known as the Network Access layer, it merges OSI Layers 1 and 2. It places TCP/IP packets onto the physical medium and receives them, functioning completely independent of the underlying hardware (e.g., Ethernet, Wi-Fi, Fiber) or frame formatting. |
+
+By decoupling the application logic from the physical network infrastructure, the TCP/IP suite guarantees that software can communicate across completely disparate networks globally. IP acts as the navigator, ensuring the packet reaches the correct geographical/logical destination, while TCP acts as the delivery manager, ensuring the data stream arrives intact and in order.
+
+### Core Mechanisms of the TCP/IP Suite
+
+To understand how the suite operates in a real-world enterprise or pentesting scenario, we must break down its critical administrative and operational tasks:
+
+| Core Task | Primary Protocol | Technical Description |
+| :--- | :---: | :--- |
+| **Logical Addressing** | IP | Given the massive scale of the Internet, hierarchical structuring is mandatory. IP handles the logical addressing of networks and individual nodes. It ensures packets are delivered strictly to the correct network segment utilizing methodologies like Subnetting, legacy Network Classes, and CIDR (Classless Inter-Domain Routing). |
+| **Routing** | IP | At every hop (router) between the sender and receiver, the packet's destination IP is evaluated against a routing table to determine the optimal next node. This allows packets to traverse complex architectures even if the sender has no knowledge of the total path. |
+| **Error & Flow Control** | TCP | TCP establishes a stateful, "virtual" connection between endpoints (via the 3-way handshake). It continuously utilizes sequence numbers, acknowledgments (ACKs), and control messages to monitor connection health, prevent network congestion, and guarantee packet delivery. |
+| **Application Multiplexing** | TCP / UDP | Ports (ranging from 0 to 65535) provide a software abstraction layer that allows a single IP address to simultaneously handle traffic for multiple different services (e.g., Port 80 for HTTP, Port 22 for SSH) without data streams crossing. |
+| **Name Resolution** | DNS | The Domain Name System translates human-readable Fully Qualified Domain Names (FQDNs, like `www.hackthebox.com`) into routable numerical IP addresses, acting as the directory service for the network. |
