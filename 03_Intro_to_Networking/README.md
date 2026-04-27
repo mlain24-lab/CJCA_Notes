@@ -138,3 +138,36 @@ Data does not travel across a network as a single block; it is formatted and pac
 1. The receiving host captures the bits at the Physical Layer.
 2. As the data travels *up* the layers, each layer reads its corresponding header, processes the instructions, strips the header off, and passes the remaining payload to the layer above.
 3. This reverse process continues until the original data is successfully unpacked and presented to the receiving application.
+
+# 03 - Introduction to Networking
+
+## The OSI Reference Model
+
+The primary objective of the ISO/OSI (Open Systems Interconnection) standard is to establish a universal reference framework. This model ensures interoperability and seamless communication across diverse hardware, vendors, and technologies. 
+
+The OSI model dissects the complex process of network communication into **seven hierarchical layers**. Each layer represents a distinct phase in the connection lifecycle and performs strictly defined operations on the data packets. This modular approach is critical for network engineers and penetration testers to visualize, troubleshoot, and exploit network connections systematically.
+
+### The 7 Layers of the OSI Model
+
+| Layer | Name | Core Functionality |
+| :---: | :--- | :--- |
+| **7** | **Application** | Serves as the interface between the network and the application software. Controls data I/O and provides network services directly to the user's applications. |
+| **6** | **Presentation** | Acts as the network's data translator. Formats, encrypts, and compresses system-dependent data into a standardized, application-independent syntax. |
+| **5** | **Session** | Establishes, maintains, and terminates logical communication sessions between two hosts. It prevents connection drops and handles graceful session teardowns. |
+| **4** | **Transport** | Manages end-to-end communication and data integrity. Handles flow control, congestion avoidance, and segments large data streams into manageable chunks. |
+| **3** | **Network** | Handles logical addressing and routing. Determines the optimal path for data to travel across the entire network from the sender to the ultimate receiver. |
+| **2** | **Data Link** | Facilitates reliable, error-free data transfer across the immediate physical medium. It packages raw bitstreams from Layer 1 into structured data **frames**. |
+| **1** | **Physical** | Manages the physical hardware specifications. Transmits raw bitstreams via electrical, optical, or electromagnetic signals over wired or wireless media. |
+
+### Layer Categorization & Data Flow
+
+The OSI stack is conceptually divided into two functional groups:
+* **Upper Layers (5-7):** Application-oriented. These layers deal primarily with application-level data formatting, session management, and user interfaces.
+* **Lower Layers (1-4):** Transport and media-oriented. These layers manage the actual segmentation, routing, and physical transmission of data across the network infrastructure.
+
+**Inter-Layer Communication:**
+Each layer is strictly siloed; it provides services exclusively to the layer directly above it while consuming services from the layer directly below it. 
+
+When two systems communicate, the payload traverses the entire OSI stack at least twice to ensure secure, reliable, and high-performance communication:
+1. **Encapsulation (Sender):** The transmitting host processes the data top-down, starting at Layer 7 (Application) and wrapping the payload with specific headers at each step until it is transmitted as raw bits at Layer 1 (Physical).
+2. **De-encapsulation (Receiver):** The receiving host processes the incoming bits bottom-up, starting at Layer 1 and unpacking the headers layer by layer until the original data payload reaches the target application at Layer 7.
