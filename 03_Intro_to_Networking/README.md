@@ -106,9 +106,27 @@ Unlike the strict 7-layer OSI model, the TCP/IP model generally condenses these 
 
 *Pentester Perspective:* Both are vital. TCP/IP helps us quickly grasp the overall connection flow, while the OSI model allows us to dissect and analyze intercepted network traffic (e.g., in Wireshark) layer by layer.
 
+| Layer Type | The OSI Model | Common Protocols / Devices | The TCP/IP Model |
+| :--- | :--- | :--- | :--- |
+| **Host Layers** | 7. Application Layer | FTP, HTTP, DNS | **4. Application** (Maps to OSI 5, 6, 7) |
+| | 6. Presentation Layer | JPG, PNG, SSL, TLS | |
+| | 5. Session Layer | NetBIOS, RPC | |
+| | 4. Transport Layer | TCP, UDP | **3. Transport** |
+| **Media Layers** | 3. Network Layer | IP, ICMP / Router, L3 Switch | **2. Internet** |
+| | 2. Data-Link Layer | MAC, ARP / Switch, Bridge | **1. Link** (Maps to OSI 1, 2) |
+| | 1. Physical Layer | Ethernet, Wi-Fi / Network Card | |
+
 ### Packet Transfers and Encapsulation
 
 Data does not travel across a network as a single block; it is formatted and packaged as it moves through the layers. The unit of data at any given layer is called a **Protocol Data Unit (PDU)**.
+
+| OSI Layer | Protocol Data Unit (PDU) | Encapsulation Element Added |
+| :--- | :--- | :--- |
+| 7, 6, 5 (App/Pres/Sess) | **Data** | Application Headers |
+| 4. Transport | **Segment** (TCP) / **Datagram** (UDP) | Transport Header (Source/Dest Ports) |
+| 3. Network | **Packet** | Network Header (Source/Dest IPs) |
+| 2. Data-Link | **Frame** | Frame Header (MACs) + Trailer (FCS) |
+| 1. Physical | **Bits** | None (Raw electrical/optical signal) |
 
 **The Transmission Process (Encapsulation):**
 1. When a user requests a website, the application passes the data to the highest layer (Application Layer).
