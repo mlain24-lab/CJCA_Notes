@@ -87,8 +87,6 @@ To standardize how data is transmitted and received across different hardware an
 
 These models break down the complex process of network communication into manageable, functional "layers." Each layer represents a step in transforming human-readable data down to electrical bits on a wire, and vice versa.
 
-![OSI/TCP Model Scheme](img/net_models4_updated.png)
-
 ### The OSI Model
 
 The **ISO/OSI Model** is the primary theoretical reference model used to teach and define system communication. Maintained by the ISO (International Organization for Standardization) and ITU, it strictly divides network communication into **seven** distinct layers, each with clearly defined responsibilities. 
@@ -111,8 +109,6 @@ Unlike the strict 7-layer OSI model, the TCP/IP model generally condenses these 
 ### Packet Transfers and Encapsulation
 
 Data does not travel across a network as a single block; it is formatted and packaged as it moves through the layers. The unit of data at any given layer is called a **Protocol Data Unit (PDU)**.
-
-![Packet](img/packet_transfer.png)
 
 **The Transmission Process (Encapsulation):**
 1. When a user requests a website, the application passes the data to the highest layer (Application Layer).
