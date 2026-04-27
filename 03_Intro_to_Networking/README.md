@@ -78,3 +78,49 @@ Proxies can operate transparently or non-transparently, regardless of whether th
 
 * **Transparent Proxy:** The client is completely unaware that their traffic is being intercepted and mediated. The network infrastructure automatically redirects the client's requests to the proxy without requiring any configuration on the client's device. 
 * **Non-Transparent Proxy (Explicit Proxy):** The client must be explicitly configured to use the proxy (e.g., setting the proxy IP and port in the operating system or browser settings). If the client is not configured to use the proxy, it will typically have no route to the internet, as the proxy is the only permitted path out of the network.
+
+# 03 - Introduction to Networking
+
+## Networking Models
+
+To standardize how data is transmitted and received across different hardware and software, the industry relies on conceptual frameworks known as networking models. The two foundational frameworks are the **OSI (Open Systems Interconnection) Model** and the **TCP/IP Model**. 
+
+These models break down the complex process of network communication into manageable, functional "layers." Each layer represents a step in transforming human-readable data down to electrical bits on a wire, and vice versa.
+
+![OSI/TCP Model Scheme](img/net_models4_updated.png)
+
+### The OSI Model
+
+The **ISO/OSI Model** is the primary theoretical reference model used to teach and define system communication. Maintained by the ISO (International Organization for Standardization) and ITU, it strictly divides network communication into **seven** distinct layers, each with clearly defined responsibilities. 
+
+Because of its strict, granular separation, the OSI model is incredibly useful for troubleshooting and detailed network analysis.
+
+### The TCP/IP Model
+
+The **TCP/IP Model** is a more practical, streamlined framework. It is the actual protocol suite that powers the modern Internet. While named after its two most prominent protocols (Transmission Control Protocol and Internet Protocol), "TCP/IP" serves as a generic term for the entire family of internet protocols (including UDP, ICMP, etc.). 
+
+Unlike the strict 7-layer OSI model, the TCP/IP model generally condenses these functions into **four** broader layers. It focuses less on strict rules and more on general guidelines that enable flexible, real-world internet connectivity.
+
+### ISO/OSI vs. TCP/IP Comparison
+
+* **OSI Model:** The older, stricter conceptual reference. It acts as the definitive gateway for understanding how networks interact with end-users. It is highly detailed but less representative of how real-world code is written.
+* **TCP/IP Model:** The practical, implemented standard. It represents the actual suite of protocols used by applications on the Internet. It is more flexible and consolidates the OSI's upper layers.
+
+*Pentester Perspective:* Both are vital. TCP/IP helps us quickly grasp the overall connection flow, while the OSI model allows us to dissect and analyze intercepted network traffic (e.g., in Wireshark) layer by layer.
+
+### Packet Transfers and Encapsulation
+
+Data does not travel across a network as a single block; it is formatted and packaged as it moves through the layers. The unit of data at any given layer is called a **Protocol Data Unit (PDU)**.
+
+![Packet](img/packet_transfer.png)
+
+**The Transmission Process (Encapsulation):**
+1. When a user requests a website, the application passes the data to the highest layer (Application Layer).
+2. As the data travels *down* the layers on the sending host, each layer performs its specific function and attaches its own control information, known as a **header**, to the data received from the layer above. 
+3. This process of adding headers to build the final network packet is called **Encapsulation**. (The header plus the data payload becomes the new PDU for the layer below it).
+4. The fully encapsulated data reaches the Physical Layer and is transmitted across the medium (cable/wireless) as raw bits.
+
+**The Reception Process (De-encapsulation):**
+1. The receiving host captures the bits at the Physical Layer.
+2. As the data travels *up* the layers, each layer reads its corresponding header, processes the instructions, strips the header off, and passes the remaining payload to the layer above.
+3. This reverse process continues until the original data is successfully unpacked and presented to the receiving application.
