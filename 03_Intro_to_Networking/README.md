@@ -233,3 +233,84 @@ A critical aspect of Layer 3 is that intermediate nodes (routers) typically do n
 4.  The data payload remains untouched, ensuring high-speed delivery through the network fabric.
 
 This mechanism allows for seamless communication between subnets that may use different addressing schemes or physical media, effectively bridging disparate network environments.
+
+# Network Addressing & IPv4 Fundamentals
+
+## 1. MAC vs. IP Addresses (Layer 2 vs. Layer 3)
+To establish communication across networks, relying solely on a **Media Access Control (MAC)** address is insufficient. While MAC addresses handle local physical delivery within the same segment, routing data across different networks—like the Internet—requires logical addressing via **IPv4** or **IPv6**.
+
+Regardless of the network's scale (from a simple Homelab to the global Internet), the IP address ensures packet delivery to the correct destination. 
+
+**Analogy:**
+* **IPv4 / IPv6 (Layer 3):** The postal code and street address of a building (routes the packet to the right location).
+* **MAC (Layer 2):** The specific floor and apartment number (delivers the packet to the exact NIC).
+
+*Note: A single IP can address multiple receivers (Multicast/Broadcast), and a single interface can bind multiple IPs. However, within a standard subnet, each IP must be unique to avoid IP conflicts.*
+
+---
+
+## 2. IPv4 Structure and Architecture
+**IPv4** is a 32-bit binary number divided into four 8-bit groups called **octets** (4 bytes total). For human readability, these are converted into decimal numbers (ranging from `0` to `255`) and formatted using **dotted-decimal notation**.
+
+**Example Structure:**
+| Notation | Representation | Binary Breakdown | Decimal |
+| :--- | :--- | :--- | :--- |
+| **Localhost** | Loopback Address | `0111 1111.0000 0000.0000 0000.0000 0001` | `127.0.0.1` |
+
+The 32-bit architecture limits the global pool to 4,294,967,296 unique addresses. Every IP is logically divided into two parts:
+1. **Network Part:** Identifies the specific network segment (assigned by IANA globally, or by the network administrator locally).
+2. **Host Part:** Identifies the specific device (router, workstation, printer) within that network.
+
+---
+
+## 3. Legacy Network Classes (Classful Addressing)
+Historically, the IP space was rigidly divided into predefined Classes (A through E). The class dictates the default length of the network and host portions. 
+
+* **Network Address:** The first IP of the subnet, used to identify the subnet itself.
+* **Broadcast Address:** The last IP of the subnet, used to send packets to all hosts in the network simultaneously.
+* **Usable IPs:** Calculated as `Total IPs - 2` (reserving the Network and Broadcast addresses).
+
+| Class | Network Address | First Usable IP | Last Usable IP | Default Subnet Mask | CIDR | Usable Hosts |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **A** | `1.0.0.0` | `1.0.0.1` | `127.255.255.254` | `255.0.0.0` | `/8` | 16,777,214 |
+| **B** | `128.0.0.0` | `128.0.0.1` | `191.255.255.254` | `255.255.0.0` | `/16` | 65,534 |
+| **C** | `192.0.0.0` | `192.0.0.1` | `223.255.255.254` | `255.255.255.0` | `/24` | 254 |
+| **D** | `224.0.0.0` | *Multicast* | *Multicast* | *N/A* | *N/A* | *Multicast Traffic* |
+| **E** | `240.0.0.0` | *Reserved* | *Reserved* | *N/A* | *N/A* | *Experimental* |
+
+### Default Gateway
+The **Default Gateway** is the IP address of the router interface connected to the local subnet. It routes traffic destined for external networks. By de-facto industry standard, network admins typically assign either the **first** or **last** usable IP address of the subnet to the gateway.
+
+---
+
+## 4. Binary to Decimal Conversion
+To understand subnetting, you must be comfortable with Base-2 (Binary) math. Each bit in an octet represents a power of 2.
+
+**Bit Values:** `128 | 64 | 32 | 16 | 8 | 4 | 2 | 1`
+
+Let's break down the IP address `192.168.10.39`:
+
+| Octet | Binary Representation | Bit Math (Sum of active '1' bits) | Decimal |
+| :---: | :--- | :--- | :---: |
+| **1st** | `1100 0000` | 128 + 64 | **192** |
+| **2nd** | `1010 1000` | 128 + 32 + 8 | **168** |
+| **3rd** | `0000 1010` | 8 + 2 | **10** |
+| **4th** | `0010 0111` | 32 + 4 + 2 + 1 | **39** |
+
+---
+
+## 5. Subnetting & CIDR (Classless Inter-Domain Routing)
+Classful addressing resulted in massive IP wastage. Modern networking relies on **CIDR**, which allows us to borrow bits from the host portion to create custom-sized subnets.
+
+The **Subnet Mask** dictates exactly which bits belong to the network (represented by `1`s) and which belong to the host (represented by `0`s).
+
+**Example: `/24` Subnet Mask**
+The CIDR suffix (e.g., `/24`) simply counts the number of `1`s in the subnet mask.
+
+```text
+Octet:             1st         2nd         3rd         4th
+Binary:         1111 1111 . 1111 1111 . 1111 1111 . 0000 0000 
+Decimal:           255    .    255    .    255    .     0
+
+```
+
