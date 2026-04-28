@@ -385,3 +385,17 @@ Fast, on-the-fly subnetting without a calculator is critical during network enum
 3. **Determine Boundaries:** Since `0` counts as an IP in networking, the first block always spans from `0` to `Block Size - 1`.
    * **Block 1:** `192.168.1.0` - `192.168.1.127` (Usable space: `.1` to `.126`)
    * **Block 2:** `192.168.1.128` - `192.168.1.255` (Usable space: `.129` to `.254`)
+
+# IPv4 Subnetting Reference Table (Class C focus)
+
+| CIDR | Máscara Decimal | Salto (Mágico) | IPs Usables | Inicio de Red (Subnet) | Dirección de Broadcast |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **/24** | 255.255.255.0 | 256 | 254 | .0 | .255 |
+| **/25** | 255.255.255.128 | 128 | 126 | .0, .128 | .127, .255 |
+| **/26** | 255.255.255.192 | 64 | 62 | .0, .64, .128, .192 | .63, .127, .191, .255 |
+| **/27** | 255.255.255.224 | 32 | 30 | Múltiplos de 32 (0, 32, 64...) | (Próxima red) - 1 |
+| **/28** | 255.255.255.240 | 16 | 14 | Múltiplos de 16 (0, 16, 32...) | (Próxima red) - 1 |
+| **/29** | 255.255.255.248 | 8 | 6 | Múltiplos de 8 (0, 8, 16...) | (Próxima red) - 1 |
+| **/30** | 255.255.255.252 | 4 | 2 | Múltiplos de 4 (0, 4, 8, 12...) | (Próxima red) - 1 |
+| **/31** | 255.255.255.254 | 2 | 0* | Múltiplos de 2 | (Próxima red) - 1 |
+| **/32** | 255.255.255.255 | 1 | 1 | La IP específica (Host) | No aplica |
