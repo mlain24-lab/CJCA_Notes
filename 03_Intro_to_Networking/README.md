@@ -314,3 +314,74 @@ Decimal:           255    .    255    .    255    .     0
 
 ```
 
+# IPv4 Subnetting & Network Segmentation
+
+## 1. Core Concepts: Subnetting Basics
+From a SysAdmin and Pentester perspective, subnetting is the logical segmentation of a larger IP address space into smaller, isolated networks. Think of it as creating distinct broadcast domains within a corporate infrastructure—each separated by a logical boundary that optimizes network performance and enforces strict access controls.
+
+Key identifiers within any given subnet:
+* **Network Address:** The routing identifier for the subnet itself.
+* **Broadcast Address:** Used to transmit data packets to all hosts within that specific subnet.
+* **First Usable Host:** The first assignable IP (conventionally reserved for the Default Gateway).
+* **Last Usable Host:** The final assignable IP before the broadcast address.
+
+## 2. Anatomy of an IPv4 Address
+Let's break down a real-world deployment example: `192.168.12.160/26`.
+An IPv4 address is split into two components defined by the subnet mask: the **Network Part** (fixed) and the **Host Part** (variable).
+
+| Element | 1st Octet | 2nd Octet | 3rd Octet | 4th Octet | Decimal |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **IPv4 Address** | `11000000` | `10101000` | `00001100` | `10\|100000` | `192.168.12.160` |
+| **Subnet Mask** | `11111111` | `11111111` | `11111111` | `11\|000000` | `255.255.255.192` |
+| **CIDR Boundary** | `/8` | `/16` | `/24` | **`/26`** | |
+
+> **Note:** The `1` bits in the subnet mask lock down the network portion. The `0` bits represent the available host space.
+
+## 3. Determining Subnet Boundaries
+To route packets correctly, we need to define the absolute boundaries of our `/26` subnet. The subnet mask dictates exactly where the network-to-host separation occurs.
+
+* **Network Address:** Set all host bits to `0`.
+  * Binary: `11000000.10101000.00001100.10\|000000`
+  * Result: `192.168.12.128`
+* **Broadcast Address:** Set all host bits to `1`.
+  * Binary: `11000000.10101000.00001100.10\|111111`
+  * Result: `192.168.12.191`
+
+**Host Capacity Calculation:**
+Total IPs: 64. 
+Usable IPs: 64 - 2 (Network & Broadcast) = **62 usable hosts** (`192.168.12.129` - `192.168.12.190`).
+
+## 4. Subnetting into Smaller Networks (VLSM)
+**Scenario:** You are tasked with dividing the `192.168.12.128/26` subnet into 4 smaller, equal-sized subnets.
+
+Subnetting relies heavily on powers of 2. To create 4 new subnets, we need to borrow bits from the host portion of our current mask.
+* 2^2 = 4 subnets $\rightarrow$ We must borrow **2 bits**.
+* New CIDR: `/26` + 2 bits = **`/28`**.
+* New Subnet Mask: `255.255.255.240`.
+
+Now, we divide our original block of 64 IPs by 4, giving us **16 IPs per subnet** (14 usable hosts per segment).
+
+### Subnet Allocation Table
+| Subnet # | Network Address | First Usable | Last Usable | Broadcast Address | CIDR |
+| :---: | :--- | :--- | :--- | :--- | :--- |
+| **1** | `192.168.12.128` | `192.168.12.129` | `192.168.12.142` | `192.168.12.143` | `/28` |
+| **2** | `192.168.12.144` | `192.168.12.145` | `192.168.12.158` | `192.168.12.159` | `/28` |
+| **3** | `192.168.12.160` | `192.168.12.161` | `192.168.12.174` | `192.168.12.175` | `/28` |
+| **4** | `192.168.12.176` | `192.168.12.177` | `192.168.12.190` | `192.168.12.191` | `/28` |
+
+## 5. Mental Subnetting (Field Ops Trick)
+Fast, on-the-fly subnetting without a calculator is critical during network enumerations (e.g., scoping targets for Nmap) or deploying infrastructure. Memorization isn't necessary if you understand the Modulo (`%`) operation on octets.
+
+1. **Identify the Target Octet:** The CIDR dictates which octet changes.
+   * `/8` (1st), `/16` (2nd), `/24` (3rd), `/32` (4th).
+   * Example: For `192.168.1.1/25`, the CIDR falls in the 4th octet (between `/24` and `/32`). This means `192.168.2.x` is an entirely different network.
+
+2. **Calculate the Subnet Block Size:** Divide the CIDR by 8 and find the remainder (Modulo).
+   * Calculation for `/25`: `25 % 8 = 1`.
+   * This means 1 bit is borrowed in the 4th octet.
+   * Remaining host bits: `8 - 1 = 7`.
+   * Block size: 2^7 = **128 IPs** per subnet.
+
+3. **Determine Boundaries:** Since `0` counts as an IP in networking, the first block always spans from `0` to `Block Size - 1`.
+   * **Block 1:** `192.168.1.0` - `192.168.1.127` (Usable space: `.1` to `.126`)
+   * **Block 2:** `192.168.1.128` - `192.168.1.255` (Usable space: `.129` to `.254`)
