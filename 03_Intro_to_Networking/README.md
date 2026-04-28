@@ -198,3 +198,38 @@ To understand how the suite operates in a real-world enterprise or pentesting sc
 | **Error & Flow Control** | TCP | TCP establishes a stateful, "virtual" connection between endpoints (via the 3-way handshake). It continuously utilizes sequence numbers, acknowledgments (ACKs), and control messages to monitor connection health, prevent network congestion, and guarantee packet delivery. |
 | **Application Multiplexing** | TCP / UDP | Ports (ranging from 0 to 65535) provide a software abstraction layer that allows a single IP address to simultaneously handle traffic for multiple different services (e.g., Port 80 for HTTP, Port 22 for SSH) without data streams crossing. |
 | **Name Resolution** | DNS | The Domain Name System translates human-readable Fully Qualified Domain Names (FQDNs, like `www.hackthebox.com`) into routable numerical IP addresses, acting as the directory service for the network. |
+
+## Network Layer (Layer 3)
+
+The **Network Layer** (Layer 3) is responsible for the delivery of packets across multiple networks. Unlike the Data Link Layer, which handles node-to-node delivery within the same segment, Layer 3 manages end-to-end communication by determining the optimal path through various routing nodes.
+
+### Core Responsibilities
+
+* **Logical Addressing:** While MAC addresses are physical and hardcoded, Layer 3 uses logical addressing (IP addresses) to identify hosts and networks globally.
+* **Routing:** This is the primary function of Layer 3. Routers evaluate the destination IP address of incoming packets and use **Routing Tables** to forward them toward their final destination through intermediate nodes.
+* **Encapsulation/Decapsulation:** Data from the Transport Layer is encapsulated into **Packets**. At each hop, routers may decapsulate the packet to read the IP header before forwarding it to the next destination.
+* **Fragmentation and Reassembly:** If a packet is too large for the Maximum Transmission Unit (MTU) of a specific network segment, the Network Layer splits it into smaller fragments and reassembles them at the destination.
+
+
+
+### Technical Protocols
+
+Protocols at this layer define the rules for logical communication. They are transparent to the layers above and below, ensuring that the Transport Layer remains unaware of the underlying routing complexity.
+
+| Protocol | Description |
+| :--- | :--- |
+| **IPv4 / IPv6** | The standard protocols for logical addressing and packet routing. |
+| **IPsec** | Provides security, integrity, and confidentiality for IP communication. |
+| **ICMP** | Used for diagnostics and error reporting (e.g., `ping`, `traceroute`). |
+| **IGMP** | Manages IP multicast group memberships. |
+| **OSPF / RIP** | Interior Gateway Protocols (IGP) used by routers to exchange routing table information. |
+
+### Intermediate Node Processing
+
+A critical aspect of Layer 3 is that intermediate nodes (routers) typically do not process data in layers higher than L3. When a packet arrives at a router:
+1.  The router inspects the **Layer 3 header**.
+2.  It determines the next hop based on its routing logic.
+3.  It assigns a new intermediate destination (at the Data Link Layer) and forwards the packet.
+4.  The data payload remains untouched, ensuring high-speed delivery through the network fabric.
+
+This mechanism allows for seamless communication between subnets that may use different addressing schemes or physical media, effectively bridging disparate network environments.
