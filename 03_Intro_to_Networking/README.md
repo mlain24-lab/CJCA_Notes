@@ -399,3 +399,50 @@ Fast, on-the-fly subnetting without a calculator is critical during network enum
 | **/30** | 255.255.255.252 | 4 | 2 | Múltiplos de 4 (0, 4, 8, 12...) | (Próxima red) - 1 |
 | **/31** | 255.255.255.254 | 2 | 0* | Múltiplos de 2 | (Próxima red) - 1 |
 | **/32** | 255.255.255.255 | 1 | 1 | La IP específica (Host) | No aplica |
+
+# Network Fundamentals: Subnetting & VLSM Logic
+
+## 1. The Magic Number Method
+In IPv4 networking, the "Magic Number" is the size of the block (total IPs). It is the most efficient way to identify Network IDs and Broadcast addresses without a calculator.
+
+**Calculation:**
+`256 - (Decimal Mask) = Magic Number (Jump size)`
+
+| CIDR | Subnet Mask | Magic Number | Total IPs |
+| :--- | :--- | :--- | :--- |
+| /27 | .224 | 32 | 32 |
+| /28 | .240 | 16 | 16 |
+| /29 | .248 | 8 | 8 |
+| /30 | .252 | 4 | 4 |
+
+## 2. Variable Length Subnet Masking (VLSM) ??
+?? VLSM (Variable Length Subnet Masking) allows us to divide a network into subnets of different sizes, maximizing IP address efficiency.
+?? VLSM (Máscara de Subred de Longitud Variable) permite dividir una red en subredes de distintos tamaños, optimizando al máximo el uso de direcciones IP y evitando el desperdicio.
+
+### Practical Workflow: Splitting a Subnet
+To split a network into equal parts:
+1. Identify the total IPs in the parent block.
+2. Divide by the number of required subnets to find the new **Magic Number**.
+3. Determine the new CIDR based on that jump size.
+4. Calculate the boundaries (Subnet & Broadcast).
+
+**Example Case:**
+* **Parent Network:** `10.200.20.0/27` (32 IPs)
+* **Goal:** Split into 4 subnets.
+* **Math:** $32 / 4 = 8$ (New Magic Number = 8).
+* **New CIDR:** `/29` (A jump of 8 corresponds to `/29`).
+
+| Subnet # | Network ID | IP Range (Usable) | Broadcast |
+| :--- | :--- | :--- | :--- |
+| 1st | .0 | .1 - .6 | .7 |
+| 2nd | .8 | .9 - .14 | .15 |
+| 3rd | .16 | .17 - .22 | .23 |
+| 4th | .24 | .25 - .30 | .31 |
+
+## 3. Quick Reference for Pentesting (HTB/CJCA)
+* **Subnet Address:** Always a multiple of the Magic Number.
+* **First Usable IP:** Network ID + 1.
+* **Last Usable IP:** Broadcast Address - 1.
+* **Broadcast Address:** (Next Network ID) - 1.
+
+> **Junior SysAdmin Note:** When performing network enumeration with Nmap, always check the CIDR. Attacking a `.0` or a `.255` address might be useless if you are within a `/27` or `/28` range where those aren't the actual boundaries.
