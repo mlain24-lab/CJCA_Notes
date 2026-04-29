@@ -446,3 +446,72 @@ To split a network into equal parts:
 * **Broadcast Address:** (Next Network ID) - 1.
 
 > **Junior SysAdmin Note:** When performing network enumeration with Nmap, always check the CIDR. Attacking a `.0` or a `.255` address might be useless if you are within a `/27` or `/28` range where those aren't the actual boundaries.
+
+# Layer 2 Addressing & Address Resolution Protocol (ARP)
+
+## Media Access Control (MAC) Addresses
+In network topology, every host interface requires a 48-bit (6-octet) Media Access Control (MAC) address, represented in hexadecimal format. Operating at OSI Layer 2, the MAC address acts as the physical hardware identifier for network interfaces across various IEEE standards:
+- **Ethernet:** IEEE 802.3
+- **WLAN:** IEEE 802.11
+- **Bluetooth:** IEEE 802.15
+
+While manufacturers hardcode this address into the Network Interface Controller (NIC) during production, it can be easily modified or spoofed via software at the OS level—a crucial mechanic for both system administration troubleshooting and penetration testing.
+
+### Anatomy of a MAC Address
+A MAC address spans 6 bytes (48 bits). Let's break down an example: `DE:AD:BE:EF:13:37`
+
+- **First 3 Bytes (24 bits) - OUI:** The *Organizationally Unique Identifier* is defined by the IEEE and assigned to specific hardware manufacturers.
+- **Last 3 Bytes (24 bits) - NIC:** The *Network Interface Controller* portion is uniquely assigned by the manufacturer to prevent physical collisions on the network.
+
+### Layer 2 Delivery Mechanics
+When IP packets are encapsulated into Ethernet frames, they must be addressed at Layer 2. The delivery flow depends on the subnet architecture:
+- **Intra-subnet:** If the destination IP is within the same local network (LAN), the frame is delivered directly to the target's MAC address.
+- **Inter-subnet:** If the target resides on a different subnet, the frame is addressed to the MAC address of the default gateway (router). The router then decapsulates the frame and handles the Layer 3 routing to the next hop.
+
+### Address Types & Bit Flags
+Specific bit states within the first octet define how the network handles the frame:
+- **Unicast (Last bit is 0):** One-to-one communication. The frame targets a single, specific host. Example: `DE:AD:BE:EF:13:37`
+- **Multicast (Last bit is 1):** One-to-many communication. The frame is sent to all hosts, but only those configured to listen to that specific multicast group will process it. Example: `01:00:5E:EF:13:37`
+- **Broadcast:** Sent to every host on the local network segment. The address is statically set to `FF:FF:FF:FF:FF:FF`. Essential for discovery protocols like ARP and DHCP.
+- **Global vs. Locally Administered:** The second-to-last bit of the first octet indicates whether the MAC is a globally unique OUI (0) or if it has been locally administered/overridden by a network admin (1).
+
+---
+
+## Layer 2 Threat Landscape
+Since Layer 2 relies on implicit trust without inherent encryption or authentication, it is highly vulnerable during internal network pentesting:
+- **MAC Spoofing:** Altering a device's MAC address to impersonate a legitimate host. Often used to bypass Network Access Control (NAC) or captive portals.
+- **MAC Flooding:** Overwhelming a switch's CAM (Content Addressable Memory) table by sending thousands of fake MAC addresses. This forces the switch into a "fail-open" state, causing it to act like a legacy hub and broadcast all traffic, which enables passive packet sniffing.
+- **MAC Filtering Bypass:** Cloning whitelisted MAC addresses to gain unauthorized access to restricted physical or wireless networks.
+
+---
+
+## Address Resolution Protocol (ARP)
+ARP is the bridge between Layer 3 (IP addresses) and Layer 2 (MAC addresses) over an IPv4 LAN. It maps a logical IP to a physical MAC, allowing Ethernet frames to be accurately addressed and delivered.
+
+### How ARP Works
+1. **ARP Request:** A device broadcasts a query to the entire LAN: *"Who has IP X.X.X.X? Tell IP Y.Y.Y.Y"*.
+2. **ARP Reply:** The host holding the requested IP responds directly (unicast) to the sender with its MAC address.
+
+*Tshark Capture - Normal ARP Flow:*
+```bash
+1   0.000000 10.129.12.100 -> 10.129.12.255 ARP 60  Who has 10.129.12.101?  Tell 10.129.12.100
+2   0.000015 10.129.12.101 -> 10.129.12.100 ARP 60  10.129.12.101 is at AA:AA:AA:AA:AA:AA
+```
+
+### ARP Cache Poisoning (ARP Spoofing)
+Because ARP is stateless, network hosts will accept and cache ARP replies even if they never sent out a corresponding request (Gratuitous ARP). Attackers leverage tools like `Ettercap` or `Cain & Abel` to exploit this vulnerability.
+
+By broadcasting falsified ARP replies, an attacker associates their own MAC address with the IP address of a critical asset (typically the default gateway). 
+
+*Tshark Capture - ARP Poisoning Attack:*
+```bash
+# Attacker (10.129.12.100) claims to be the Gateway (10.129.12.255) by sending a spoofed reply to the Target (10.129.12.101)
+1   0.000000 10.129.12.100 -> 10.129.12.101 ARP 60 10.129.12.255 is at CC:CC:CC:CC:CC:CC  
+
+# Target queries for the Gateway, but its ARP cache is already poisoned
+4   0.000045 10.129.12.101 -> 10.129.12.100 ARP 60 Who has 10.129.12.255? Tell 10.129.12.101
+```
+
+**Impact:** By successfully hijacking the routing path, the attacker establishes a Man-in-the-Middle (MITM) position. This allows for total traffic interception, credential harvesting, session hijacking, or DNS spoofing. 
+
+**Mitigation:** Preventing Layer 2 attacks requires infrastructure-level defenses such as Dynamic ARP Inspection (DAI) on managed switches, network segmentation, and enforcing end-to-end encryption protocols (IPSec, SSL/TLS) to render intercepted traffic useless to the attacker.
