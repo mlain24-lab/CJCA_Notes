@@ -540,3 +540,79 @@ Specific bit states within the **first octet** dictate how the switch handles th
 The broadcast address targets every host on the local segment, turning all 48 bits to `1`. Essential for protocols like ARP and DHCP.
 - **Hex:** `FF:FF:FF:FF:FF:FF`
 - **Binary:** `1111 1111` `1111 1111` `1111 1111` `1111 1111` `1111 1111` `1111 1111`
+
+# IPv6 Addressing: Architecture and Fundamentals
+
+## Overview
+Internet Protocol version 6 (IPv6) is the successor to IPv4, designed primarily to resolve the issue of IP address exhaustion. While IPv4 uses a 32-bit addressing scheme, IPv6 utilizes **128-bit addresses**, exponentially increasing the available address space. 
+
+IPv6 is managed by the Internet Assigned Numbers Authority (**IANA**) and is designed for the modern "end-to-end" principle, eliminating the necessity for Network Address Translation (NAT). Most modern systems utilize a **Dual Stack** configuration, allowing IPv4 and IPv6 to operate simultaneously on the same infrastructure.
+
+### Key Advantages over IPv4
+* **Massive Address Space:** Supports approximately $340 \times 10^{36}$ (undecillion) addresses.
+* **Stateless Address Autoconfiguration (SLAAC):** Allows hosts to generate their own addresses without a DHCP server.
+* **Efficiency:** Streamlined headers for faster routing and support for Jumbograms (packets up to 4 GB).
+* **No Broadcast:** Replaces broadcast with specialized multicast, reducing network noise.
+* **Multi-Homing:** Interfaces can support multiple IPv6 addresses (e.g., Link-Local and Global Unicast).
+
+---
+
+## Technical Comparison: IPv4 vs. IPv6
+
+| Feature | IPv4 | IPv6 |
+| :--- | :--- | :--- |
+| **Bit Length** | 32-bit | 128-bit |
+| **Address Range** | ~4.3 Billion | ~340 Undecillion |
+| **Representation** | Dotted Decimal | Hexadecimal |
+| **Standard Prefix** | `/24` | `/64` |
+| **Address Assignment** | DHCP / Static | SLAAC / DHCPv6 |
+| **Security (IPsec)** | Optional Extension | Native / Mandatory Support |
+
+---
+
+## Address Types
+IPv6 categorizes communication into three distinct types:
+
+1.  **Unicast:** Communication between a single source and a single destination interface.
+2.  **Anycast:** One-to-nearest communication. The packet is routed to the nearest interface (defined by routing distance) sharing the same address.
+3.  **Multicast:** One-to-many communication. Packets are delivered to all interfaces belonging to a specific multicast group (e.g., `ff02::1` for all nodes).
+
+> **Note:** IPv6 does not use Broadcast. Network discovery is handled via Multicast groups and the Neighbor Discovery Protocol (NDP).
+
+---
+
+## The Hexadecimal System
+IPv6 uses hexadecimal notation (Base 16) to represent the 128-bit address in a human-readable format. Each hex character represents a **4-bit nibble**.
+
+| Decimal | Hex | Binary | Decimal | Hex | Binary |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 0 | 0 | 0000 | 8 | 8 | 1000 |
+| 1 | 1 | 0001 | 9 | 9 | 1001 |
+| 2 | 2 | 0010 | 10 | A | 1010 |
+| 3 | 3 | 0011 | 11 | B | 1011 |
+| 4 | 4 | 0100 | 12 | C | 1100 |
+| 5 | 5 | 0101 | 13 | D | 1101 |
+| 6 | 6 | 0110 | 14 | E | 1110 |
+| 7 | 7 | 0111 | 15 | F | 1111 |
+
+---
+
+## Address Structure & Notation
+An IPv6 address consists of **16 bytes** divided into **8 blocks** (hextets) of 16 bits each. Blocks are separated by colons (`:`).
+
+![IPv6 Structure Diagram](img/ipv6_structure.png)
+
+### Parts of the Address
+1.  **Network Prefix (Network Part):** Typically the first 64 bits. It identifies the specific network or subnet assigned by the ISP/IANA.
+2.  **Interface Identifier (Host Part):** The final 64 bits. It identifies the specific interface. This can be generated via SLAAC, often using the EUI-64 process which incorporates the device's MAC address.
+
+### Compression Rules (RFC 5952)
+To simplify notation, IPv6 addresses should be compressed using the following standard rules:
+* **Omit Leading Zeros:** Within a block, leading zeros are removed (e.g., `:00AB:` becomes `:AB:`).
+* **Double Colon (::):** One or more consecutive blocks of zeros can be replaced by `::`. This can only be done **once** per address to avoid ambiguity.
+* **Lowercase:** All hexadecimal letters (a-f) must be written in lowercase.
+
+**Example Conversion:**
+- **Full:** `fe80:0000:0000:0000:dd80:b1a9:6687:2d3b`
+- **Compressed:** `fe80::dd80:b1a9:6687:2d3b`
+
