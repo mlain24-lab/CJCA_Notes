@@ -600,7 +600,6 @@ IPv6 uses hexadecimal notation (Base 16) to represent the 128-bit address in a h
 ## Address Structure & Notation
 An IPv6 address consists of **16 bytes** divided into **8 blocks** (hextets) of 16 bits each. Blocks are separated by colons (`:`).
 
-![IPv6 Structure Diagram](img/ipv6_structure.png)
 
 ### Parts of the Address
 1.  **Network Prefix (Network Part):** Typically the first 64 bits. It identifies the specific network or subnet assigned by the ISP/IANA.
