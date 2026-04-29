@@ -515,3 +515,28 @@ By broadcasting falsified ARP replies, an attacker associates their own MAC addr
 **Impact:** By successfully hijacking the routing path, the attacker establishes a Man-in-the-Middle (MITM) position. This allows for total traffic interception, credential harvesting, session hijacking, or DNS spoofing. 
 
 **Mitigation:** Preventing Layer 2 attacks requires infrastructure-level defenses such as Dynamic ARP Inspection (DAI) on managed switches, network segmentation, and enforcing end-to-end encryption protocols (IPSec, SSL/TLS) to render intercepted traffic useless to the attacker.
+
+### Appendix: MAC Address Binary Representation & Bit Flags
+Understanding the binary structure of a MAC address is critical for low-level packet analysis and CJCA exam scenarios. A MAC address spans 6 bytes (48 bits). 
+
+Let's break down the hex-to-binary conversion using the example `DE:AD:BE:EF:13:37`:
+
+| Representation | 1st Octet | 2nd Octet | 3rd Octet | 4th Octet | 5th Octet | 6th Octet |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Hex** | DE | AD | BE | EF | 13 | 37 |
+| **Binary** | 1101 1110 | 1010 1101 | 1011 1110 | 1110 1111 | 0001 0011 | 0011 0111 |
+
+Specific bit states within the **first octet** dictate how the switch handles the Ethernet frame:
+
+**1. Unicast vs. Multicast (Least Significant Bit of 1st Octet):**
+- **Unicast (Bit = 0):** One-to-one communication. The frame targets a single, specific host. *(Example Hex: `DE`, Binary: `1101 1110`)*
+- **Multicast (Bit = 1):** One-to-many communication. Sent to all hosts, but only processed by those subscribed to the multicast group. *(Example Hex: `01`, Binary: `0000 0001`)*
+
+**2. Global vs. Locally Administered (Second Least Significant Bit of 1st Octet):**
+- **Global OUI (Bit = 0):** Uniquely assigned by the IEEE. *(Example Hex: `DC`, Binary: `1101 1100`)*
+- **Locally Administered (Bit = 1):** Overridden or assigned manually by a SysAdmin/attacker (MAC Spoofing). *(Example Hex: `DE`, Binary: `1101 1110`)*
+
+**3. Broadcast Address:**
+The broadcast address targets every host on the local segment, turning all 48 bits to `1`. Essential for protocols like ARP and DHCP.
+- **Hex:** `FF:FF:FF:FF:FF:FF`
+- **Binary:** `1111 1111` `1111 1111` `1111 1111` `1111 1111` `1111 1111` `1111 1111`
