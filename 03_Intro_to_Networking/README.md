@@ -669,3 +669,87 @@ The following list establishes the foundational protocols and terminology requir
 | **Internet Key Exchange** | **IKE** | The protocol used to set up a security association (SA) in the IPsec protocol suite. |
 | **Generic Routing Encapsulation** | **GRE** | A tunneling protocol developed by Cisco that can encapsulate a wide variety of network layer protocols inside virtual point-to-point links. |
 | **Remote Shell** | **RSH** | A command-line computer program that can execute shell commands as another user, and on a remote computer over the network. Insecure. |
+
+# Network Fundamentals: Common Protocols & Communication Standards
+
+## Overview of Network Protocols
+Network protocols are standardized sets of rules defined by **RFCs** (Requests for Comments) that govern how data is exchanged across a network. These standards ensure interoperability between heterogeneous hardware and software environments. At a foundational level, most network communication relies on either **TCP** (Transmission Control Protocol) or **UDP** (User Datagram Protocol).
+
+---
+
+## 1. Transmission Control Protocol (TCP)
+TCP is a **connection-oriented** (stateful) protocol. It ensures reliable data delivery by establishing a virtual connection through a **Three-Way Handshake** (SYN, SYN-ACK, ACK).
+
+*   **Reliability:** Provides error-checking, sequencing, and acknowledgment of received packets.
+*   **Performance:** Higher overhead due to connection management, making it slower than UDP but essential for data integrity (e.g., Web browsing, File transfers).
+
+(img/tcp_handshake.png)
+
+### Common TCP Protocols
+| Protocol | Port | Description |
+| :--- | :---: | :--- |
+| **SSH** | 22 | Secure encrypted remote access. |
+| **Telnet** | 23 | Unencrypted (insecure) remote login service. |
+| **SMTP** | 25 | Simple Mail Transfer Protocol for email routing. |
+| **DNS** | 53 | Zone transfers and large queries. |
+| **HTTP / HTTPS** | 80 / 443 | Web traffic (Cleartext / SSL-TLS Encrypted). |
+| **POP3 / IMAP** | 110 / 143 | Email retrieval from servers. |
+| **SMB** | 445 | Server Message Block for Windows file sharing. |
+| **RDP** | 3389 | Remote Desktop Protocol for GUI-based access. |
+| **MSSQL** | 1433 | Microsoft SQL Server database engine. |
+
+---
+
+## 2. User Datagram Protocol (UDP)
+UDP is a **connectionless** (stateless) protocol. It broadcasts data to the destination without verifying receipt or establishing a prior session.
+
+*   **Speed:** Minimal overhead makes it ideal for real-time applications.
+*   **Use Cases:** Streaming, VoIP, and services where occasional packet loss is acceptable (e.g., YouTube, gaming).
+
+### Common UDP Protocols
+| Protocol | Port | Description |
+| :--- | :---: | :--- |
+| **DNS** | 53 | Standard domain name resolution queries. |
+| **DHCP** | 67, 68 | Dynamic assignment of IP addresses and network config. |
+| **TFTP** | 69 | Trivial File Transfer Protocol (unauthenticated). |
+| **NTP** | 123 | Network Time Protocol for clock synchronization. |
+| **SNMP** | 161, 162 | Network device monitoring and management. |
+| **Syslog** | 514 | Standard protocol for message logging. |
+
+---
+
+## 3. Internet Control Message Protocol (ICMP)
+ICMP is primarily used for diagnostic and error-reporting purposes. It functions at the Network Layer to provide feedback about communication issues.
+
+### ICMP Types & Diagnostic Tools
+*   **Echo Request (Type 8):** Used by `ping` and `traceroute` to verify reachability.
+*   **Echo Reply (Type 0):** The response sent to an Echo Request.
+*   **Destination Unreachable:** Indicates a packet could not be delivered.
+*   **Time Exceeded:** Generated when a packet's **TTL (Time-To-Live)** reaches zero.
+
+### OS Fingerprinting via TTL
+As a Pentester, the default TTL value in a response can help identify the target's Operating System:
+
+| OS Type | Default TTL |
+| :--- | :---: |
+| **Linux / macOS** | 64 |
+| **Windows** | 128 |
+| **Solaris / Network Gear** | 255 |
+
+> **Note:** These values can be manually modified by administrators to obfuscate the system identity.
+
+---
+
+## 4. Voice over IP (VoIP) & Session Initiation Protocol (SIP)
+VoIP enables voice and multimedia communication over IP networks. **SIP** is the primary signaling protocol used to manage these sessions.
+
+### SIP Interaction Methods
+SIP uses specific "Methods" to control calls and sessions:
+*   **INVITE:** Initiates a session.
+*   **ACK:** Confirms the final response to an INVITE.
+*   **OPTIONS:** Queries a server for supported capabilities/methods.
+*   **BYE:** Terminates an active session.
+
+### Security Implications & Information Disclosure
+*   **User Enumeration:** Attackers can use the `OPTIONS` method or specialized tools to identify valid extensions/users on a SIP server for future brute-force attempts.
+*   **Cisco Configuration Files:** Finding files like `SEPxxxx.cnf` (often via TFTP) is critical. These files contain device-specific configurations (MAC-based naming) and can reveal firmware versions, proxy settings, and other sensitive infrastructure details.
