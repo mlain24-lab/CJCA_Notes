@@ -615,3 +615,57 @@ To simplify notation, IPv6 addresses should be compressed using the following st
 - **Full:** `fe80:0000:0000:0000:dd80:b1a9:6687:2d3b`
 - **Compressed:** `fe80::dd80:b1a9:6687:2d3b`
 
+## Networking Fundamentals: Key Terminology & Protocols
+
+In the field of Information Technology, and specifically within Cybersecurity and System Administration, mastering the "alphabet" of networking is non-negotiable. The landscape is vast, comparable to the medical sector in complexity and specialization. A professional can spend an entire career mastering just a few of these domains.
+
+The following list establishes the foundational protocols and terminology required to navigate the CJCA modules and professional environments. While not exhaustive, these represent the most common protocols encountered in enterprise infrastructures.
+
+### Protocol Reference Table
+
+| Protocol / Term | Acronym | Technical Description & Security Context |
+| :--- | :--- | :--- |
+| **Wired Equivalent Privacy** | **WEP** | A deprecated and highly vulnerable security protocol for 802.11 wireless networks. Easily cracked with modern tools. |
+| **Secure Shell** | **SSH** | The industry standard for secure remote administration, providing encrypted command-line access. |
+| **File Transfer Protocol** | **FTP** | A legacy protocol for transferring files. Insecure by nature as it transmits credentials in plaintext. |
+| **Simple Mail Transfer Protocol** | **SMTP** | The standard communication protocol for sending and relaying outgoing email traffic. |
+| **Hypertext Transfer Protocol** | **HTTP** | An application-layer protocol for distributed information systems; the foundation of data communication for the Web. |
+| **Server Message Block** | **SMB** | Primarily used in Windows environments for providing shared access to files, printers, and serial ports. High interest for Pentesters. |
+| **Network File System** | **NFS** | A distributed file system protocol used primarily in Unix/Linux environments to access files over a network. |
+| **Simple Network Management Protocol** | **SNMP** | Used for collecting and organizing information about managed devices on IP networks and for modifying that information. |
+| **Wi-Fi Protected Access** | **WPA** | A security standard for wireless networks designed to provide better data encryption and user authentication than WEP. |
+| **Temporal Key Integrity Protocol** | **TKIP** | A legacy stopgap security protocol used in WPA to replace WEP without requiring hardware upgrades. Now considered weak. |
+| **Network Time Protocol** | **NTP** | Essential for clock synchronization between computer systems over packet-switched, variable-latency data networks. |
+| **Virtual Local Area Network** | **VLAN** | A logical partition of a Layer 2 network, used to isolate traffic and improve security/performance. |
+| **VLAN Trunking Protocol** | **VTP** | A Cisco proprietary protocol that propagates the definition of VLANs on the whole local area network. |
+| **Routing Information Protocol** | **RIP** | A legacy distance-vector routing protocol that uses hop count as a routing metric. |
+| **Open Shortest Path First** | **OSPF** | A link-state routing protocol (IGP) used to find the best path for packets as they pass through a set of connected networks. |
+| **Interior Gateway Routing Protocol** | **IGRP** | A legacy Cisco proprietary distance-vector routing protocol (superseded by EIGRP). |
+| **Enhanced IGRP** | **EIGRP** | An advanced distance-vector routing protocol with features of link-state protocols, proprietary to Cisco. |
+| **Pretty Good Privacy** | **PGP** | An encryption program that provides cryptographic privacy and authentication for data communication (Emails/Files). |
+| **Network News Transfer Protocol** | **NNTP** | An application protocol used for transporting Usenet news articles between news servers. |
+| **Cisco Discovery Protocol** | **CDP** | A proprietary Layer 2 network protocol used by Cisco equipment to share information about other directly connected Cisco equipment. |
+| **Hot Standby Router Protocol** | **HSRP** | A Cisco proprietary redundancy protocol for establishing a fault-tolerant default gateway. |
+| **Virtual Router Redundancy Protocol** | **VRRP** | A standard-based alternative to HSRP, providing high availability for routers. |
+| **Spanning Tree Protocol** | **STP** | A Layer 2 protocol that prevents bridge loops and the resulting broadcast storms in Ethernet networks. |
+| **TACACS+** | **TACACS** | A protocol providing centralized AAA (Authentication, Authorization, and Accounting) services for network devices. |
+| **Session Initiation Protocol** | **SIP** | A signaling protocol used for initiating, maintaining, and terminating real-time sessions (Voice/Video). |
+| **Voice Over IP** | **VoIP** | A group of technologies for the delivery of voice communications and multimedia sessions over IP networks. |
+| **Extensible Authentication Protocol** | **EAP** | An authentication framework frequently used in wireless networks and point-to-point connections. |
+| **Lightweight EAP** | **LEAP** | A Cisco-proprietary version of EAP. Now considered insecure due to susceptibility to dictionary attacks. |
+| **Protected EAP** | **PEAP** | A protocol that encapsulates EAP within a TLS tunnel to enhance security during the authentication process. |
+| **Systems Management Server** | **SMS** | (Now SCCM) A systems management software product by Microsoft for managing large groups of computers. |
+| **Microsoft Baseline Security Analyzer**| **MBSA** | A legacy tool used to determine the security state of Windows systems by identifying missing updates and misconfigurations. |
+| **SCADA** | **SCADA** | A control system architecture used for high-level process supervisory management of industrial infrastructure. |
+| **Virtual Private Network** | **VPN** | Creates a secure, encrypted tunnel over a less secure network (like the Internet). |
+| **Internet Protocol Security** | **IPsec** | A suite of protocols used to secure IP communications by authenticating and encrypting each IP packet in a stream. |
+| **Point-to-Point Tunneling Protocol** | **PPTP** | An obsolete method for implementing VPNs with many known security vulnerabilities. |
+| **Network Address Translation** | **NAT** | A method of remapping one IP address space into another, typically used to connect private networks to the Internet. |
+| **Carriage Return Line Feed** | **CRLF** | Special control characters used to signify the end of a line of text (CR: \r, LF: \n). |
+| **AJAX** | **AJAX** | A set of web development techniques using many web technologies on the client side to create asynchronous web applications. |
+| **ISAPI** | **ISAPI** | An N-tier API of Internet Information Services (IIS). |
+| **Uniform Resource Identifier** | **URI** | A unique sequence of characters used to identify a logical or physical resource on the web. |
+| **Uniform Resource Locator** | **URL** | A specific type of URI that provides a means of locating a resource by describing its primary access mechanism. |
+| **Internet Key Exchange** | **IKE** | The protocol used to set up a security association (SA) in the IPsec protocol suite. |
+| **Generic Routing Encapsulation** | **GRE** | A tunneling protocol developed by Cisco that can encapsulate a wide variety of network layer protocols inside virtual point-to-point links. |
+| **Remote Shell** | **RSH** | A command-line computer program that can execute shell commands as another user, and on a remote computer over the network. Insecure. |
