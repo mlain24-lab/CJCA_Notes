@@ -834,3 +834,60 @@ An attacker sends spoofed **disassociation frames** to a client, forcing them to
 *   **Deploy EAP-TLS:** Uses Certificate-Based Authentication for high-security environments.
 
 ---
+
+# Virtual Private Networks (VPN) & Secure Tunneling
+
+## Overview
+A **Virtual Private Network (VPN)** extends a private network across a public infrastructure, such as the Internet. It enables remote users and branch offices to send and receive data as if their computing devices were directly connected to the local area network (LAN). From an administrative standpoint, VPNs are critical for managing internal infrastructure securely without exposing sensitive services directly to the WAN.
+
+### Key Benefits
+*   **Confidentiality:** Uses encryption to create a secure tunnel, preventing unauthorized interception (Man-in-the-Middle attacks).
+*   **Encapsulation:** Remote hosts are assigned internal IP addresses, allowing seamless access to internal resources (File servers, Databases, SSH).
+*   **Cost-Efficiency:** Replaces expensive leased lines by utilizing existing public internet routing.
+
+---
+
+## VPN Components & Requirements
+
+| Component | Description |
+| :--- | :--- |
+| **VPN Client** | Software (e.g., OpenVPN, AnyConnect, FortiClient) that initiates the tunnel and handles local encryption/decryption. |
+| **VPN Server/Gateway** | The endpoint responsible for authenticating clients, terminating the tunnel, and routing traffic to the internal network. |
+| **Encryption** | Cryptographic algorithms (AES-256, ChaCha20) used to ensure data privacy within the tunnel. |
+| **Authentication** | Verification of identity via Shared Secrets (PSK), Digital Certificates (X.509), or Multi-Factor Authentication (MFA). |
+
+
+---
+
+## IPsec (Internet Protocol Security)
+
+IPsec is a suite of protocols used to secure IP communications by authenticating and encrypting each IP packet in a communication session. It operates at the Network Layer (Layer 3) of the OSI model.
+
+### Core Protocols
+1.  **Authentication Header (AH):** Provides connectionless integrity and data origin authentication. It protects against replay attacks but **does not provide encryption** (payload is visible).
+2.  **Encapsulating Security Payload (ESP):** Provides confidentiality (encryption), origin authentication, and integrity. In modern setups, ESP is preferred over AH as it secures the payload.
+
+### IPsec Operating Modes
+
+| Mode | Use Case | Description |
+| :--- | :--- | :--- |
+| **Transport Mode** | Host-to-Host | Only the payload is encrypted; the original IP header remains intact. Used for end-to-end security between two specific devices. |
+| **Tunnel Mode** | Site-to-Site / Client-to-Site | The entire IP packet (header + payload) is encrypted and encapsulated into a new IP packet. Standard for VPN tunnels. |
+
+### Firewall Configuration for IPsec
+To allow IPsec traffic through a stateful firewall, the following ports and protocols must be open:
+
+*   **UDP 500 (IKE):** Used by the Internet Key Exchange to negotiate security associations (SA) and handle Diffie-Hellman exchanges.
+*   **UDP 4500 (NAT-T):** Necessary when the VPN traffic passes through a NAT device (NAT Traversal).
+*   **IP Protocol 50 (ESP):** To allow the encrypted data packets.
+*   **IP Protocol 51 (AH):** To allow authentication headers (if used).
+
+---
+
+## Legacy Protocols: PPTP
+
+**Point-to-Point Tunneling Protocol (PPTP)** is a legacy method for implementing VPNs. While it is easy to configure and natively supported by many older systems, it is considered **security-deprecated**.
+
+*   **Port:** TCP 1723.
+*   **Vulnerabilities:** PPTP relies on **MS-CHAPv2** for authentication, which uses the weak **DES** encryption. This is susceptible to offline dictionary attacks and rapid brute-forcing with modern hardware.
+*   **Recommendation:** Avoid PPTP in production environments. Transition to **OpenVPN (SSL/TLS)**, **WireGuard**, or **L2TP/IPsec**.
