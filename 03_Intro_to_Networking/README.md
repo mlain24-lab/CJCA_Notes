@@ -753,3 +753,84 @@ SIP uses specific "Methods" to control calls and sessions:
 ### Security Implications & Information Disclosure
 *   **User Enumeration:** Attackers can use the `OPTIONS` method or specialized tools to identify valid extensions/users on a SIP server for future brute-force attempts.
 *   **Cisco Configuration Files:** Finding files like `SEPxxxx.cnf` (often via TFTP) is critical. These files contain device-specific configurations (MAC-based naming) and can reveal firmware versions, proxy settings, and other sensitive infrastructure details.
+
+# Wireless Networks Fundamentals & Security
+
+
+
+## 1. Overview of Wireless Networks
+Wireless networks facilitate data exchange between nodes using **Radio Frequency (RF)** technology, eliminating the need for physical cabling. These networks range from local deployments (**WLAN/WiFi**) to regional coverage via mobile telecommunications (**WWAN** like 4G LTE or 5G).
+
+### Key Components & Operation
+*   **Wireless Adapter:** Converts digital data into RF signals and vice versa.
+*   **Wireless Access Point (WAP):** Acts as a bridge between the wireless and wired networks.
+*   **Frequency Bands:** Typically operates on **2.4 GHz** (longer range, more interference) or **5 GHz** (shorter range, higher throughput).
+
+---
+
+## 2. The IEEE 802.11 Connection Process
+To join a WiFi network, a device initiates a handshake using the **802.11 protocol**.
+
+### Association Request Frame
+When a client attempts to connect, it sends an **Association Request** containing:
+*   **MAC Address:** Unique hardware identifier.
+*   **SSID (Service Set Identifier):** The network name.
+*   **Supported Data Rates & Channels:** Communication capabilities.
+*   **Security Protocols:** Support for encryption like **WPA2/WPA3**.
+
+> [!NOTE]
+> Even if the **SSID broadcast** is disabled (Hidden SSID), the identifier can often be recovered by sniffing authentication packets during a client connection.
+
+---
+
+## 3. Legacy Security: WEP (Wired Equivalent Privacy)
+WEP is a legacy protocol now considered **insecure** due to fundamental design flaws.
+
+### WEP Challenge-Response Handshake
+| Step | Source | Description |
+| :--- | :--- | :--- |
+| 1 | **Client** | Sends an association request to the WAP. |
+| 2 | **WAP** | Responds with a challenge string. |
+| 3 | **Client** | Encrypts the challenge using the **Shared Secret Key** and returns it. |
+| 4 | **WAP** | Verifies the response; if it matches, authentication is granted. |
+
+### Critical Vulnerabilities
+*   **Initialization Vector (IV) Weakness:** WEP uses a small 24-bit IV. Because it is so short, IVs eventually repeat (IV collision), allowing attackers to brute-force the key.
+*   **CRC Flaw:** The **Cyclic Redundancy Check (CRC)** ??
+    > **CRC (Cyclic Redundancy Check) / Control de Redundancia Cíclica:**
+    > *   **EN:** A mathematical algorithm used to detect errors in data transmission. In WEP, it is flawed because it's calculated on plaintext, allowing attackers to manipulate or decrypt packets without knowing the key.
+    > *   **ES:** Un algoritmo matemático utilizado para detectar errores en la transmisión de datos. En WEP, es vulnerable porque se calcula sobre el texto en claro, lo que permite a un atacante manipular o descifrar paquetes sin conocer la clave.
+
+---
+
+## 4. Modern Encryption & Authentication
+### WPA (WiFi Protected Access)
+*   **WPA2/WPA3:** Use **AES (Advanced Encryption Standard)** with 128-bit keys or higher.
+*   **WPA-Personal (PSK):** Uses a Pre-Shared Key (password).
+*   **WPA-Enterprise:** Uses a centralized server (RADIUS/TACACS+) for individual user authentication.
+
+### EAP Protocols (Extensible Authentication Protocol)
+*   **LEAP (Lightweight EAP):** Uses a shared key; susceptible to offline dictionary attacks.
+*   **PEAP (Protected EAP):** Encapsulates EAP within a secure **TLS tunnel**, providing much stronger protection.
+*   **EAP-TLS:** The gold standard; requires **digital certificates** on both the client and server.
+
+### TACACS+ vs. RADIUS
+**TACACS+** ??
+> **TACACS+ (Terminal Access Controller Access-Control System Plus):**
+> *   **EN:** A Cisco-proprietary AAA protocol that encrypts the *entire* body of the packet, offering better security than RADIUS (which only encrypts passwords).
+> *   **ES:** Un protocolo AAA propietario de Cisco que cifra el cuerpo *completo* del paquete, ofreciendo mayor seguridad que RADIUS (que solo cifra las contraseñas).
+
+---
+
+## 5. Wireless Attacks & Hardening
+### Disassociation Attack
+An attacker sends spoofed **disassociation frames** to a client, forcing them to disconnect from the WAP.
+*   **Purpose:** Denial of Service (DoS) or capturing handshakes (WPA 4-way handshake) for offline cracking.
+
+### Hardening Checklist
+*   **Disable SSID Broadcasting:** Reduces visibility (though not a complete security solution).
+*   **MAC Filtering:** Restricts access to specific hardware addresses.
+*   **Implement WPA3:** Latest encryption standard.
+*   **Deploy EAP-TLS:** Uses Certificate-Based Authentication for high-security environments.
+
+---
