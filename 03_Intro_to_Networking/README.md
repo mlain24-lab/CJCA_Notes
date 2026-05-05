@@ -891,3 +891,220 @@ To allow IPsec traffic through a stateful firewall, the following ports and prot
 *   **Port:** TCP 1723.
 *   **Vulnerabilities:** PPTP relies on **MS-CHAPv2** for authentication, which uses the weak **DES** encryption. This is susceptible to offline dictionary attacks and rapid brute-forcing with modern hardware.
 *   **Recommendation:** Avoid PPTP in production environments. Transition to **OpenVPN (SSL/TLS)**, **WireGuard**, or **L2TP/IPsec**.
+
+# Cisco IOS & Network Segmentation Fundamentals
+
+## 1. Cisco IOS Overview
+**Cisco Internetwork Operating System (IOS)** is the proprietary operating system deployed across Cisco network devices, including routers and switches. It delivers the essential routing, switching, internetworking, and telecommunications functions required to operate modern enterprise networks.
+
+### Core Capabilities
+* **IPv6 Support:** Comprehensive dual-stack and native IPv6 routing/switching.
+* **Quality of Service (QoS):** Traffic prioritization and bandwidth management.
+* **Security:** Native encryption, access control, and robust authentication mechanisms.
+* **Virtualization:** Virtual Private LAN Service (VPLS) and Virtual Routing and Forwarding (VRF).
+
+### Management Interfaces
+Cisco devices are predominantly administered via the **Command Line Interface (CLI)** through Console, SSH, or Telnet, though Graphical User Interfaces (GUI) are available for certain models.
+
+### Supported Network Protocols
+| Protocol Category | Examples | Description |
+| :--- | :--- | :--- |
+| **Routing** | OSPF, BGP | Dynamic protocols used to calculate paths and route data packets across networks. |
+| **Switching** | VTP, STP | Layer 2 protocols to manage VLAN propagation (VTP) and prevent network loops (STP). |
+| **Network Services** | DHCP, DNS | Protocols that automate IP assignment and hostname resolution. |
+| **Security** | ACLs | Access Control Lists used to filter traffic and mitigate unauthorized access. |
+
+### Cisco IOS Access Control (Passwords)
+| Password Type | Description |
+| :--- | :--- |
+| **User Password** | Secures initial device access (Console, VTY lines). Restricts user to basic execution mode (`>`). |
+| **Enable Password** | Secures access to privileged EXEC mode (`#`), granting administrative control. Stored in plaintext by default unless service password-encryption is enabled. |
+| **Secret** | A secure, encrypted password used to restrict access to specific remote management tools and services. |
+| **Enable Secret** | The secure alternative to the Enable Password. It leverages robust hashing algorithms (e.g., MD5, SHA-256) to secure privileged EXEC mode. |
+
+> **Initial Reconnaissance Note:** When enumerating network services, a Cisco IOS device can often be identified via Telnet/SSH banners.
+
+~~~bash
+MikyRedHat@htb[/htb]$ telnet 10.129.10.2
+Trying 10.129.10.2...
+Connected to 10.129.10.2.
+Escape character is '^]'.
+
+User Access Verification
+Password:
+~~~
+
+---
+
+## 2. Virtual Local Area Networks (VLANs)
+A **VLAN** conceptually fragments a single physical switch into multiple isolated, logical mini-switches. It creates distinct broadcast domains that span across multiple physical LAN segments. This logical segmentation is independent of the users' physical locations.
+
+Since each VLAN acts as an independent broadcast domain, it requires its own IP subnet to facilitate inter-VLAN routing (usually handled by a Layer 3 switch or a "Router on a Stick").
+
+**Example Corporate Topology:**
+| Department | VLAN ID | Subnet |
+| :--- | :--- | :--- |
+| Servers | VLAN 10 | 192.168.1.0/24 |
+| C-Level | VLAN 20 | 192.168.2.0/24 |
+| Finance | VLAN 30 | 192.168.3.0/24 |
+| HR | VLAN 40 | 192.168.4.0/24 |
+| Marketing | VLAN 50 | 192.168.5.0/24 |
+| IT Support | VLAN 60 | 192.168.6.0/24 |
+
+### Strategic Benefits of VLANs
+1. **Security Posture:** Isolates sensitive traffic. An attacker on the HR VLAN cannot passively sniff broadcast traffic from the Finance VLAN.
+2. **Performance Optimization:** Reduces the size of broadcast domains, mitigating broadcast storms and freeing up bandwidth.
+3. **Simplified Administration:** Devices can be logically grouped by function rather than physical location.
+
+### VLAN Ranges (Cisco)
+* **Normal-Range (1-1005):** Stored in the `vlan.dat` file in Flash memory.
+    * `VLAN 1`: Default VLAN (cannot be deleted).
+    * `VLANs 1002-1005`: Reserved for legacy Token Ring/FDDI.
+* **Extended-Range (1006-4094):** Saved in the running configuration file, not in `vlan.dat`. Requires VTP Transparent mode in older IOS versions.
+* **Reserved (0 & 4095):** Cannot be used.
+
+---
+
+## 3. Switch Port Modes & Memberships
+
+### Static vs. Dynamic Assignment
+* **Static VLANs:** Ports are manually assigned to a specific VLAN ID by a SysAdmin. This is the industry standard due to its high security.
+* **Dynamic VLANs:** Switch queries a centralized database (like VMPS) to assign a VLAN based on the connecting device's MAC address.
+    * *Security Risk:* An attacker can easily bypass this by utilizing tools like `macchanger` to spoof a legitimate MAC address and jump into a restricted VLAN.
+
+### Access Ports vs. Trunk Ports
+* **Access Ports:** Configured to carry traffic for exactly **one** VLAN (ignoring auxiliary voice VLANs). Devices connected to access ports are unaware of the VLAN topology.
+* **Trunk Ports:** Designed to carry traffic for **multiple** VLANs simultaneously across a single physical link connecting switches or routers.
+
+---
+
+## 4. VLAN Identification (Trunking Protocols)
+Because standard 802.3 Ethernet frames lack VLAN data, switches use encapsulation/tagging protocols to maintain VLAN isolation across trunk links.
+
+### Inter-Switch Link (ISL)
+* **Legacy Cisco-Proprietary Protocol.**
+* Encapsulates the *entire* original Ethernet frame, appending a 26-byte header and a 4-byte trailer. Deprecated in modern networks.
+
+### IEEE 802.1Q (Dot1Q)
+* **The Industry Standard.**
+* Modifies the original 802.3 frame by injecting a 4-byte Tag Control Information (TCI) header directly into it.
+* **TPID (Tag Protocol Identifier):** A 16-bit field set to `0x8100` to denote an 802.1Q tagged frame.
+* **TCI (Tag Control Information):** Contains the PCP (Priority), DEI (Drop Eligibility), and the **VID (VLAN Identifier)**.
+    * The VID is a 12-bit field. $2^{12} = 4096$, yielding 4094 usable VLAN IDs (excluding 0 and 4095).
+
+---
+
+## 5. Configuring VLAN-Capable NICs
+Modern Network Interface Cards (NICs) support 802.1Q tagging directly at the OS level.
+
+### Linux Implementation
+We create a logical sub-interface on top of the physical interface. The Kernel module `8021q` must be loaded.
+
+~~~bash
+# Load the 8021q module and verify
+MikyRedHat@htb[/htb]$ sudo modprobe 8021q
+MikyRedHat@htb[/htb]$ lsmod | grep 8021q
+
+# Note: The 'vconfig' tool is deprecated. Use the modern 'iproute2' suite.
+# Create a VLAN 20 sub-interface on eth0
+MikyRedHat@htb[/htb]$ sudo ip link add link eth0 name eth0.20 type vlan id 20
+
+# Assign an IP address and bring the interface UP
+MikyRedHat@htb[/htb]$ sudo ip addr add 192.168.1.1/24 dev eth0.20
+MikyRedHat@htb[/htb]$ sudo ip link set up eth0.20
+
+# Verify interface state
+MikyRedHat@htb[/htb]$ ip a | grep eth0.20
+~~~
+
+### Windows Implementation
+VLANs can be configured via the Device Manager GUI (Advanced properties of the NIC) or natively via PowerShell:
+
+~~~powershell
+# Enumerate available Network Adapters
+PS C:\> Get-NetAdapter | Format-Table -AutoSize
+
+# Retrieve the current VLAN ID of an interface
+PS C:\> Get-NetAdapterAdvancedProperty -DisplayName "vlan id"
+
+# Assign an interface to VLAN 10 (Requires NIC driver support)
+PS C:\> Set-NetAdapter -Name "Ethernet 2" -VlanID 10
+~~~
+
+![Windows Device Manager VLAN GUI](img/windows_vlan_gui.png)
+
+---
+
+## 6. Packet Analysis: VLAN Traffic
+VLAN tags can be intercepted and analyzed using packet sniffers.
+
+**Wireshark / Tshark Filters:**
+* Show all tagged traffic: `vlan`
+* Filter by specific VLAN: `vlan.id == 10`
+
+![Wireshark VLAN filter](img/wireshark_vlan.png)
+
+~~~bash
+# Extract and sort unique VLAN IDs from a PCAP file using Tshark
+MikyRedHat@htb[/htb]$ tshark -r "The_Ultimate_PCAP.pcapng" -T fields -e vlan.id | sort -n -u
+~~~
+
+---
+
+## 7. Security Implications: VLAN Attacks
+
+### VLAN Hopping (DTP Exploitation)
+VLAN Hopping allows an attacker to bypass routing restrictions and inject/sniff traffic in unauthorized VLANs. This typically exploits the **Dynamic Trunking Protocol (DTP)**, which automates trunk negotiation on Cisco switches.
+* **Attack Vector:** An attacker configures their host to spoof DTP packets (acting like a switch). If the switch port is left in 'Dynamic Auto' or 'Dynamic Desirable' mode, a trunk link is established, exposing all allowed VLAN traffic to the attacker.
+* **Tooling:** `Yersinia` is the industry standard for exploiting DTP and Layer 2 protocols.
+
+![Yersinia Framework](img/yersinia_dtp.png)
+
+### Double-Tagging (802.1Q Encapsulation Attack)
+This attack exploits how switches process the "Native VLAN" on trunk links.
+* **Prerequisite:** The attacker MUST be connected to a port that belongs to the same VLAN as the trunk's Native VLAN.
+* **Execution:**
+  1. The attacker crafts a frame with **two** 802.1Q tags: an outer tag (matching the Native VLAN) and a hidden inner tag (the target VLAN, e.g., VLAN 30).
+  2. The first switch reads the outer tag, realizes it belongs to the Native VLAN, strips the tag, and forwards it across the trunk.
+  3. The receiving switch inspects the frame, finds the *inner* tag (VLAN 30), and forwards the packet into the victim's VLAN.
+* **Tooling:** `Scapy` (Python framework) is used to craft customized double-tagged packets.
+
+---
+
+## 8. Data Center Scalability: VXLAN
+In modern cloud/data center architectures, the 4,094 VLAN limit of standard 802.1Q is insufficient. Furthermore, Spanning Tree Protocol (STP) blocks redundant links, killing multipathing efficiency.
+
+**Virtual eXtensible Local Area Network (VXLAN) - RFC7348:**
+* **Concept:** A Layer 2 overlay mapped over a Layer 3 network infrastructure (MAC-in-UDP encapsulation).
+* **VNI (VXLAN Network Identifier):** Uses a 24-bit identifier, expanding the logical segment limit from 4,094 to **16 million**.
+* **Impact:** Enables massive multi-tenant scalability and allows VMs to migrate across physical data centers while maintaining the same Layer 2 segment without being bottlenecked by STP loops.
+
+---
+
+## 9. Network Discovery & Telemetry (CDP vs. STP)
+
+### Cisco Discovery Protocol (CDP)
+A proprietary Layer 2 protocol used by Cisco devices to broadcast their hardware platform, OS version, IP addresses, and capabilities to directly connected neighbors. 
+* *Security Warning:* CDP broadcasts in plaintext. It should be disabled on external-facing interfaces or untrusted access ports to prevent reconnaissance.
+
+~~~text
+# Example CDP Packet Capture
+22:14:11.563654 CDPv2, ttl: 180s, length: 180
+        Device-ID: 'router.inlanefreight.loc'
+        IPv4: 10.129.100.1
+        Port-ID: 'Ethernet0/0'
+        Capability: Router
+        Platform: 'Cisco 881 (MPC8300) processor'
+        Version String: 'Cisco IOS Software, C880 Software'
+~~~
+
+### Spanning Tree Protocol (STP)
+A Layer 2 protocol (IEEE 802.1D / 802.1w) that prevents broadcast storms by calculating a loop-free logical topology and blocking redundant links.
+
+~~~text
+# Example Rapid STP (802.1w) Packet Capture
+22:14:11.563654 STP 802.1w, Rapid STP, Flags [Learn, Forward]
+        bridge-id 8001.00:11:22:33:44:55.8000
+        root-id 8001.AA:AA:AA:AA:AA:AA, cost 0
+        port-id 8001, max-age 20.00s, forward-delay 15.00s
+~~~
