@@ -1153,3 +1153,48 @@ IKE negotiations dictate the sequence and parameters of the exchange process. Th
 A **Pre-Shared Key (PSK)** is a predefined secret value mutually held by both parties. In IKE, a PSK acts as an optional authentication layer before the DH exchange initiates. 
 * **Implementation:** PSKs must be distributed via a secure, out-of-band channel (e.g., physical transfer or a secondary secure line) prior to the exchange.
 * **Security Impact:** While PSKs add a straightforward layer of authentication, poorly managed or intercepted PSKs completely compromise the IKE session, exposing the VPN tunnel to MITM attacks.
+
+# Authentication Protocols
+
+Authentication protocols are foundational components in networking, designed to verify the identity of devices, users, and systems. They provide a secure, standardized mechanism for identity verification, preventing unauthorized access and mitigating network compromise. Furthermore, these protocols facilitate the secure exchange of information, ensuring data confidentiality and integrity against eavesdropping or Man-In-The-Middle (MITM) attacks.
+
+## Common Authentication Protocols
+
+| Protocol | Description |
+| :--- | :--- |
+| **Kerberos** | Key Distribution Center (KDC) based authentication protocol utilizing tickets within domain environments (e.g., Active Directory). |
+| **SRP** | Secure Remote Password. A password-based authentication protocol using zero-knowledge proofs and cryptography to thwart eavesdropping and MITM attacks. |
+| **SSL** | Secure Sockets Layer. A legacy cryptographic protocol for securing network communications (deprecated in modern environments). |
+| **TLS** | Transport Layer Security. The modern, secure successor to SSL, providing internet communication security. |
+| **OAuth** | Open standard for authorization allowing secure, delegated third-party access to web resources without sharing credentials. |
+| **OpenID** | Decentralized authentication protocol enabling users to leverage a single identity across multiple platforms. |
+| **SAML** | Security Assertion Markup Language. An XML-based standard for securely exchanging authentication and authorization data between identity and service providers. |
+| **2FA** | Two-Factor Authentication. Requires exactly two distinct factors (e.g., knowledge and possession) to verify an identity. |
+| **FIDO** | Fast IDentity Online. Open standards developed by the FIDO Alliance to promote strong, passwordless authentication. |
+| **PKI** | Public Key Infrastructure. A framework using public and private key pairs for encryption, digital signatures, and secure data exchange. |
+| **SSO** | Single Sign-On. Allows users to authenticate once with a single set of credentials to access multiple independent applications. |
+| **MFA** | Multi-Factor Authentication. Uses two or more authentication factors (knowledge, possession, inherence/biometrics) for robust identity verification. |
+| **PAP** | Password Authentication Protocol. A deprecated, insecure protocol that transmits passwords in clear text over the network. |
+| **CHAP** | Challenge-Handshake Authentication Protocol. Uses a three-way handshake and hashing to verify identity without sending cleartext secrets. |
+| **EAP** | Extensible Authentication Protocol. A versatile framework supporting multiple authentication mechanisms (e.g., EAP-TLS, PEAP). |
+| **SSH** | Secure Shell. Provides encrypted remote command-line access, remote execution, and secure file transfer (replaces Telnet/FTP). |
+| **HTTPS** | Hypertext Transfer Protocol Secure. HTTP running over SSL/TLS, ensuring encrypted and authenticated web traffic. |
+
+## In-Depth Analysis: Wireless & Tunneling Authentication
+
+### LEAP vs. PEAP
+
+Protocols like **LEAP** and **PEAP** are typically deployed in enterprise environments to authenticate wireless clients (802.1X) or remote users connecting via VPNs—scenarios where standard SSH or HTTPS are architecturally unsuitable.
+
+*   **LEAP (Lightweight Extensible Authentication Protocol):** Developed by Cisco, LEAP provides mutual authentication between a client and a RADIUS server using EAP and the RC4 cipher.
+    *   *Vulnerability:* LEAP relies on a negotiated shared secret and does *not* encrypt the MSCHAPv2 hash, making it highly susceptible to offline dictionary attacks. It is considered legacy and severely insecure.
+*   **PEAP (Protected Extensible Authentication Protocol):** A highly secure tunneling protocol based on EAP. It establishes an encrypted TLS tunnel before authenticating the client.
+    *   *Security Advantage:* PEAP mandates a server-side public key certificate to validate the server's identity, preventing rogue access point attacks. Crucially, it encrypts the MSCHAPv2 hash within the TLS tunnel and supports robust cryptographic algorithms (AES, 3DES) instead of the weaker RC4 cipher.
+
+Both protocols belong to earlier generations of wireless security. While PEAP remains widely deployed, modern enterprise infrastructures are increasingly migrating to **EAP-TLS** for strict certificate-based mutual authentication.
+
+## Secure Physical & Application Layer Connections
+
+For direct connections and application-layer transport, **SSL/TLS** protocols form the backbone of network security, prominently implemented via **SSH** and **HTTPS**.
+
+These protocols leverage robust symmetric and asymmetric encryption algorithms to safeguard transmitted authentication data against interception or tampering. Furthermore, they integrate seamlessly with **PKI** and digital certificates to mutually authenticate the server and client, neutralizing MITM vectors. Due to their extensive cross-platform support and standardization, SSH and HTTPS are the industry defaults for secure system administration, web communications, and API interactions.
