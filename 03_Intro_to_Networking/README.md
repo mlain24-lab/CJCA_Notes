@@ -1031,7 +1031,6 @@ PS C:\> Get-NetAdapterAdvancedProperty -DisplayName "vlan id"
 PS C:\> Set-NetAdapter -Name "Ethernet 2" -VlanID 10
 ~~~
 
-![Windows Device Manager VLAN GUI](img/windows_vlan_gui.png)
 
 ---
 
@@ -1042,7 +1041,6 @@ VLAN tags can be intercepted and analyzed using packet sniffers.
 * Show all tagged traffic: `vlan`
 * Filter by specific VLAN: `vlan.id == 10`
 
-![Wireshark VLAN filter](img/wireshark_vlan.png)
 
 ~~~bash
 # Extract and sort unique VLAN IDs from a PCAP file using Tshark
@@ -1058,7 +1056,6 @@ VLAN Hopping allows an attacker to bypass routing restrictions and inject/sniff 
 * **Attack Vector:** An attacker configures their host to spoof DTP packets (acting like a switch). If the switch port is left in 'Dynamic Auto' or 'Dynamic Desirable' mode, a trunk link is established, exposing all allowed VLAN traffic to the attacker.
 * **Tooling:** `Yersinia` is the industry standard for exploiting DTP and Layer 2 protocols.
 
-![Yersinia Framework](img/yersinia_dtp.png)
 
 ### Double-Tagging (802.1Q Encapsulation Attack)
 This attack exploits how switches process the "Native VLAN" on trunk links.
