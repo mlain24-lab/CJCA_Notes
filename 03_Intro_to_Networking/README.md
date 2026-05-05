@@ -1105,3 +1105,51 @@ A Layer 2 protocol (IEEE 802.1D / 802.1w) that prevents broadcast storms by calc
         root-id 8001.AA:AA:AA:AA:AA:AA, cost 0
         port-id 8001, max-age 20.00s, forward-delay 15.00s
 ~~~
+
+# Key Exchange Mechanisms
+
+Key exchange mechanisms are critical cryptographic protocols designed to securely distribute and establish **shared secret keys** between communicating parties over an untrusted, insecure channel. Since the fundamental security of encrypted communications relies on the secrecy of these keys, selecting the right mathematical algorithm is paramount.
+
+## Core Algorithms
+
+### 1. Diffie-Hellman (DH)
+The **Diffie-Hellman (DH)** key exchange allows two parties to mutually generate a shared secret key without any prior communication or transmission of private data. It forms the foundation of secure channel establishment, prominently featured in the **Transport Layer Security (TLS)** protocol.
+* **Drawbacks:** Classic finite-field DH is computationally expensive compared to Elliptic-Curve variants. Crucially, raw DH lacks built-in authentication, making it inherently vulnerable to **Man-In-The-Middle (MITM)** attacks, where an adversary intercepts the traffic and injects rogue keys.
+
+### 2. Rivest–Shamir–Adleman (RSA)
+**RSA** is an asymmetric public-key cryptosystem based on the mathematical difficulty of factoring the product of two large prime numbers. Beyond key exchange, RSA is a versatile standard used across the industry for:
+* **Confidentiality & Authentication:** Encrypting and digitally signing messages.
+* **Data in Transit:** Securing network traffic (e.g., SSL/TLS protocols).
+* **Integrity:** Generating and verifying digital signatures for electronic documents.
+* **Access Control:** Authenticating users and devices, notably via **PKINIT** in Kerberos environments.
+
+### 3. Elliptic-Curve Cryptography (ECC)
+ECC provides equivalent or superior security to classic algorithms but with significantly smaller key sizes, drastically reducing computational overhead (crucial for latency-sensitive or low-power devices).
+* **ECDH (Elliptic Curve Diffie-Hellman):** A modern variant of DH leveraging ECC. It establishes secure TLS connections, supports **Perfect Forward Secrecy (PFS)** to protect past sessions from future key compromises, and drives the **Internet Key Exchange (IKE)** protocol in VPNs.
+* **ECDSA (Elliptic Curve Digital Signature Algorithm):** Utilizes ECC strictly for generating digital signatures to robustly authenticate parties during a key exchange.
+
+### Algorithm Comparison Matrix
+
+| Algorithm | Acronym | Security Profile & Characteristics |
+| :--- | :--- | :--- |
+| **Diffie-Hellman** | DH | Secure with strong parameters and external authentication. Computationally heavier/slower than ECDH. |
+| **Rivest–Shamir–Adleman** | RSA | Industry-standard security with adequate key lengths. Higher computational footprint than ECC. |
+| **Elliptic Curve Diffie-Hellman** | ECDH | Enhanced security and operational speed compared to classic DH. Ideal for modern implementations. |
+| **Elliptic Curve Digital Signature** | ECDSA | Highly efficient and secure framework strictly for digital signature generation. |
+
+---
+
+## Internet Key Exchange (IKE)
+
+**Internet Key Exchange (IKE)** is the standard protocol for setting up a Security Association (SA) in the IPsec protocol suite, heavily utilized for establishing encrypted **Virtual Private Network (VPN)** tunnels. IKE blends DH key exchanges with additional cryptographic techniques (like RSA for signatures and AES for payload encryption) to securely negotiate parameters and authenticate clients/servers.
+
+### IKE Operation Modes
+IKE negotiations dictate the sequence and parameters of the exchange process. They operate in two primary modes:
+
+* **Main Mode (Default):** Prioritizes security. It executes the key exchange across **three distinct phases** (six messages), allowing for secure negotiation and strict identity protection. The trade-off is higher latency.
+* **Aggressive Mode:** Prioritizes speed. It compresses the exchange into just **two phases** (three messages). While performance is faster due to fewer round trips, it completely sacrifices identity protection, making it a weaker security posture compared to Main Mode.
+
+### Pre-Shared Keys (PSK)
+A **Pre-Shared Key (PSK)** is a predefined secret value mutually held by both parties. In IKE, a PSK acts as an optional authentication layer before the DH exchange initiates. 
+* **Implementation:** PSKs must be distributed via a secure, out-of-band channel (e.g., physical transfer or a secondary secure line) prior to the exchange.
+* **Security Impact:** While PSKs add a straightforward layer of authentication, poorly managed or intercepted PSKs completely compromise the IKE session, exposing the VPN tunnel to MITM attacks.
