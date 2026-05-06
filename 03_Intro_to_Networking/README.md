@@ -1296,3 +1296,51 @@ UDP is a stateless protocol. When performing a `traceroute` via UDP, the target 
 * **Objective:** Establish unauthorized connections or disrupt service by hijacking sessions.
 * **Pentest Note:** Successfully predicting an ISN allows an attacker to complete a TCP handshake "blindly," potentially bypassing IP-based authentication.
 
+# Cryptography and Encryption Fundamentals
+
+## Overview
+Encryption is the core mechanism used to secure data transmission across the Internet (e.g., payment information, emails, personal data), ensuring confidentiality and integrity against unauthorized manipulation. By applying cryptographic algorithms based on complex mathematical operations, plaintext is transformed into ciphertext. 
+
+Modern encryption relies on digital keys within **symmetric** or **asymmetric** frameworks. The robustness of these methods depends on the algorithm's mathematical complexity and key length. State-of-the-art cryptography with extensive key lengths is currently considered highly secure and nearly impossible to compromise efficiently.
+
+## Symmetric Encryption
+Symmetric encryption (secret-key encryption) relies on a single shared key for both encryption and decryption. Both the sender and receiver must possess this exact key to successfully communicate.
+
+*   **Vulnerabilities:** The primary risk lies in key distribution, storage, and exchange. If the secret key is intercepted or leaked, the confidentiality of the data is completely compromised.
+*   **Use Cases:** Highly efficient and ideal for encrypting large volumes of data at rest or in transit (e.g., full-disk encryption, bulk network traffic).
+*   **Standard Algorithms:** 
+    *   **DES** (Data Encryption Standard) - Legacy.
+    *   **AES** (Advanced Encryption Standard) - The current industry standard.
+
+## Asymmetric Encryption (Public-Key Cryptography)
+Asymmetric encryption utilizes a mathematically linked key pair:
+1.  **Public Key:** Used to encrypt the data. It can be freely distributed.
+2.  **Private Key:** Used to decrypt the data. It must remain strictly confidential.
+
+Anyone can encrypt a payload using the target's public key, but only the holder of the corresponding private key can decrypt it.
+
+*   **Advantages:** It elegantly bypasses the secret key exchange problem inherent in symmetric encryption. Security relies on computationally intractable mathematical problems. Additionally, asymmetric methods enable authentication and non-repudiation via digital signatures.
+*   **Standard Algorithms:** RSA (Rivest–Shamir–Adleman), PGP (Pretty Good Privacy), ECC (Elliptic Curve Cryptography).
+*   **Common Implementations:** E-Signatures, SSL/TLS, VPNs, SSH, PKI, Cloud Security.
+
+## Legacy Standards: DES & 3DES
+*   **DES (Data Encryption Standard):** A symmetric-key block cipher that processes 64-bit blocks of plaintext into 64-bit ciphertext. While the key is formally 64 bits, 8 bits are reserved for parity checks, resulting in an effective key length of only **56 bits**. This makes it highly vulnerable to modern brute-force attacks.
+*   **3DES (Triple DES):** An extension designed to strengthen DES by applying the cipher three times sequentially (Encrypt-Decrypt-Encrypt) using up to three separate keys. While more secure than standard DES, it remains bottlenecked by its 56-bit foundation and is largely considered obsolete for modern applications.
+
+## Modern Standard: AES (Advanced Encryption Standard)
+AES is the successor to DES, delivering significantly enhanced security and operational performance.
+*   **Key Lengths:** Operates with 128-bit, 192-bit, or 256-bit keys.
+*   **Performance:** Features a highly efficient algorithmic structure capable of processing multiple data blocks simultaneously. This parallelism makes AES vastly faster than DES, which is critical for bulk encryption scenarios.
+*   **Common Implementations:** WLAN (IEEE 802.11i), IPsec, SSH, VoIP, PGP, OpenSSL.
+
+## Cipher Modes of Operation
+A cipher mode dictates how a block cipher algorithm (processing fixed 64 or 128-bit blocks) handles data to securely encrypt messages of arbitrary length.
+
+| Cipher Mode | Full Name | Description & Use Case |
+| :--- | :--- | :--- |
+| **ECB** | Electronic Code Book | **Not recommended.** Encrypts identical plaintext blocks into identical ciphertext blocks. It fails to hide data patterns, leaving applications vulnerable to statistical analysis. |
+| **CBC** | Cipher Block Chaining | The default mode for early AES implementations. Used for disk encryption (TrueCrypt, VeraCrypt) and legacy TLS/SSL. |
+| **CFB** | Cipher Feedback | Ideal for real-time data stream encryption, such as network communications or file transit (PKCS, BitLocker). |
+| **OFB** | Output Feedback | Used for stream encryption in real-time communications. Generates the keystream independently, making it highly suitable for noisy channels (PKCS, SSH). |
+| **CTR** | Counter | High-performance mode that encrypts real-time data streams by turning a block cipher into a stream cipher. Widely used in IPsec and BitLocker. |
+| **GCM** | Galois/Counter Mode | The modern gold standard. Protects both confidentiality and data integrity (authenticated encryption). Heavily used in wireless communications, VPNs, and secure protocols (TLS 1.3). |
