@@ -1198,3 +1198,101 @@ Both protocols belong to earlier generations of wireless security. While PEAP re
 For direct connections and application-layer transport, **SSL/TLS** protocols form the backbone of network security, prominently implemented via **SSH** and **HTTPS**.
 
 These protocols leverage robust symmetric and asymmetric encryption algorithms to safeguard transmitted authentication data against interception or tampering. Furthermore, they integrate seamlessly with **PKI** and digital certificates to mutually authenticate the server and client, neutralizing MITM vectors. Due to their extensive cross-platform support and standardization, SSH and HTTPS are the industry defaults for secure system administration, web communications, and API interactions.
+
+
+# Technical Documentation: Network Layer and Transport Layer Analysis
+
+## 1. Transport Layer Protocols: TCP vs. UDP
+
+The Transport Layer (Layer 4) utilizes two primary protocols for data transmission across the internet, each optimized for different operational requirements.
+
+### Transmission Control Protocol (TCP)
+TCP is a **connection-oriented** protocol designed to guarantee the reliable delivery of data.
+* **Mechanism:** It functions similarly to a telephone conversation where a session is established and maintained. It ensures that all segments are received in the correct order.
+* **Error Recovery:** If an error or packet loss occurs, the receiver notifies the sender to retransmit the missing data.
+* **Characteristics:** High reliability but higher latency due to error-checking and retransmission overhead.
+* **Common Uses:** Web traffic (HTTP/S), Email (SMTP/IMAP), and file transfers.
+
+### User Datagram Protocol (UDP)
+UDP is a **connectionless** protocol that prioritizes speed and low latency over reliability.
+* **Mechanism:** Data is sent without establishing a connection or verifying receipt. There is no acknowledgement (ACK) process.
+* **Error Handling:** If a datagram is lost or corrupted, it is not resent.
+* **Characteristics:** Fast and lightweight, but prone to data loss.
+* **Common Uses:** Real-time applications such as video streaming, VoIP, and online gaming.
+
+---
+
+## 2. The IP Packet Structure
+
+An **Internet Protocol (IP) Packet** is the standard unit of data at the Network Layer (Layer 3). It can be visualized as an envelope: the **Header** contains routing and metadata (sender/recipient), while the **Payload** contains the actual data (the letter).
+
+### IP Header Field Analysis
+| Field | Description |
+| :--- | :--- |
+| **Version** | Indicates IPv4 or IPv6 protocol version. |
+| **IHL** | Internet Header Length; specifies header size in 32-bit words. |
+| **Class of Service** | Defines packet priority (QoS). |
+| **Total Length** | Total packet size (header + payload) in bytes. |
+| **Identification (ID)** | A 16-bit unique value used to identify fragments of a packet. |
+| **Flags** | Control bits for fragmentation. |
+| **Fragment Offset** | Indicates the fragment's position within the original packet. |
+| **TTL** | Time to Live; prevents infinite routing loops by limiting hop count. |
+| **Protocol** | Defines the encapsulated protocol (TCP=6, UDP=17). |
+| **Checksum** | Error detection for the header. |
+| **Source/Destination** | Logical addresses of the sender and recipient. |
+| **Options/Padding** | Optional routing info and padding to ensure word alignment. |
+
+### Fingerprinting via IP ID
+The **IP ID** field is a 16-bit field (0-65535). In security audits, analyzing this field can reveal **multi-homed hosts**. Even if a host uses different IP addresses across different networks, the IP ID often increments sequentially across all interfaces.
+
+**Traffic Capture Analysis:**
+```shellsession
+IP 10.129.1.100.5060 > 10.129.1.1.5060: SIP, length: 1329, id 1337
+IP 10.129.1.100.5060 > 10.129.1.1.5060: SIP, length: 1329, id 1338
+IP 10.129.1.100.5060 > 10.129.1.1.5060: SIP, length: 1329, id 1339
+IP 10.129.2.200.5060 > 10.129.1.1.5060: SIP, length: 1329, id 1340
+IP 10.129.2.200.5060 > 10.129.1.1.5060: SIP, length: 1329, id 1341
+```
+*In this scenario, the continuous sequence of IDs (1337-1341) confirms that 10.129.1.100 and 10.129.2.200 belong to the same physical host.*
+
+---
+
+## 3. Network Reconnaissance Techniques
+
+### IP Record-Route (RR) Field
+The RR field logs the IP addresses of routers that a packet traverses. When the target sends an `ICMP Echo Reply`, the path is revealed in the header.
+
+**Command Example:**
+```shellsession
+MikyRedHat@htb[/htb]$ ping -c 1 -R 10.129.143.158
+RR: 10.10.14.38 -> 10.129.0.1 -> 10.129.143.158
+```
+
+### Traceroute Methodology
+Traceroute maps the network path by intentionally triggering `ICMP Time-Exceeded` messages through TTL manipulation:
+1. **Initial Probe:** A TCP SYN packet is sent with a **TTL of 1**.
+2. **Hop 1:** The first router decrements TTL to 0, drops the packet, and returns an `ICMP Time-Exceeded` packet. The attacker records this IP.
+3. **Iteration:** The process repeats with an incremented TTL (2, 3, etc.) for each subsequent hop.
+4. **Conclusion:** The process ends when the destination is reached and returns a `TCP SYN/ACK` or `TCP RST`. On Unix systems, UDP is typically used, resulting in a `Destination/Port Unreachable` message upon completion.
+
+---
+
+## 4. Layer 4 Segmentation and Payloads
+
+### TCP Segments
+TCP headers include critical fields for stateful communication: **Source/Destination Ports**, **Sequence Numbers** (order), **Acknowledgment Numbers** (receipt verification), **Control Flags** (SYN, ACK, PSH, FIN, RST), and **Window Size** (flow control). The payload contains the actual conversation data.
+
+### UDP Datagrams
+UDP is a stateless protocol. When performing a `traceroute` via UDP, the target host will typically respond with `Destination Unreachable` and `Port Unreachable` once the packet reaches the target device.
+
+---
+
+## 5. Advanced Attack Vectors: Blind Spoofing
+
+**Blind Spoofing** is a data manipulation technique where an attacker injects forged traffic into a network without being able to see the target's responses.
+
+* **Method:** The attacker forges the IP header (Source/Destination) and must predict the **Initial Sequence Number (ISN)**.
+* **ISN (??):** The Initial Sequence Number is a 32-bit value assigned to the first packet of a TCP connection to synchronize sequence tracking. / *El ISN es un valor de 32 bits asignado al primer paquete de una conexión TCP para sincronizar el seguimiento de la secuencia.*
+* **Objective:** Establish unauthorized connections or disrupt service by hijacking sessions.
+* **Pentest Note:** Successfully predicting an ISN allows an attacker to complete a TCP handshake "blindly," potentially bypassing IP-based authentication.
+
