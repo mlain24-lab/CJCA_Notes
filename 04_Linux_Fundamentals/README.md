@@ -194,22 +194,57 @@ The **PS1** (Prompt String 1) is an environment variable that defines the primar
 
 ### Special Characters for Customization
 
-To modify the prompt, special backslash-escaped characters are used within the `.bashrc` file:
+# Advanced Bash Prompt: Full PS1 Escape Sequences Reference
 
-| Character | Description |
+The **PS1** variable is highly extensible, allowing administrators and security researchers to embed real-time system data directly into the shell interface. Beyond basic identity, these sequences enable precise logging and situational awareness.
+
+> **Bash Escape Sequences ??**
+> **English:** Special backslash-escaped characters that Bash interprets as dynamic commands to insert specific system information into the prompt string.
+> **Español:** Caracteres especiales precedidos por una barra invertida que Bash interpreta como comandos dinámicos para insertar información específica del sistema en la cadena del prompt.
+
+## 1. Complete Escape Sequence Table
+
+| Sequence | Description |
 | :--- | :--- |
-| `\u` | Current username |
-| `\h` | Short hostname (up to the first '.') |
-| `\H` | Full hostname |
-| `\w` | Full path of the current working directory |
-| `\W` | Basename of the current working directory |
-| `\d` | Date (e.g., "Wed Sep 04") |
-| `\t` | Current time (24-hour HH:MM:SS) |
-| `\n` | Newline character |
+| `\a` | An ASCII bell character (07). |
+| `\d` | The date in "Weekday Month Date" format (e.g., "Tue May 26"). |
+| `\D{format}` | Custom date format (passed to `strftime(3)`). Use `{}` for local time. |
+| `\e` | An ASCII escape character (033). Used for adding colors. |
+| `\h` | The hostname up to the first dot ('.'). |
+| `\H` | The full hostname (FQDN). |
+| `\j` | The number of jobs currently managed by the shell. |
+| `\l` | The basename of the shell’s terminal device name (tty). |
+| `\n` | Newline character (creates multi-line prompts). |
+| `\r` | Carriage return. |
+| `\s` | The name of the shell (the basename of `$0`). |
+| `\t` | Current time in 24-hour HH:MM:SS format. |
+| `\T` | Current time in 12-hour HH:MM:SS format. |
+| `\@` | Current time in 12-hour AM/PM format. |
+| `\A` | Current time in 24-hour HH:MM format. |
+| `\u` | The username of the current user. |
+| `\v` | The version of Bash (e.g., 5.1). |
+| `\V` | The release of Bash (version + patch level). |
+| `\w` | The current working directory (full path, with $HOME as `~`). |
+| `\W` | The basename of the current working directory. |
+| `\!` | The history number of the current command. |
+| `\#` | The command number of the current command (resets every session). |
+| `\$` | Displays `#` if the effective UID is 0 (root), otherwise `$`. |
+| `\nnn` | The character corresponding to the octal number `nnn`. |
+| `\\` | A literal backslash. |
+| `\[` | Begin a sequence of non-printing characters (essential for color codes). |
+| `\]` | End a sequence of non-printing characters. |
 
-### Implementation Example
-To set a descriptive prompt that includes the user, host, and full path, use:
-`export PS1="\u@\h:\w\$ "`
+## 2. Practical Pentesting Implementation
+
+During an engagement, it is recommended to include the command number (`\!`) and a timestamp (`\t`) to ensure that `script` logs and `.bash_history` are easy to correlate with server logs.
+
+### Recommended "Audit-Ready" Prompt:
+`export PS1="\[\e[32m\][\t] \[\e[31m\]\u@\h\[\e[m\]:\w (\!) \$ "`
+
+### Key Symbols Summary
+*   **~**: Current User's Home Directory.
+*   **$**: Unprivileged user.
+*   **#**: Root/Privileged user.
 
 ## 3. Advanced Customization & Tools
 
