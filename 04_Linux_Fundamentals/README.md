@@ -123,7 +123,7 @@ Debian utilizes the **Advanced Package Tool (`apt`)** to manage software install
 
 ### Learning Curve & Granular Control
 While Debian presents a steeper learning curve compared to user-friendly forks, it offers unparalleled flexibility. The initial configuration and setup require a deeper technical understanding, but this yields absolute administrative control over the system. 
-    
+
 *SysAdmin Note:* Increased control inherently feels more complex due to the sheer volume of possibilities and configurations available. However, mastering this complexity through deep-dive learning is vastly more efficient in the long run. Relying on GUI tools for "easy" tasks wastes time compared to mastering core CLI concepts, which we will explore further in the *Filter Contents* and *Find Files and Directories* sections.
 
 ### Stability & Long-Term Support (LTS)
@@ -163,3 +163,61 @@ While Bash is the industry standard, several other powerful shells are widely us
 * **Zsh (Z Shell):** Highly popular in development and pentesting (often standard in modern Kali Linux builds) for its advanced auto-completion and robust plugin frameworks (e.g., Oh My Zsh).
 * **Fish (Friendly Interactive Shell):** Known for its intelligent auto-suggestions and out-of-the-box syntax highlighting.
 * **Ksh (KornShell)** and **Tcsh/Csh (C Shell):** Frequently encountered when auditing or maintaining legacy UNIX environments.
+
+# Linux Fundamentals: Bash Prompt & PS1 Configuration
+
+The Bash prompt is the primary interface indicator that signals the system is ready to accept commands. By default, it provides critical environmental context, such as the current user identity, host machine, and the working directory.
+
+![Standard Bash Prompt Layout](img/bash_prompt_overview.png)
+
+## 1. Prompt Structure and Privilege Levels
+
+The standard syntax for a prompt is typically represented as:
+`<username>@<hostname>:<current_working_directory><symbol>`
+
+The terminal uses specific symbols to denote the current shell's privilege level:
+
+*   **Unprivileged User (`$`):** Indicates the session is running under standard user permissions.
+*   **Privileged/Root User (`#`):** Indicates an administrative or root session.
+
+> **Root ??**
+> **English:** The superuser account in Unix-like operating systems with full system access and administrative privileges.
+> **Español:** La cuenta de superusuario en sistemas operativos tipo Unix con acceso total al sistema y privilegios administrativos.
+
+In scenarios where a reverse shell is executed or the environment is not fully initialized, the prompt may default to a simple `$` or `#` because the **PS1** variable has not been exported or defined.
+
+## 2. The PS1 Variable
+
+The **PS1** (Prompt String 1) is an environment variable that defines the primary prompt structure. Customizing this variable is essential for maintaining situational awareness during penetration tests (e.g., displaying the target IP or a timestamp for logging purposes).
+
+> **PS1 ??**
+> **English:** The primary prompt string environment variable that defines the appearance and information displayed in the command-line prompt.
+> **Español:** La variable de entorno de la cadena de prompt primario que define la apariencia y la información mostrada en el prompt de la línea de comandos.
+
+### Special Characters for Customization
+
+To modify the prompt, special backslash-escaped characters are used within the `.bashrc` file:
+
+| Character | Description |
+| :--- | :--- |
+| `\u` | Current username |
+| `\h` | Short hostname (up to the first '.') |
+| `\H` | Full hostname |
+| `\w` | Full path of the current working directory |
+| `\W` | Basename of the current working directory |
+| `\d` | Date (e.g., "Wed Sep 04") |
+| `\t` | Current time (24-hour HH:MM:SS) |
+| `\n` | Newline character |
+
+### Implementation Example
+To set a descriptive prompt that includes the user, host, and full path, use:
+`export PS1="\u@\h:\w\$ "`
+
+## 3. Advanced Customization & Tools
+
+For complex environments, external tools can automate the generation of high-visibility prompts:
+
+*   **Bash Prompt Generator:** Web-based tools to visually construct PS1 strings.
+*   **Powerline:** A status line plugin that provides highly detailed, color-coded information for Vim, Bash, and other applications.
+
+Leveraging these configurations ensures that all actions captured via `script` or `.bash_history` are contextualized with timing and location data, which is vital for professional reporting and incident post-mortems.
