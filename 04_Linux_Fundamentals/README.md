@@ -154,8 +154,6 @@ Fundamentally, the shell operates as a highly versatile, text-based GUI. It proc
 
 To maximize operational efficiency, system administrators and pentesters rely on terminal emulators and **multiplexers** (such as `tmux` or `screen`). These tools provide advanced workspace management, enabling you to split a single terminal window into multiple panes, persist background sessions, and work across multiple directories simultaneously.
 
-An example of a terminal multiplexer (`tmux`) in action:
-
 
 ## The Shell Ecosystem
 
