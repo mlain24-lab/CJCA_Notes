@@ -168,8 +168,6 @@ While Bash is the industry standard, several other powerful shells are widely us
 
 The Bash prompt is the primary interface indicator that signals the system is ready to accept commands. By default, it provides critical environmental context, such as the current user identity, host machine, and the working directory.
 
-![Standard Bash Prompt Layout](img/bash_prompt_overview.png)
-
 ## 1. Prompt Structure and Privilege Levels
 
 The standard syntax for a prompt is typically represented as:
