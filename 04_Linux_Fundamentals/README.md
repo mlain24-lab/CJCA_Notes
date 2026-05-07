@@ -26,7 +26,7 @@ The Linux philosophy is driven by simplicity, modularity, and openness. It champ
 | :--- | :--- |
 | **Everything is a file** | All system resources (hardware devices, processes, network sockets) are represented as files. They can be read from and written to using standard I/O commands. |
 | **Small, single-purpose programs** | The ecosystem relies on lightweight, specialized tools designed to do one specific task flawlessly. |
-| **Chaining programs** | Utilities can be piped ( `&#124;` )  and integrated to parse, filter, and process data for complex tasks. |
+| **Chaining programs** | Utilities can be piped (  &#124;  )  and integrated to parse, filter, and process data for complex tasks. |
 | **Avoid captive interfaces** | Linux is optimized for the Command Line Interface (CLI/Shell), granting administrators granular control without GUI overhead. |
 | **Plain-text configuration** | Configuration data is stored in human-readable text files (e.g., `/etc/passwd`), simplifying management and automation. |
 
