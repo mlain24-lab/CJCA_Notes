@@ -77,4 +77,4 @@ Linux organizes files in a strict, tree-like structure defined by the Filesystem
 | `/sbin` | **System Binaries:** Executables intended exclusively for system administration (e.g., `fdisk`, `iptables`). |
 | `/tmp` | **Temporary Files:** Ephemeral storage used by applications. Typically cleared out upon system reboot. |
 | `/usr` | **User Programs:** Secondary hierarchy containing read-only user data, binaries, libraries, and documentation (`man` pages). |
-| `/var` | **Variable Data:**
+| `/var` | **Variable Data:** Files expected to change dynamically during system operation, including logs (`/var/log`), caches, and web roots (`/var/www`). |
