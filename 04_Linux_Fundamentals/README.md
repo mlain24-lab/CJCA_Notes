@@ -254,3 +254,84 @@ For complex environments, external tools can automate the generation of high-vis
 *   **Powerline:** A status line plugin that provides highly detailed, color-coded information for Vim, Bash, and other applications.
 
 Leveraging these configurations ensures that all actions captured via `script` or `.bash_history` are contextualized with timing and location data, which is vital for professional reporting and incident post-mortems.
+
+# 01. Getting Help in the Linux CLI
+
+## Overview
+Having established a solid foundation in Linux directory structures and the shell, the next operational phase is mastering command-line execution and self-reliance. In daily SysAdmin or pentesting workflows, encountering unfamiliar binaries or forgetting specific syntax flags is standard. Efficiently retrieving local documentation using native help functions and manual pages is a critical skill for troubleshooting and system enumeration.
+
+## Basic Enumeration: The `ls` Command
+The `ls` command is the standard utility for listing files and directories. Like most GNU core utilities, it supports various optional parameters to format or filter standard output.
+
+```shell
+MikyRedHat@htb[/htb]$ ls
+cacert.der  Documents  Music     Public     Videos
+Desktop     Downloads  Pictures  Templates
+```
+
+## Native Documentation: Manual Pages (`man`)
+The `man` command interfaces with the system's reference manuals, providing exhaustive documentation on commands, daemons, configuration files, and system calls. 
+
+**Syntax:**
+```shell
+MikyRedHat@htb[/htb]$ man <tool>
+```
+
+**Example:**
+```shell
+MikyRedHat@htb[/htb]$ man ls
+
+LS(1)                            User Commands                           LS(1)
+NAME
+       ls - list directory contents
+SYNOPSIS
+       ls [OPTION]... [FILE]...
+DESCRIPTION
+       List  information  about  the FILEs (the current directory by default).
+...
+```
+
+## Quick Syntax Reference: Help Flags
+For rapid parameter lookup without invoking a pager, most utilities support the `--help` flag or its short-form `-h`. This outputs the tool's usage synopsis directly to the terminal, which is ideal for quick checks while scripting or chaining commands.
+
+**Syntax:**
+```shell
+MikyRedHat@htb[/htb]$ <tool> --help
+MikyRedHat@htb[/htb]$ <tool> -h
+```
+
+**Examples:**
+```shell
+MikyRedHat@htb[/htb]$ ls --help
+Usage: ls [OPTION]... [FILE]...
+List information about the FILEs (the current directory by default).
+...
+```
+
+```shell
+MikyRedHat@htb[/htb]$ curl -h
+Usage: curl [options...] <url>
+     --abstract-unix-socket <path> Connect via abstract Unix domain socket
+...
+```
+
+## Keyword Searching: `apropos`
+When the exact binary name is unknown, the `apropos` command searches the short descriptions of all local man pages for a given keyword, effectively mapping required functions to available tools.
+
+**Syntax:**
+```shell
+MikyRedHat@htb[/htb]$ apropos <keyword>
+```
+
+**Example:**
+```shell
+MikyRedHat@htb[/htb]$ apropos sudo
+sudo (8)             - execute a command as another user
+sudo.conf (5)        - configuration for sudo front end
+sudo_plugin (8)      - Sudo Plugin API
+sudo_root (8)        - How to run administrative commands
+...
+```
+
+## External Resources
+When analyzing complex, heavily chained pipelines, [ExplainShell](https://explainshell.com/) is an excellent external resource that visually breaks down standard Linux commands and their respective flags.
