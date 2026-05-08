@@ -422,3 +422,108 @@ MikyRedHat@htb[/htb]$ uname -r
 ## Continuous Learning Methodology
 
 Navigating unfamiliar systems relies heavily on native documentation. Utilizing `man [command]` or `[command] --help` is mandatory for understanding flag options and uncovering advanced, non-standard execution methods. In a technical environment, discomfort when encountering undocumented scenarios is expected; systematic enumeration and documentation review are the primary mechanisms to overcome these technical hurdles.
+
+# Linux File System Navigation
+
+Navigating the Linux file system via the command-line interface (CLI) is a core competency for any SysAdmin or Cybersecurity professional. Efficient directory traversal and file enumeration are critical during both daily administration and post-exploitation phases. This module covers essential commands for spatial awareness, directory listing, terminal optimization, and path navigation. 
+
+*Note: It is highly recommended to experiment with these commands in a local virtual machine (Homelab). Always ensure you have an active snapshot before executing unfamiliar commands.*
+
+## Spatial Awareness (`pwd`)
+
+To identify your current working directory within the file system hierarchy, use the `pwd` (Print Working Directory) command. This outputs the absolute path of your current location.
+
+```bash
+cry0l1t3@htb[~]$ pwd
+/home/cry0l1t3
+```
+
+## Directory Enumeration (`ls`)
+
+The `ls` command is used to list directory contents. By default, running it without arguments displays visible files and directories in the current location.
+
+```bash
+cry0l1t3@htb[~]$ ls
+Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos
+```
+
+### Detailed Output (`ls -l`)
+For a more comprehensive view, including file permissions, ownership, and timestamps, append the `-l` (long format) flag.
+
+```bash
+cry0l1t3@htb[~]$ ls -l
+total 32
+drwxr-xr-x 2 cry0l1t3 htbacademy 4096 Nov 13 17:37 Desktop
+drwxr-xr-x 2 cry0l1t3 htbacademy 4096 Nov 13 17:34 Documents
+drwxr-xr-x 3 cry0l1t3 htbacademy 4096 Nov 15 03:26 Downloads
+...
+```
+*The `total 32` output indicates the amount of 1024-byte blocks used by the contents (32 blocks * 1024 bytes = 32 KB).*
+
+**Understanding the `-l` Output Columns:**
+
+| Column Content | Description |
+| :--- | :--- |
+| `drwxr-xr-x` | File type (`d` for directory) and access permissions. |
+| `2` | Number of hard links pointing to the file/directory. |
+| `cry0l1t3` | User owner of the file/directory. |
+| `htbacademy` | Group owner of the file/directory. |
+| `4096` | Size of the file or the number of blocks used to store directory info. |
+| `Nov 13 17:37` | Last modification date and time. |
+| `Desktop` | File or directory name. |
+
+### Hidden Files (`ls -la`)
+Standard enumeration omits hidden files (prefixed with a `.`, such as `.bashrc` or `.bash_history`). To display absolutely all contents, combine the all and long flags (`-la`).
+
+```bash
+cry0l1t3@htb[~]$ ls -la
+total 403188
+drwxr-xr-x 2 cry0l1t3 htbacademy 4096 Nov 13 17:37 .bash_history
+drwxr-xr-x 2 cry0l1t3 htbacademy 4096 Nov 13 17:37 .bashrc
+drwxr-xr-x 2 cry0l1t3 htbacademy 4096 Nov 13 17:37 Desktop
+...
+```
+
+You can also enumerate target directories remotely by passing the absolute path as an argument, bypassing the need to navigate there first:
+
+```bash
+cry0l1t3@htb[~]$ ls -l /var/
+total 52
+drwxr-xr-x  2 root root     4096 Mai 15 18:54 backups
+drwxr-xr-x 18 root root     4096 Nov 15 16:55 cache
+...
+```
+
+## Path Navigation (`cd`)
+
+The `cd` (Change Directory) command is utilized for file system traversal. You can use absolute paths (starting from the root `/`) or relative paths.
+
+```bash
+cry0l1t3@htb[~]$ cd /dev/shm
+cry0l1t3@htb[/dev/shm]$
+```
+
+**Essential Navigation Shortcuts:**
+*   **Previous Directory (`cd -`):** Quickly toggles back to the last directory you were in.
+    ```bash
+    cry0l1t3@htb[/dev/shm]$ cd -
+    cry0l1t3@htb[~]$
+    ```
+*   **Parent Directory (`cd ..`):** Moves you one level up in the directory hierarchy. The `..` represents the parent directory, while a single `.` represents the current directory.
+
+```bash
+    cry0l1t3@htb[/dev/shm]$ cd ..
+    cry0l1t3@htb[/dev]$
+    ```
+
+## Terminal Optimization & Shortcuts
+
+Agility in the CLI is vital. Use these built-in shortcuts to streamline your workflow:
+
+*   **Tab Completion:** Pressing `[TAB]` auto-completes file paths and commands. If multiple matches exist, pressing `[TAB]` twice will list all possible entries starting with your input.
+    ```bash
+    cry0l1t3@htb[~]$ cd /dev/s [TAB 2x]
+    shm/ snd/
+    ```
+*   **Clear Terminal:** The `clear` command or the `[Ctrl] + [L]` shortcut wipes the terminal screen, providing a clean workspace. You can chain commands using the `&&` operator (e.g., `cd shm && clear`).
+*   **Command History:** Use the Up/Down arrow keys (`↑` or `↓`) to scroll through your recently executed commands. For faster retrieval, `[Ctrl] + [R]` initiates a reverse search through your shell history.
