@@ -514,7 +514,8 @@ cry0l1t3@htb[/dev/shm]$
 ```bash
     cry0l1t3@htb[/dev/shm]$ cd ..
     cry0l1t3@htb[/dev]$
-    ```
+    
+```
 
 ## Terminal Optimization & Shortcuts
 
