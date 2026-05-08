@@ -335,3 +335,90 @@ sudo_root (8)        - How to run administrative commands
 
 ## External Resources
 When analyzing complex, heavily chained pipelines, [ExplainShell](https://explainshell.com/) is an excellent external resource that visually breaks down standard Linux commands and their respective flags.
+
+# System Information & Enumeration in Linux
+
+Understanding the structure of Linux systems—including processes, network configurations, user permissions, and directory structures—is fundamental for both routine system administration and security assessments. Properly leveraging native binaries is critical for identifying misconfigurations, discovering vulnerabilities, and mapping potential vectors for privilege escalation.
+
+## Essential Enumeration Tools
+
+The following utilities are pre-installed on most Linux distributions and are essential for situational awareness upon obtaining shell access.
+
+| Command | Description |
+| :--- | :--- |
+| `whoami` | Displays the current logged-in username. |
+| `id` | Returns the user's identity, including UID, GID, and effective group memberships. |
+| `hostname` | Sets or prints the name of the current host system. |
+| `uname` | Prints basic information about the OS kernel and system hardware. |
+| `pwd` | Returns the absolute path of the current working directory. |
+| `ifconfig` | Configures network interface parameters and assigns/views IP addresses (Deprecated; replaced by `ip`). |
+| `ip` | Shows or manipulates routing, network devices, interfaces, and tunnels. |
+| `netstat` | Displays network connections, routing tables, and interface statistics. |
+| `ss` | Investigates sockets (faster and more detailed alternative to `netstat`). |
+| `ps` | Displays the status of current running processes. |
+| `who` | Displays a list of users currently logged into the system. |
+| `env` | Prints the environment variables or sets/executes commands in a modified environment. |
+| `lsblk` | Lists information about all available or specified block devices. |
+| `lsusb` | Lists connected USB devices. |
+| `lsof` | Lists open files and the processes that opened them. |
+| `lspci` | Lists all PCI devices. |
+
+---
+
+## Secure Shell (SSH) Access
+
+**SSH (Secure Shell)** is the industry-standard protocol for executing commands on remote Unix-like hosts. It operates without a GUI, occupying minimal overhead while providing encrypted, secure administrative access.
+
+To initiate a connection to a target machine:
+
+```bash
+MikyRedHat@htb[/htb]$ ssh htb-student@[Target_IP]
+```
+
+---
+
+## Post-Exploitation & Situational Awareness
+
+Once reverse shell or SSH access is established, the immediate priority is situational awareness.
+
+### 1. Host Identification (`hostname`)
+Identifies the target machine within the network topology.
+
+```bash
+MikyRedHat@htb[/htb]$ hostname
+nixfund
+```
+
+### 2. User Context (`whoami` & `id`)
+Determines current privileges and execution context. The `id` command is crucial for auditing account permissions and group memberships to identify escalation paths.
+
+```bash
+MikyRedHat@htb[/htb]$ whoami
+cry0l1t3
+
+MikyRedHat@htb[/htb]$ id
+uid=1000(cry0l1t3) gid=1000(cry0l1t3) groups=1000(cry0l1t3),1337(hackthebox),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),116(lpadmin),126(sambashare)
+```
+*Security Note:* Group memberships often reveal potential attack vectors.
+*   `adm`: Allows reading log files (e.g., `/var/log`), potentially leaking sensitive data or credentials.
+*   `sudo`: Grants the ability to execute commands as `root`, serving as a direct path to privilege escalation.
+
+### 3. System Architecture & Kernel Enumeration (`uname`)
+Retrieves kernel and OS details to cross-reference against known CVEs and kernel exploits.
+
+```bash
+# Print all available system information
+MikyRedHat@htb[/htb]$ uname -a
+Linux box 4.15.0-99-generic #100-Ubuntu SMP Wed Apr 22 20:32:56 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+
+# Isolate the kernel release version for exploit hunting
+MikyRedHat@htb[/htb]$ uname -r
+4.15.0-99-generic
+```
+*Workflow Application:* With the output of `uname -r`, a Pentester can immediately query exploit databases (e.g., SearchSploit) for terms like `4.15.0-99-generic exploit` to identify potential local privilege escalation (LPE) vulnerabilities.
+
+---
+
+## Continuous Learning Methodology
+
+Navigating unfamiliar systems relies heavily on native documentation. Utilizing `man [command]` or `[command] --help` is mandatory for understanding flag options and uncovering advanced, non-standard execution methods. In a technical environment, discomfort when encountering undocumented scenarios is expected; systematic enumeration and documentation review are the primary mechanisms to overcome these technical hurdles.
