@@ -528,3 +528,118 @@ Agility in the CLI is vital. Use these built-in shortcuts to streamline your wor
     ```
 *   **Clear Terminal:** The `clear` command or the `[Ctrl] + [L]` shortcut wipes the terminal screen, providing a clean workspace. You can chain commands using the `&&` operator (e.g., `cd shm && clear`).
 *   **Command History:** Use the Up/Down arrow keys (`↑` or `↓`) to scroll through your recently executed commands. For faster retrieval, `[Ctrl] + [R]` initiates a reverse search through your shell history.
+
+# Linux File System Operations: Working with Files & Directories
+
+## Overview
+As SysAdmins and Junior Pentesters, manipulating the file system via the Command Line Interface (CLI) is a fundamental skill. Unlike Windows environments that rely heavily on graphical tools (e.g., File Explorer), Linux file management through the terminal provides unparalleled speed, efficiency, and automation capabilities. 
+
+Interacting directly via shell commands allows us to:
+* Bypass the overhead of interactive text editors (`vim`, `nano`) for rapid modifications.
+* Apply regular expressions (regex) for granular file selection.
+* Leverage stdout/stdin redirection to automate batch tasks across multiple files simultaneously.
+
+---
+
+## Core Operations: Create, Move, and Copy
+
+Before executing these operations, ensure you have established an SSH connection to the target host. 
+
+### File and Directory Creation
+The foundational commands for establishing a directory tree are `touch` (for empty file provisioning) and `mkdir` (for directory creation).
+
+**Syntax Definitions:**
+```bash
+# Create an empty file
+touch <filename>
+
+# Create a directory
+mkdir <directory_name>
+```
+
+**Implementation Example:**
+Let's provision a baseline structure by creating an `info.txt` file and a `Storage` directory.
+```bash
+MikyRedHat@htb[/htb]$ touch info.txt
+MikyRedHat@htb[/htb]$ mkdir Storage
+```
+
+#### Creating Parent Directories (`mkdir -p`)
+When architecting complex directory trees, running `mkdir` sequentially for each nested folder is highly inefficient. The `-p` (parents) flag streamlines this by generating the entire directory path in a single execution.
+
+```bash
+MikyRedHat@htb[/htb]$ mkdir -p Storage/local/user/documents
+```
+
+We can verify the filesystem structure using the `tree` utility:
+```bash
+MikyRedHat@htb[/htb]$ tree .
+.
+├── info.txt
+└── Storage
+    └── local
+        └── user
+            └── documents
+
+4 directories, 1 file
+```
+
+#### Relative Pathing
+Files can be provisioned directly into nested directories using relative paths. The single dot (`.`) references the Current Working Directory (CWD).
+
+```bash
+MikyRedHat@htb[/htb]$ touch ./Storage/local/user/userinfo.txt
+```
+
+### Moving and Renaming (`mv`)
+In Unix-like systems, the `mv` command serves a dual purpose: relocating files across the directory tree and renaming them (which is fundamentally moving a file to the same location with a new string identifier).
+
+**Syntax Definition:**
+```bash
+mv <source_item> <destination_item>
+```
+
+**Implementation Example:**
+Rename `info.txt` to `information.txt`, then relocate it alongside a newly created `readme.txt` into the `Storage/` directory.
+
+```bash
+# Rename the file
+MikyRedHat@htb[/htb]$ mv info.txt information.txt
+
+# Create a secondary file
+MikyRedHat@htb[/htb]$ touch readme.txt
+
+# Move both files to the target directory concurrently
+MikyRedHat@htb[/htb]$ mv information.txt readme.txt Storage/
+```
+
+### Copying Files (`cp`)
+To duplicate data without removing the source file, we utilize the `cp` command.
+
+**Implementation Example:**
+Duplicate `readme.txt` from the `Storage/` root into the nested `local/` subdirectory.
+
+```bash
+MikyRedHat@htb[/htb]$ cp Storage/readme.txt Storage/local/
+```
+
+**Post-Operation Verification:**
+```bash
+MikyRedHat@htb[/htb]$ tree .
+.
+└── Storage
+    ├── information.txt
+    ├── local
+    │   ├── readme.txt
+    │   └── user
+    │       ├── documents
+    │       └── userinfo.txt
+    └── readme.txt
+
+4 directories, 4 files
+```
+
+---
+
+## Next Steps: Advanced Manipulation
+Beyond foundational file operations, mastering Linux requires fluency in I/O redirection and CLI text editors. Redirection allows for the seamless manipulation of data streams between commands and files, optimizing file modifications. Subsequent modules will cover interactive editing via `vim` and `nano` to solidify your incident handling and system administration workflows.
