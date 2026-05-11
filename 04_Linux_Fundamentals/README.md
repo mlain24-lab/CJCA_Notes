@@ -866,3 +866,10 @@ MikyRedHat@htb[/htb]$ find /etc/ -name *.conf 2>/dev/null | grep systemd | wc -l
 
 ## Summary
 A fundamental understanding of File Descriptors, stream redirections, and pipes is critical for robust system administration and security auditing. Mastering these mechanics allows for precise data flow manipulation, avoiding unnecessary I/O steps, and efficiently filtering critical information from system logs and terminal outputs.
+
+```bash
+
+dpkg -l | grep "ii" | wc -l
+
+```
+sirve para ver los paquetes correctamente instalados en el host.
