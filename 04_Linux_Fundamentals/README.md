@@ -782,8 +782,6 @@ MikyRedHat@htb[/htb]$ locate *.conf
 **Key Takeaway (`find` vs. `locate`):**
 Use `locate` for rapid, broad queries when you already know parts of the filename. Pivot to `find` when you need granular filtering (e.g., identifying files by size, date, or ownership) or when searching dynamic paths that might not yet be indexed by `updatedb`.
 
-![File Descriptors and Redirections](img/file_descriptors_header.png)
-
 # Linux File Descriptors, Redirections, and Pipes
 
 ## 1. Overview: File Descriptors (FD)
