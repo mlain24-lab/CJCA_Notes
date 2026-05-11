@@ -643,3 +643,79 @@ MikyRedHat@htb[/htb]$ tree .
 
 ## Next Steps: Advanced Manipulation
 Beyond foundational file operations, mastering Linux requires fluency in I/O redirection and CLI text editors. Redirection allows for the seamless manipulation of data streams between commands and files, optimizing file modifications. Subsequent modules will cover interactive editing via `vim` and `nano` to solidify your incident handling and system administration workflows.
+
+
+# Linux File Editing: Nano and Vim
+
+## Introduction to Text Editors
+After mastering file and directory creation, the next logical step in command-line proficiency is file editing. Linux offers several text editors, with **Vi** and **Vim** being the industry standards. However, for initial familiarization, we will begin with **Nano**, a straightforward and user-friendly editor.
+
+## The Nano Editor
+To create or edit a file using Nano, append the target filename as an argument to the command. For instance, to initialize a new file named `notes.txt`, execute:
+
+```bash
+MikyRedHat@htb[/htb]$ nano notes.txt
+```
+
+This command drops you directly into the Nano interface (often referred to as a "pager"), allowing immediate text input. Nano's low barrier to entry makes it an excellent tool for quick file modifications, especially during initial reconnaissance or rapid payload tweaking.
+
+### Nano Interface and Shortcuts
+Within Nano, the bottom of the terminal displays a cheat sheet of essential commands. The caret symbol (`^`) represents the `[CTRL]` key.
+
+```text
+  GNU nano 2.9.3                                    notes.txt                                              
+Here we can type everything we want and make our notes.
+
+^G Get Help    ^O Write Out   ^W Where Is    ^K Cut Text    ^J Justify     ^C Cur Pos     M-U Undo
+^X Exit        ^R Read File   ^\ Replace     ^U Uncut Text  ^T To Spell    ^_ Go To Line  M-E Redo
+```
+
+* **Searching:** Press `[CTRL + W]` ("Where Is") to trigger the search prompt. Typing a string (e.g., "we") and pressing `[ENTER]` moves the cursor to the first match. To jump to the next occurrence, press `[CTRL + W]` followed immediately by `[ENTER]`.
+* **Saving Output:** Press `[CTRL + O]` ("Write Out") and confirm the filename with `[ENTER]` to save your buffer to disk.
+* **Exiting:** Press `[CTRL + X]` to terminate the editor and return to the shell.
+
+### Verifying File Contents
+Once back in the shell, use the `cat` command to output the file's contents to the standard output (stdout):
+
+```bash
+MikyRedHat@htb[/htb]$ cat notes.txt
+Here we can type everything we want and make our notes.
+```
+
+## Security Context: Critical System Files
+In Linux environments, improper file permissions frequently provide penetration testers with privilege escalation vectors. A prime target is the `/etc/passwd` file. This file stores core user attributes, including usernames, User IDs (UIDs), Group IDs (GIDs), and home directory paths.
+
+Historically, `/etc/passwd` also contained password hashes. Modern systems have migrated these hashes to the `/etc/shadow` file, which enforces stricter access controls. However, if an administrator misconfigures the permissions on `/etc/passwd` or `/etc/shadow`, it can expose sensitive data or allow unauthorized user creation. Identifying such misconfigurations is a critical phase when assessing a system's security posture.
+
+## The Vim Editor
+**Vim** (Vi IMproved) is an open-source, highly efficient text editor favored by system administrators and penetration testers. Unlike Nano, Vim adheres to the Unix philosophy: it focuses strictly on text editing and relies on external utilities (`grep`, `awk`, `sed`) for complex data manipulation. This modular approach makes Vim lightweight, fast, flexible, and incredibly powerful.
+
+### Launching Vim
+```bash
+MikyRedHat@htb[/htb]$ vim
+```
+
+### Vim Operating Modes
+Vim is a **modal editor**, meaning the behavior of keystrokes changes depending on the active mode. Mastering these six fundamental modes is key to leveraging Vim's full potential for fast configuration file edits during an engagement:
+
+| Mode | Description |
+| :--- | :--- |
+| **Normal** | The default state upon launch. Keystrokes are interpreted as editor commands (e.g., navigation, deletion, copying) rather than text input. |
+| **Insert** | Activated to type text into the buffer, functioning similarly to standard text editors. |
+| **Visual** | Used to highlight contiguous text blocks. The highlighted area can then be manipulated (deleted, copied, replaced) using standard commands. |
+| **Command** | Accessed by typing `:` from Normal mode. Allows execution of single-line commands at the bottom of the screen (e.g., saving, quitting, global string substitution). |
+| **Replace** | Overwrites existing characters at the cursor's position. If the cursor reaches the end of the line, it appends the new text. |
+| **Ex** | Emulates the legacy 'Ex' editor, allowing the execution of batch commands sequentially without reverting to Normal mode after each execution. |
+
+### Exiting Vim
+To exit Vim, ensure you are in Normal mode (press `[ESC]`), type `:` to enter Command mode, followed by `q` (quit), and hit `[ENTER]`.
+```text
+:q
+```
+
+### VimTutor
+Vim includes a built-in interactive tutorial called `vimtutor`. While Vim's learning curve can seem steep initially, dedicating 20-30 minutes to this tutorial rapidly builds the muscle memory and efficiency required for advanced system administration. Launch it directly from your terminal:
+
+```bash
+MikyRedHat@htb[/htb]$ vimtutor
+```
