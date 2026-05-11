@@ -781,3 +781,90 @@ MikyRedHat@htb[/htb]$ locate *.conf
 
 **Key Takeaway (`find` vs. `locate`):**
 Use `locate` for rapid, broad queries when you already know parts of the filename. Pivot to `find` when you need granular filtering (e.g., identifying files by size, date, or ownership) or when searching dynamic paths that might not yet be indexed by `updatedb`.
+
+![File Descriptors and Redirections](img/file_descriptors_header.png)
+
+# Linux File Descriptors, Redirections, and Pipes
+
+## 1. Overview: File Descriptors (FD)
+In Unix/Linux operating systems, a **File Descriptor (FD)** is a unique, kernel-managed reference used to handle Input/Output (I/O) operations. It serves as an identifier for open files, sockets, or other I/O resources (analogous to a *file handle* in Windows environments). 
+
+*Analogy*: Consider an FD as a coatroom claim ticket. The ticket (FD) maps to your coat (the I/O resource). To retrieve your coat, you present the ticket to the attendant (the OS/kernel). Without it, the system cannot efficiently locate or interact with the active connection.
+
+### Standard Data Streams
+By default, Linux environments allocate the first three file descriptors as follows:
+* **`0` (STDIN)**: Standard Input (Data stream for input)
+* **`1` (STDOUT)**: Standard Output (Data stream for standard output)
+* **`2` (STDERR)**: Standard Error (Data stream for error messages and diagnostics)
+
+---
+
+## 2. Stream Redirection Techniques
+
+### 2.1 STDIN and STDOUT Fundamentals (`cat`)
+When executing a program like `cat`, the system waits for STDIN (FD 0). Once input is confirmed via `[ENTER]`, the kernel processes the data and returns it to the terminal as STDOUT (FD 1).
+
+### 2.2 Handling STDOUT and STDERR (`find`)
+Errors during command execution, such as attempting to read protected files without adequate privileges, are routed to STDERR (FD 2).
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name shadow
+```
+*Expected Result*: The terminal displays `Permission denied` output via STDERR.
+
+### 2.3 Discarding STDERR (`2>/dev/null`)
+During reconnaissance or routine searches, error noise can clutter the terminal. We can suppress this by redirecting STDERR (FD 2) to the null device (`/dev/null`), effectively dropping the error data into a black hole.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name shadow 2>/dev/null
+```
+
+### 2.4 Redirecting STDOUT to a File (`>`)
+To capture clean output, we can discard STDERR and redirect STDOUT to a text file. The `>` operator will overwrite the target file if it already exists.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name shadow 2>/dev/null > results.txt
+```
+
+### 2.5 Segregating STDOUT and STDERR (`1>` and `2>`)
+For proper auditing and log management, it is often necessary to separate standard output from error logs without losing data. We achieve this by redirecting each FD to its respective file.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name shadow 2> stderr.txt 1> stdout.txt
+```
+
+### 2.6 Redirecting STDIN (`<`)
+Just as `>` directs output to a destination, `<` feeds input from a source. We can inject the contents of a file as STDIN directly into a command.
+```bash
+MikyRedHat@htb[/htb]$ cat < stdout.txt
+```
+
+### 2.7 Appending STDOUT (`>>`)
+To preserve existing file contents while appending new output, use the double greater-than operator `>>`.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name passwd >> stdout.txt 2>/dev/null
+```
+
+### 2.8 Here-Documents / Stream to File (`<< EOF`)
+To input multi-line strings or interactively feed a stream until a specific delimiter (End-Of-File) is met, we use the `<<` operator.
+```bash
+MikyRedHat@htb[/htb]$ cat << EOF > stream.txt
+```
+
+---
+
+## 3. Command Chaining with Pipes (`|`)
+Pipes (`|`) are a powerful mechanism used to pass the STDOUT of one command directly as the STDIN of another, enabling modular data processing and complex command-line execution.
+
+### 3.1 Filtering Output (`grep`)
+In this example, we search for `.conf` files, discard error messages, and pipe the clean STDOUT into `grep` to filter for the pattern `systemd`.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name *.conf 2>/dev/null | grep systemd
+```
+
+### 3.2 Counting Pipeline Results (`wc -l`)
+Pipes can be chained sequentially to refine data further. Here, we pipe the filtered `grep` output into `wc -l` to count the exact number of matching lines.
+```bash
+MikyRedHat@htb[/htb]$ find /etc/ -name *.conf 2>/dev/null | grep systemd | wc -l
+```
+
+---
+
+## Summary
+A fundamental understanding of File Descriptors, stream redirections, and pipes is critical for robust system administration and security auditing. Mastering these mechanics allows for precise data flow manipulation, avoiding unnecessary I/O steps, and efficiently filtering critical information from system logs and terminal outputs.
