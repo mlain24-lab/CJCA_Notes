@@ -719,3 +719,65 @@ Vim includes a built-in interactive tutorial called `vimtutor`. While Vim's lear
 ```bash
 MikyRedHat@htb[/htb]$ vimtutor
 ```
+# Enumerating Files and Directories in Linux
+
+During post-exploitation or standard system administration troubleshooting, locating configuration files, user-created scripts, and hidden directories is critical. Instead of manually traversing the file system, we leverage built-in Linux utilities to automate and expedite this process.
+
+## 1. The `which` Command
+
+The `which` tool is used to identify the absolute path of executables located within the system's `$PATH` environment variable. It is a highly effective way to determine if specific programming languages or utilities (e.g., `python`, `curl`, `netcat`, `gcc`) are installed and accessible on the target host.
+
+```bash
+MikyRedHat@htb[/htb]$ which python
+/usr/bin/python
+```
+> **Note:** If the binary is not installed or not present in the user's `$PATH`, the command returns no output.
+
+## 2. The `find` Command
+
+The `find` command is a powerful enumeration tool that searches for files and directories within a specified directory hierarchy. Unlike `which`, `find` includes extensive filtering capabilities based on file size, modification dates, ownership, and permissions.
+
+**Basic Syntax:**
+```bash
+find <target_location> <options>
+```
+
+**Advanced Usage Example:**
+The following command searches the entire root filesystem (`/`) for configuration files, applying multiple filters and executing an action on the results, while cleanly discarding any access-denied errors.
+
+```bash
+MikyRedHat@htb[/htb]$ find / -type f -name "*.conf" -user root -size +20k -newermt 2020-03-03 -exec ls -al {} \; 2>/dev/null
+```
+
+**Parameter Breakdown:**
+*   `-type f`: Specifies the object type to search for (`f` stands for files, `d` for directories).
+*   `-name "*.conf"`: Filters results by name, using the `*` wildcard to match any file ending with the `.conf` extension.
+*   `-user root`: Restricts the search to files owned by the `root` user.
+*   `-size +20k`: Filters the output to display only files larger than 20 KiB.
+*   `-newermt 2020-03-03`: Matches files modified more recently than the specified timestamp.
+*   `-exec ls -al {} \;`: Executes the `ls -al` command against each matched file. The `{}` acts as a placeholder for the file path, and the escaped semicolon `\;` terminates the `-exec` statement.
+*   `2>/dev/null`: Redirects standard error (`STDERR`) to the null device. This suppresses "Permission denied" warnings, keeping the terminal output clean and readable.
+
+## 3. The `locate` Command
+
+When speed is a priority and granular filtering is not required, `locate` is the preferred tool. Instead of querying the live filesystem directly, `locate` searches through a pre-compiled local database, making it significantly faster than `find`.
+
+**Updating the Database:**
+To ensure the search results are accurate and include recently created files, the database must be updated first using sudo privileges:
+
+```bash
+MikyRedHat@htb[/htb]$ sudo updatedb
+```
+
+**Executing a Search:**
+```bash
+MikyRedHat@htb[/htb]$ locate *.conf
+/etc/GeoIP.conf
+/etc/NetworkManager/NetworkManager.conf
+/etc/UPower/UPower.conf
+/etc/adduser.conf
+<SNIP>
+```
+
+**Key Takeaway (`find` vs. `locate`):**
+Use `locate` for rapid, broad queries when you already know parts of the filename. Pivot to `find` when you need granular filtering (e.g., identifying files by size, date, or ownership) or when searching dynamic paths that might not yet be indexed by `updatedb`.
