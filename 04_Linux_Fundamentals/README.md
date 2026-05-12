@@ -1045,3 +1045,119 @@ mysql:x:116:120:MySQL Server,,:/nonexistent:/bin/false
 cry0l1t3@htb:~$ grep "my" /etc/passwd | grep "false"
 mysql:x:116:120:MySQL Server,,:/nonexistent:/bin/false
 ```
+# Linux File Permissions & Ownership
+
+In Linux, permissions act as a core security mechanism, controlling access to files and directories. These permissions are assigned to users and groups, functioning as access control lists that define what actions can be performed on system resources.
+
+Every file and directory is owned by a specific user and associated with a primary group. When a new resource is created, it inherits the creator's UID (User ID) and primary GID (Group ID). Permissions establish the specific read, write, and execute rights for the owner, the group, and all other users on the system.
+
+## Directory Traversal & Execute Permissions
+
+Accessing the contents of a Linux directory requires specific privileges. To "traverse" or navigate into a directory (e.g., using the `cd` command), a user must possess **execute (`x`)** permissions on that directory. 
+
+Without the execute bit set, a user cannot enter the directory or access its internal structure, even if they have read permissions to see its contents. Attempting to do so will result in a `Permission denied` error.
+
+```bash
+cry0l1t3@htb[/htb]$ ls -ld scripts
+drw-rw-r-- 3 cry0l1t3 cry0l1t3   4096 Jan 12 12:30 scripts
+
+cry0l1t3@htb[/htb]$ ls -al mydirectory/
+ls: cannot access 'mydirectory/script.sh': Permission denied
+ls: cannot access 'mydirectory/..': Permission denied
+ls: cannot access 'mydirectory/subdirectory': Permission denied
+ls: cannot access 'mydirectory/.': Permission denied
+total 0
+d????????? ? ? ? ?            ? .
+d????????? ? ? ? ?            ? ..
+-????????? ? ? ? ?            ? script.sh
+d????????? ? ? ? ?            ? subdirectory
+```
+
+*Note:* Execute permissions on a directory only allow traversal; they do not inherently grant the right to execute files within it. To modify directory contents (create, delete, or rename files or subdirectories), **write (`w`)** permissions are required on the directory itself.
+
+## The Octal Permission System
+
+Linux file permissions are based on an octal number system consisting of three core attributes:
+*   **(r) - Read:** Value of `4`
+*   **(w) - Write:** Value of `2`
+*   **(x) - Execute:** Value of `1`
+
+These attributes are assigned across three standard scopes: **Owner (u)**, **Group (g)**, and **Others (o)**.
+
+```bash
+cry0l1t3@htb[/htb]$ ls -l /etc/passwd
+- rwx rw- r--   1 root root 1641 May  4 23:42 /etc/passwd
+|  |   |   |    |  |    |    |        |_ Date
+|  |   |   |    |  |    |    |__________ File Size
+|  |   |   |    |  |    |_______________ Group
+|  |   |   |    |  |____________________ User
+|  |   |   |    |_______________________ Number of hard links
+|  |   |   |____________________________ Permissions of others (read)
+|  |   |________________________________ Permissions of the group (read, write)
+|  |____________________________________ Permissions of the owner (read, write, execute)
+|_______________________________________ File type (- = File, d = Directory, l = Link)
+```
+
+## Modifying Permissions (`chmod`)
+
+The `chmod` command is used to modify file and directory permissions. This can be done using symbolic representation (`u`, `g`, `o`, `a` combined with `+` or `-`) or absolute octal values.
+
+**Example:** Modifying permissions symbolically to grant read rights to all users:
+```bash
+cry0l1t3@htb[/htb]$ ls -l shell
+-rwxr-x--x   1 cry0l1t3 htbteam 0 May  4 22:12 shell
+
+cry0l1t3@htb[/htb]$ chmod a+r shell && ls -l shell
+-rwxr-xr-x   1 cry0l1t3 htbteam 0 May  4 22:12 shell
+```
+
+**Example:** Applying absolute octal values (`754` = `rwxr-xr--`):
+```bash
+cry0l1t3@htb[/htb]$ chmod 754 shell && ls -l shell
+-rwxr-xr--   1 cry0l1t3 htbteam 0 May  4 22:12 shell
+```
+
+### Octal Calculation Breakdown
+```text
+Binary Notation:                4 2 1  |  4 2 1  |  4 2 1
+----------------------------------------------------------
+Binary Representation:          1 1 1  |  1 0 1  |  1 0 0
+----------------------------------------------------------
+Octal Value:                      7    |    5    |    4
+----------------------------------------------------------
+Permission Representation:      r w x  |  r - x  |  r - -
+```
+
+## Changing Ownership (`chown`)
+
+To transfer the ownership or change the primary group assignment of a file or directory, use the `chown` command.
+
+**Syntax:**
+```bash
+chown <user>:<group> <file/directory>
+```
+
+**Example:**
+```bash
+cry0l1t3@htb[/htb]$ chown root:root shell && ls -l shell
+-rwxr-xr--   1 root root 0 May  4 22:12 shell
+```
+
+## Advanced Permissions: SUID, SGID & Sticky Bit
+
+### SUID & SGID
+Set User ID (SUID) and Set Group ID (SGID) are special permission bits that allow users to execute a binary with the privileges of the file's owner or group, rather than the user executing it. 
+
+In the permission string, these bits are represented by an `s` instead of the standard `x` (e.g., `-rwsr-xr-x`). While necessary for certain system functions, misconfigured SUID/SGID binaries pose severe security risks and are common vectors for privilege escalation. For instance, exploiting a binary like `journalctl` with an SUID bit can allow an attacker to spawn a root shell, granting them complete system control (further details can be found on GTFOBins).
+
+### Sticky Bit
+The Sticky Bit is an access-control safeguard typically applied to shared directories (like `/tmp`). When enforced, it ensures that only the file's owner, the directory's owner, or the `root` user can rename or delete files within that directory, preventing unauthorized tampering in collaborative workspaces.
+
+It is represented by a `t` or `T` at the end of the permission string:
+```bash
+cry0l1t3@htb[/htb]$ ls -ld scripts reports
+drw-rw-r-t 3 cry0l1t3 cry0l1t3   4096 Jan 12 12:30 scripts
+drw-rw-r-T 3 cry0l1t3 cry0l1t3   4096 Jan 12 12:32 reports
+```
+*   **`t` (Lowercase):** The sticky bit is set, and the directory *has* execute (`x`) permissions for others.
+*   **`T` (Uppercase):** The sticky bit is set, but the directory *lacks* execute (`x`) permissions for others.
