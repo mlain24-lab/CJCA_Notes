@@ -873,3 +873,110 @@ dpkg -l | grep "ii" | wc -l
 
 ```
 sirve para ver los paquetes correctamente instalados en el host.
+
+
+# CLI Content Filtering and Output Manipulation
+
+Standard output (`stdout`) redirection is a powerful mechanism in Linux, but to efficiently parse, audit, or troubleshoot data (such as system logs or configuration files), we must leverage specialized command-line filtering tools. The following utilities are essential for stream processing, string manipulation, and data parsing without the need for interactive text editors.
+
+## 1. Pagers: Viewing Large Outputs
+
+Pagers allow for interactive scrolling through large files or command outputs that exceed the terminal's viewport.
+
+*   **`more`**: A basic pager that reads the standard input and displays it screen by screen. Navigation is strictly forward.
+    ```bash
+    MikyRedHat@htb[/htb]$ cat /etc/passwd | more
+    ```
+    *Note: Press `[Q]` to exit. The read output remains in the terminal buffer.*
+
+*   **`less`**: A highly advanced pager with extended functionality. It allows both forward and backward navigation, robust searching, and does not leave the viewed content in the terminal buffer upon exiting `[Q]`.
+    ```bash
+    MikyRedHat@htb[/htb]$ less /etc/passwd
+    ```
+
+## 2. Boundary Inspection: `head` & `tail`
+
+When auditing logs or configuration files, you often only need to inspect the beginning or the end of a file.
+
+*   **`head`**: Outputs the first ten lines of a file by default. Excellent for checking headers or recent entries in reverse-ordered logs.
+    
+```bash
+    MikyRedHat@htb[/htb]$ head /etc/passwd
+    ```
+*   **`tail`**: Outputs the last ten lines of a file by default. Highly useful for monitoring active logs or identifying newly appended configurations.
+    ```bash
+    MikyRedHat@htb[/htb]$ tail /etc/passwd
+    ```
+
+## 3. Data Parsing & Stream Manipulation
+
+To extract actionable intelligence from raw data, we pipeline multiple text-processing utilities.
+
+### Sorting Data (`sort`)
+Organizes standard input alphabetically or numerically, making raw datasets significantly easier to analyze.
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | sort
+```
+
+### Pattern Matching (`grep`)
+A fundamental tool for searching plain-text data sets for lines that match a regular expression.
+*   **Standard Match**: Extract lines containing a specific string (e.g., users with bash access).
+    ```bash
+    MikyRedHat@htb[/htb]$ cat /etc/passwd | grep "/bin/bash"
+    ```
+*   **Inverted Match (`-v`)**: Exclude specific patterns from the output (e.g., filtering out service accounts).
+    
+```bash
+    MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin"
+    ```
+
+### Field Extraction (`cut`)
+Removes sections from each line of files or data streams based on a specified delimiter.
+*   `-d":"`: Defines the colon as the delimiter.
+*   `-f1`: Extracts the first field (the username in `/etc/passwd`).
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | cut -d":" -f1
+```
+
+### Character Translation (`tr`)
+Translates, squeezes, or deletes characters from standard input. Useful for sanitizing outputs.
+```bash
+# Replacing colons with spaces
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " "
+```
+
+## 4. Advanced Formatting and Processing
+
+When data lacks uniformity, more programmatic tools are required to stabilize the output structure.
+
+### Output Formatting (`column`)
+Parses raw inputs and structures them into highly readable tabular formats.
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " " | column -t
+```
+
+### Pattern Scanning and Processing Language (`awk`)
+A robust programming language designed for advanced text processing. Ideal for dynamically handling rows with variable column counts.
+*   `$1`: Prints the first column.
+*   `$NF`: Prints the last column (Number of Fields), regardless of the total column count.
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " " | awk '{print $1, $NF}'
+```
+
+### Stream Editor (`sed`)
+Performs basic text transformations on an input stream. Primarily used for regex-based string substitution.
+*   Syntax: `s/pattern/replacement/g` (`s` = substitute, `g` = global).
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " " | awk '{print $1, $NF}' | sed 's/bin/HTB/g'
+```
+
+### Word, Line, and Character Counting (`wc`)
+Calculates the numerical statistics of a file or stream. Vital for verifying the scope of an output without manual counting.
+*   `-l`: Outputs the total number of lines.
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " " | awk '{print $1, $NF}' | wc -l
+```
+
+## 5. Workflow Recommendations
+
+Familiarity with these utilities is developed through constant application. Always consult the built-in manuals (`man <tool>` or `<tool> --help`) to discover advanced flags. Pipelining these tools allows for the creation of sophisticated, automated data filtering mechanisms crucial for systems administration and penetration testing tasks.
