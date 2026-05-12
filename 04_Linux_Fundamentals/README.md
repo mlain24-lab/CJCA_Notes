@@ -886,7 +886,7 @@ Pagers allow for interactive scrolling through large files or command outputs th
 *   **`more`**: A basic pager that reads the standard input and displays it screen by screen. Navigation is strictly forward.
     ```bash
     MikyRedHat@htb[/htb]$ cat /etc/passwd | more
-    ```
+```
     *Note: Press `[Q]` to exit. The read output remains in the terminal buffer.*
 
 *   **`less`**: A highly advanced pager with extended functionality. It allows both forward and backward navigation, robust searching, and does not leave the viewed content in the terminal buffer upon exiting `[Q]`.
@@ -899,19 +899,15 @@ Pagers allow for interactive scrolling through large files or command outputs th
 When auditing logs or configuration files, you often only need to inspect the beginning or the end of a file.
 
 *   **`head`**: Outputs the first ten lines of a file by default. Excellent for checking headers or recent entries in reverse-ordered logs.
-    
+
 ```bash
-    
-    MikyRedHat@htb[/htb]$ head /etc/passwd
-    
-    ```
+MikyRedHat@htb[/htb]$ head /etc/passwd
+```
 *   **`tail`**: Outputs the last ten lines of a file by default. Highly useful for monitoring active logs or identifying newly appended configurations.
-    
-    ```bash
-    
-    MikyRedHat@htb[/htb]$ tail /etc/passwd
-    
-    ```
+
+```bash
+MikyRedHat@htb[/htb]$ tail /etc/passwd
+```
 
 ## 3. Data Parsing & Stream Manipulation
 
@@ -919,6 +915,7 @@ To extract actionable intelligence from raw data, we pipeline multiple text-proc
 
 ### Sorting Data (`sort`)
 Organizes standard input alphabetically or numerically, making raw datasets significantly easier to analyze.
+
 ```bash
 MikyRedHat@htb[/htb]$ cat /etc/passwd | sort
 ```
