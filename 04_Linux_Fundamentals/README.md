@@ -1014,7 +1014,7 @@ RegEx utilizes specific syntax to group and quantify desired search patterns. Th
 | **Round Brackets** | `(a)` | Used to create **Capture Groups**. Defines sub-patterns within the regex that are processed or extracted together. |
 | **Square Brackets** | `[a-z]` | Defines **Character Classes**. Specifies a custom list or range of characters to match at a given position. |
 | **Curly Brackets** | `{1,10}` | Defines **Quantifiers**. Specifies the exact number or range of times the preceding pattern must occur. |
-| **Pipe / OR** | `( | )` | Acts as a logical **OR** operator. Yields a match if the expression on either side is found. |
+| **Pipe / OR** | `<code>&#124;</code>` | Acts as a logical **OR** operator. Yields a match if the expression on either side is found. |
 | **Dot Star / AND** | `.*` | Functions similarly to a sequential **AND**. It matches any character (`.`) zero or more times (`*`), ensuring both expressions are present in the specified order. |
 
 ### Practical Implementation with `grep`
