@@ -901,11 +901,16 @@ When auditing logs or configuration files, you often only need to inspect the be
 *   **`head`**: Outputs the first ten lines of a file by default. Excellent for checking headers or recent entries in reverse-ordered logs.
     
 ```bash
+    
     MikyRedHat@htb[/htb]$ head /etc/passwd
+    
     ```
 *   **`tail`**: Outputs the last ten lines of a file by default. Highly useful for monitoring active logs or identifying newly appended configurations.
+    
     ```bash
+    
     MikyRedHat@htb[/htb]$ tail /etc/passwd
+    
     ```
 
 ## 3. Data Parsing & Stream Manipulation
