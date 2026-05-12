@@ -998,3 +998,50 @@ MikyRedHat@htb[/htb]$ cat /etc/passwd | grep -v "false\|nologin" | tr ":" " " | 
 ## 5. Workflow Recommendations
 
 Familiarity with these utilities is developed through constant application. Always consult the built-in manuals (`man <tool>` or `<tool> --help`) to discover advanced flags. Pipelining these tools allows for the creation of sophisticated, automated data filtering mechanisms crucial for systems administration and penetration testing tasks.
+
+# Regular Expressions (RegEx)
+
+Regular expressions (RegEx) serve as precise blueprints for pattern matching, string manipulation, and data extraction across text and files. They act as highly customizable filters, essential for log analysis, input validation, and advanced search operations.
+
+At its core, a regular expression utilizes a sequence of characters and metacharacters. These metacharacters define the structural pattern of the search (e.g., specifying digit classes, letters, or wildcards) rather than representing literal text. RegEx is natively integrated into core administrative and pentesting tools like `grep`, `sed`, and `awk`.
+
+## Grouping & Operators
+
+RegEx utilizes specific syntax to group and quantify desired search patterns. The core concepts rely on three distinct bracket types and logical operators:
+
+| Operator | Syntax Example | Description |
+| :--- | :--- | :--- |
+| **Round Brackets** | `(a)` | Used to create **Capture Groups**. Defines sub-patterns within the regex that are processed or extracted together. |
+| **Square Brackets** | `[a-z]` | Defines **Character Classes**. Specifies a custom list or range of characters to match at a given position. |
+| **Curly Brackets** | `{1,10}` | Defines **Quantifiers**. Specifies the exact number or range of times the preceding pattern must occur. |
+| **Pipe / OR** | `|` | Acts as a logical **OR** operator. Yields a match if the expression on either side is found. |
+| **Dot Star / AND** | `.*` | Functions similarly to a sequential **AND**. It matches any character (`.`) zero or more times (`*`), ensuring both expressions are present in the specified order. |
+
+### Practical Implementation with `grep`
+
+To leverage these advanced grouping operators in terminal operations, the extended regex flag (`-E`) must be passed to `grep`.
+
+#### 1. Alternation (OR Operator)
+The following command searches for lines containing either the string `my` OR `false`.
+
+```bash
+cry0l1t3@htb:~$ grep -E "(my|false)" /etc/passwd
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+pollinate:x:109:1::/var/cache/pollinate:/bin/false
+mysql:x:116:120:MySQL Server,,:/nonexistent:/bin/false
+```
+
+#### 2. Sequential Matching (AND Operator equivalent)
+By using `.*`, we instruct the regex engine to find lines where `my` is followed by `false` anywhere in the string.
+
+```bash
+cry0l1t3@htb:~$ grep -E "(my.*false)" /etc/passwd
+mysql:x:116:120:MySQL Server,,:/nonexistent:/bin/false
+```
+
+*Note:* A simplified, albeit less efficient, method to achieve this logical AND without extended RegEx is piping multiple `grep` processes:
+
+```bash
+cry0l1t3@htb:~$ grep "my" /etc/passwd | grep "false"
+mysql:x:116:120:MySQL Server,,:/nonexistent:/bin/false
+```
