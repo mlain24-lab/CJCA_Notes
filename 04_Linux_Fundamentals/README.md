@@ -1161,3 +1161,53 @@ drw-rw-r-T 3 cry0l1t3 cry0l1t3   4096 Jan 12 12:32 reports
 ```
 *   **`t` (Lowercase):** The sticky bit is set, and the directory *has* execute (`x`) permissions for others.
 *   **`T` (Uppercase):** The sticky bit is set, but the directory *lacks* execute (`x`) permissions for others.
+
+# User Management & Privilege Execution
+
+Effective user management is a core pillar of Linux system administration and endpoint security. As administrators, we configure user accounts and assign group memberships to enforce strict access controls and Role-Based Access Control (RBAC). Proper group segregation ensures that users only have the permissions necessary to interact with specific files and resources, maintaining the integrity and confidentiality of the system.
+
+From a troubleshooting and auditing perspective, managing local access allows us to gather critical system telemetry. For instance, when onboarding a new user, a SysAdmin provisions the account and maps it to the required development or project groups. In operational scenarios, executing commands with elevated privileges (or context-switching to another user) is mandatory to deploy services or modify system configurations.
+
+## Privilege Execution: The `/etc/shadow` Case
+
+The `/etc/shadow` file contains the encrypted password hashes for all system accounts. To prevent unauthorized credential harvesting, it is restricted with read/write permissions exclusively for the `root` user.
+
+Attempting to read it as a standard, unprivileged user results in an access violation:
+
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/shadow
+cat: /etc/shadow: Permission denied
+```
+
+### Using `sudo` for Elevated Operations
+
+To perform tasks requiring administrative privileges without logging directly into the `root` account, we use the `sudo` (Superuser Do) utility. `sudo` allows authorized users to execute binaries with the security context of another user, adhering to the policies defined in the sudoers file. This is a fundamental best practice for system security.
+
+```bash
+MikyRedHat@htb[/htb]$ sudo cat /etc/shadow
+root:<SNIP>:18395:0:99999:7:::
+daemon:*:17737:0:99999:7:::
+bin:*:17737:0:99999:7:::
+<SNIP>
+```
+
+## Core User Management Commands
+
+Mastering these utilities is essential for both daily system administration and identifying privilege escalation vectors during a penetration test.
+
+| Command | Description |
+| :--- | :--- |
+| `sudo` | Executes a command as a different user based on the sudoers security policy. |
+| `su` | Requests user credentials via PAM and switches the user ID (defaults to root), spawning a new shell session. |
+| `useradd` | Provisions a new user account or updates default user creation parameters. |
+| `userdel` | Removes a user account and its associated local files from the system. |
+| `usermod` | Modifies existing user account properties (e.g., appending groups, changing default shells). |
+| `addgroup` | Creates a new user group within the local system. |
+| `delgroup` | Deletes an existing group from the local system. |
+| `passwd` | Updates or manages user authentication tokens (passwords). |
+
+## Security Implications & Lab Practice
+
+A deep understanding of user accounts, file permissions, and authentication mechanisms (like PAM) is critical for a Pentester. It enables us to detect vulnerabilities, exploit misconfigurations, and accurately assess a target's security posture.
+
+**Methodology:** The most effective way to internalize these concepts is through hands-on iteration in a Homelab environment. Combine these user management utilities with standard coreutils: provision new accounts, configure specific directory permissions, redirect filtered outputs to these restricted directories, and test the access boundaries. On a target system, configurations can always be reverted—reset the instance and iterate until the workflow is fully mastered.
