@@ -1442,3 +1442,119 @@ Chaining commands improves efficiency and enables basic automation in the CLI.
 2.  **Logical AND (`&&`):** Executes the subsequent command **only if** the previous one exited successfully (exit code 0).
 3.  **Pipe (`|`):** Redirects the standard output (`stdout`) of one command into the standard input (`stdin`) of the next.
 
+# Task Scheduling and Automation in Linux
+
+## 1. Overview
+Task scheduling is a critical administrative function in Linux (Ubuntu, RHEL, Solaris) that allows for the automation of repetitive tasks. By offloading manual execution to the system, administrators ensure consistency in software updates, database maintenance, and backup routines.
+
+From a **Cybersecurity** and **Penetration Testing** perspective, task scheduling is a double-edged sword. While it is a legitimate tool for system health, it is a common vector for **persistence**. Attackers often leverage unauthorized cron jobs or systemd timers to execute malicious scripts or maintain backdoors.
+
+
+
+---
+
+## 2. Systemd Timers
+`systemd` ?? (A system and service manager for Linux that acts as an init system, managing processes and daemons / Un gestor de sistema y servicios para Linux que actúa como sistema de inicio, gestionando procesos y demonios) provides a modern way to schedule tasks using **Timer Units**.
+
+### Implementation Workflow
+To automate a task via systemd, three components are required:
+1.  **Timer Unit**: Defines the schedule.
+2.  **Service Unit**: Defines the execution logic (the script or command).
+3.  **Activation**: Enabling the timer via `systemctl`.
+
+### Configuration Steps
+First, create the directory and the timer definition:
+
+```bash
+MikyRedHat@htb[/htb]$ sudo mkdir -p /etc/systemd/system/mytimer.timer.d
+MikyRedHat@htb[/htb]$ sudo vim /etc/systemd/system/mytimer.timer
+```
+
+**mytimer.timer configuration:**
+```ini
+[Unit]
+Description=Automation Timer for custom scripts
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=1hour
+
+[Install]
+WantedBy=timers.target
+```
+*   `OnBootSec`: Triggers the task after the initial system boot.
+*   `OnUnitActiveSec`: Sets the interval for subsequent executions.
+
+Next, define the corresponding service:
+```bash
+MikyRedHat@htb[/htb]$ sudo vim /etc/systemd/system/mytimer.service
+```
+
+**mytimer.service configuration:**
+```ini
+[Unit]
+Description=Custom Maintenance Script Service
+
+[Service]
+ExecStart=/usr/local/bin/backup_script.sh
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Deployment
+Apply the changes by reloading the daemon:
+```bash
+MikyRedHat@htb[/htb]$ sudo systemctl daemon-reload
+```
+`daemon-reload` ?? (Command that reloads the systemd manager configuration, picking up new or modified units / Comando que recarga la configuración del gestor systemd, detectando unidades nuevas o modificadas)
+
+Finally, enable and start the timer:
+```bash
+MikyRedHat@htb[/htb]$ sudo systemctl enable --now mytimer.timer
+```
+
+---
+
+## 3. Cron (Cron Jobs)
+`Cron` ?? (A time-based job scheduler in Unix-like operating systems / Un programador de tareas basado en tiempo en sistemas operativos tipo Unix) is the traditional method for automation. It uses the `crontab` ?? (A configuration file that specifies shell commands to run periodically on a given schedule / Un archivo de configuración que especifica comandos de shell para ejecutarse periódicamente en un horario determinado) to manage tasks.
+
+
+
+### Crontab Syntax Breakdown
+| Component | Range | Description |
+| :--- | :--- | :--- |
+| **Minutes** | 0-59 | Minute of execution |
+| **Hours** | 0-23 | Hour of execution |
+| **Day of Month** | 1-31 | Specific day of the month |
+| **Month** | 1-12 | Specific month |
+| **Day of Week** | 0-7 | 0 or 7 represent Sunday |
+
+### Practical Examples
+Below are common administrative cron entries:
+
+```bash
+# System Update: Runs every 6 hours
+0 */6 * * * /usr/local/bin/update_system.sh
+
+# Script Execution: Runs the 1st of every month at 00:00
+0 0 1 * * /opt/scripts/monthly_report.sh
+
+# Database Cleanup: Runs every Sunday at midnight
+0 0 * * 0 /opt/db_utils/clean_db.sh
+
+# Backups: Runs every Sunday at midnight (Alternative syntax)
+0 0 * * 7 /backup/scripts/full_backup.sh
+```
+
+---
+
+## 4. Systemd vs. Cron
+| Feature | Systemd Timers | Cron |
+| :--- | :--- | :--- |
+| **Configuration** | Unit files (`.timer` + `.service`) | Single line in `crontab` |
+| **Precision** | Microsecond precision | Minute precision |
+| **Logging** | Managed via `journalctl` | Usually separate logs in `/var/log/syslog` |
+| **Dependencies** | Can depend on other services | Independent |
+
+From a pentesting perspective, always check `/etc/crontab`, `/etc/cron.d/`, and `systemctl list-timers` for unusual entries that might indicate **privilege escalation** or **persistence**.
