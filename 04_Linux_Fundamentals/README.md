@@ -1361,7 +1361,84 @@ sudo dpkg -i strace_version_amd64.deb
 ### Tool Cloning (Git)
 For tools like **Nishang** or custom exploit scripts:
 ```bash
+
 # Organizing the environment
 mkdir -p ~/tools/powershell && cd ~/tools/powershell
 git clone https://github.com/samratashok/nishang.git
 ```
+# Service and Process Management
+
+## 1. Overview of Daemons and Services
+In Linux, **services** (commonly referred to as **daemons**) are background processes that operate without direct user intervention. They are the backbone of system functionality and are generally categorized into two groups:
+
+*   **System Services:** Critical background tasks initialized during the boot process (e.g., hardware management, network initialization). Think of these as the engine and transmission of a vehicle—essential for movement.
+*   **User-Installed Services:** Applications added by the administrator to extend functionality (e.g., Web servers, SSH, databases). These are comparable to a car's GPS or AC—functional enhancements based on specific needs.
+
+Daemons are typically identified by a trailing `d` in their process name (e.g., `sshd`, `systemd`).
+
+## 2. The Initialization System: systemd
+Most modern distributions utilize **systemd** as the init system. As the first process to start during boot, it is assigned **PID 1**.
+*   **PID (Process ID):** A unique identifier for every running process.
+*   **PPID (Parent Process ID):** Identifies the process that spawned the current child process.
+*   **Metadata:** Information regarding active processes is stored within the `/proc/` directory.
+
+
+
+## 3. Service Management with `systemctl`
+
+The `systemctl` utility is the primary tool for controlling the systemd init system and services.
+
+### Common Operations
+| Action | Command |
+| :--- | :--- |
+| **Start** | `systemctl start <service>` |
+| **Stop** | `systemctl stop <service>` |
+| **Restart** | `systemctl restart <service>` |
+| **Status** | `systemctl status <service>` |
+| **Enable (at boot)** | `systemctl enable <service>` |
+| **Disable (at boot)** | `systemctl disable <service>` |
+| **List Services** | `systemctl list-units --type=service` |
+
+### Troubleshooting and Logs
+If a service fails to initialize, use `journalctl` to inspect the logs for the specific unit:
+`journalctl -u <service_name>.service --no-pager`
+
+## 4. Process States and Signal Handling
+Processes within a Linux environment exist in one of the following states:
+*   **Running:** Currently executing or in the CPU queue.
+*   **Waiting:** Interrupted while waiting for an event or resource.
+*   **Stopped:** Suspended by a signal.
+*   **Zombie:** Terminated processes that still have an entry in the process table.
+
+### Controlling Processes with Signals
+Signals allow us to interact with processes directly. The most common signals used in troubleshooting and administration include:
+
+| Signal | Name | Description |
+| :--- | :--- | :--- |
+| **1** | `SIGHUP` | Hangup; usually used to reload configuration files. |
+| **2** | `SIGINT` | Interrupt; sent via `[Ctrl] + C`. |
+| **9** | `SIGKILL` | Forced termination; kills the process immediately without cleanup. |
+| **15** | `SIGTERM` | Graceful termination; the default signal for `kill`. |
+| **19** | `SIGSTOP` | Stops/suspends the process (cannot be ignored). |
+| **20** | `SIGTSTP` | Suspend request; sent via `[Ctrl] + Z`. |
+
+**Execution Example:**
+`kill -9 <PID>`
+
+## 5. Job Control: Background and Foreground
+Efficient terminal usage often requires managing multiple tasks simultaneously.
+
+*   **Backgrounding:** Append `&` to a command to run it in the background immediately.
+*   **Suspending:** Use `[Ctrl] + Z` to suspend a foreground task.
+*   **Managing Jobs:**
+    *   `jobs`: List current background tasks.
+    *   `bg %<ID>`: Resume a suspended task in the background.
+    *   `fg %<ID>`: Bring a background task to the foreground.
+
+## 6. Logic Operators and Command Chaining
+Chaining commands improves efficiency and enables basic automation in the CLI.
+
+1.  **Semicolon (`;`):** Executes commands sequentially, regardless of the success or failure of previous commands.
+2.  **Logical AND (`&&`):** Executes the subsequent command **only if** the previous one exited successfully (exit code 0).
+3.  **Pipe (`|`):** Redirects the standard output (`stdout`) of one command into the standard input (`stdin`) of the next.
+
