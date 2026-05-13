@@ -641,6 +641,66 @@ MikyRedHat@htb[/htb]$ tree .
 
 ---
 
+### Advanced File Deletion Techniques
+
+Beyond basic removal, SysAdmins often need to target specific file types or ensure a safe deletion process to maintain system integrity.
+
+#### 1. Selective Deletion using Wildcards
+!! To target specific groups of files without affecting others, we leverage wildcards. This is particularly useful for purging log files or temporary scripts while leaving the directory structure intact:
+```bash
+# Deletes all files ending in .log
+rm *.log
+
+# Deletes all files starting with "temp"
+rm temp*
+```
+
+#### 2. Interactive Deletion
+!! To prevent accidental data loss during bulk operations, the `-i` flag enables interactive mode. The system will prompt for confirmation before deleting each file, providing a critical safety layer:
+```bash
+rm -i *.txt
+```
+
+#### 3. Filtering "Only Files" with Find
+When you need to ensure that directories remain untouched and only files are processed, the `find` ?? command is the most robust solution.
+
+```bash
+# Finds and deletes only files within the current directory
+find . -type f -delete
+```
+?? find: A powerful utility to search for files in a directory hierarchy based on various attributes like type, size, or name. / Una potente utilidad para buscar archivos en una jerarquía de directorios basada en varios atributos como tipo, tamaño o nombre.
+
+#### 4. Practical Example: Cleaning Pentest Logs
+!! In a post-exploitation or cleanup phase, a Pentester might need to remove all `.txt` and `.json` files from a workspace while preserving the folder hierarchy:
+```bash
+rm *.txt *.json
+```
+
+!! Remove all files within the current directory without deleting the directory itself, the wildcard operator `*` is utilized. This is a standard procedure for clearing temporary data or log files:
+```bash
+rm *
+```
+
+#### 2. Removing Directories
+* **Empty Directories**:
+    The `rmdir` ?? command is the primary tool for this task.
+    ```bash
+    rmdir directory_name/
+    ```
+    ?? rmdir: A command-line utility used to remove empty directories. It will fail if the directory contains any files or sub-folders. / Comando de línea de comandos utilizado para eliminar directorios vacíos. Fallará si el directorio contiene archivos o subcarpetas.
+
+* **Directories with Content (Recursive)**:
+    !! When dealing with non-empty directories, the `-r` (recursive) flag must be appended to `rm`. This instructs the system to traverse the directory tree and delete every nested file and subdirectory:
+    ```bash
+    rm -r directory_name/
+    ```
+
+* **Forceful Deletion**:
+    !! In scenarios where multiple files are write-protected or you need to bypass confirmation prompts for automation, the `-f` (force) flag is combined with the recursive flag. This is a powerful command that should be used with caution:
+    ```bash
+    rm -rf directory_name/
+    ```
+
 ## Next Steps: Advanced Manipulation
 Beyond foundational file operations, mastering Linux requires fluency in I/O redirection and CLI text editors. Redirection allows for the seamless manipulation of data streams between commands and files, optimizing file modifications. Subsequent modules will cover interactive editing via `vim` and `nano` to solidify your incident handling and system administration workflows.
 
