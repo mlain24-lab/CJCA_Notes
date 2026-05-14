@@ -1558,3 +1558,127 @@ Below are common administrative cron entries:
 | **Dependencies** | Can depend on other services | Independent |
 
 From a pentesting perspective, always check `/etc/crontab`, `/etc/cron.d/`, and `systemctl list-timers` for unusual entries that might indicate **privilege escalation** or **persistence**.
+
+# Linux Network Services: Administration & Security Auditing
+
+Proficiency in managing and securing Linux network services is a core competency for both Systems Administrators and Penetration Testers. Network services handle specific remote operations, enabling file transfers, remote execution, and network traffic routing. Understanding their default configurations, behavioral patterns, and potential misconfigurations allows us to identify vulnerabilities during security assessments and enforce robust hardening strategies.
+
+Consider a standard penetration testing scenario: during network traffic analysis, we capture a user connecting to a remote host via FTP. Because FTP transmits data without encryption, we can intercept and extract the user's credentials in plain text. For a SysAdmin, this represents a critical security oversight. Understanding the underlying protocols ensures we avoid deploying insecure services and accurately assess risk when auditing infrastructure.
+
+---
+
+## 1. Secure Shell (SSH)
+
+SSH is a cryptographic network protocol used for secure data transmission, remote system management, and command execution over an unsecured network. It replaces legacy, unencrypted protocols like Telnet. The industry standard implementation is **OpenSSH**.
+
+From an administrative perspective, OpenSSH provides encrypted remote management capabilities, secure file transfers (SFTP/SCP), and robust authentication methods (RSA/Ed25519 keys). For penetration testers, SSH is a primary vector for secure remote access post-exploitation, as well as a powerful tool for port forwarding and traffic tunneling to bypass network restrictions.
+
+### Installation and Service Status
+```bash
+# Install OpenSSH Server
+sudo apt install openssh-server -y
+
+# Verify service status
+systemctl status ssh
+```
+
+### Remote Connection
+```bash
+# Connecting to a remote host
+ssh cry0l1t3@10.129.17.122
+```
+
+**Security Note:** OpenSSH is configured via `/etc/ssh/sshd_config`. Hardening this file is critical. Key configurations include disabling root login (`PermitRootLogin no`), enforcing public key authentication (`PasswordAuthentication no`), and limiting concurrent connections. 
+
+---
+
+## 2. Network File System (NFS)
+
+NFS allows distributed file systems to be mounted over a network, enabling users to interact with remote files as if they were local. While efficient for centralized data management across Linux/Windows environments, misconfigured NFS shares frequently present severe privilege escalation vectors during audits.
+
+### Installation and Service Status
+```bash
+# Install NFS Kernel Server
+sudo apt install nfs-kernel-server -y
+
+# Verify service status
+systemctl status nfs-kernel-server
+```
+
+### Configuration & Access Control (`/etc/exports`)
+NFS shares and their respective permissions are defined in `/etc/exports`. 
+
+| Permission | Description |
+| :--- | :--- |
+| `rw` / `ro` | Grants Read/Write (`rw`) or Read-Only (`ro`) access to the share. |
+| `no_root_squash` | **Critical:** Prevents the root user on the client from being mapped to an unprivileged user. This is a primary target for privilege escalation. |
+| `root_squash` | Secures the share by mapping client root requests to a standard, unprivileged user (`nobody`). |
+| `sync` / `async` | `sync` commits changes to disk before responding; `async` improves speed at the risk of data corruption during crashes. |
+
+### Creating and Mounting an NFS Share
+```bash
+# 1. Administrator: Create and export the share on the target
+mkdir /home/cry0l1t3/nfs_sharing
+echo '/home/cry0l1t3/nfs_sharing *(rw,sync,no_root_squash)' | sudo tee -a /etc/exports
+sudo exportfs -a
+
+# 2. Pentester/User: Mount the remote share locally
+mkdir ~/target_nfs
+sudo mount -t nfs 10.129.12.17:/home/cry0l1t3/nfs_sharing ~/target_nfs
+tree ~/target_nfs
+```
+
+---
+
+## 3. Web Servers (Apache2 & Python HTTP)
+
+Web servers deliver content via HTTP/HTTPS. Beyond hosting web applications, they are invaluable utility tools during audits. Penetration testers frequently use lightweight web servers to host payloads, exfiltrate data, or perform ingress tool transfers to a compromised target.
+
+### Apache2 Web Server
+Apache is highly versatile and widely deployed. Directory permissions and modular features (like `mod_ssl` or `mod_rewrite`) allow for deep customization.
+
+```bash
+# Install Apache2
+sudo apt install apache2 -y
+```
+
+**Global Configuration (`/etc/apache2/apache2.conf`):**
+```apache
+<Directory /var/www/html>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+```
+*Note:* The `Indexes` directive allows directory listing, which can lead to sensitive information disclosure if not explicitly disabled. Directory-level settings can also be enforced using `.htaccess` files.
+
+### Python3 HTTP Server (Agile Transfers)
+For rapid, temporary file hosting during a penetration test, the built-in Python3 `http.server` module is the most efficient solution. It instantly hosts the current working directory on a specified port.
+
+```bash
+# Host the current directory on default TCP/8000
+python3 -m http.server
+
+# Host a specific directory on a custom port (e.g., TCP/443)
+sudo python3 -m http.server 443 --directory /home/cry0l1t3/target_files
+```
+*Attack vector:* Once the server is running on the attacker's machine, tools can be pulled directly from the target system using utilities like `wget` or `curl`.
+
+---
+
+## 4. Virtual Private Network (OpenVPN)
+
+A VPN establishes a secure, encrypted tunnel over an untrusted network, routing traffic between a client and a private network. It masks the origin IP and protects data in transit. 
+
+In penetration testing, VPNs are foundational. They allow secure, authorized access to internal enterprise networks (e.g., Hack The Box labs) to perform vulnerability assessments against internal infrastructure without requiring physical presence.
+
+### Installation and Connection
+```bash
+# Install OpenVPN
+sudo apt install openvpn -y
+
+# Connect to the internal network using a configuration file
+sudo openvpn --config internal.ovpn
+```
+
+**Administrative Note:** The server-side configuration is managed in `/etc/openvpn/server.conf`, handling cryptographic ciphers, traffic routing, and tunneling protocols. Once the tunnel (`tun0`) is established, the workstation can natively communicate with the target subnet.
