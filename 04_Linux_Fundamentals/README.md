@@ -1707,7 +1707,6 @@ MikyRedHat@htb[/htb]$ sudo systemctl start apache2
 
 By default, Apache listens on HTTP port `80`. Browsing to `http://localhost` will display the default Apache landing page, confirming the service is operational.
 
-![Apache2 Default Landing Page](img/apache_default_page.png)
 
 ### Port Troubleshooting and Reconfiguration
 
