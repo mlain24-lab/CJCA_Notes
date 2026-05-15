@@ -1682,3 +1682,99 @@ sudo openvpn --config internal.ovpn
 ```
 
 **Administrative Note:** The server-side configuration is managed in `/etc/openvpn/server.conf`, handling cryptographic ciphers, traffic routing, and tunneling protocols. Once the tunnel (`tun0`) is established, the workstation can natively communicate with the target subnet.
+
+# Web Services & CLI Interaction: Apache, cURL, Wget, and Python HTTP
+
+This documentation outlines the fundamental procedures for deploying web services, modifying port configurations to prevent service conflicts, and interacting with web servers directly through the Command Line Interface (CLI) using standard Linux utilities.
+
+## Apache2: Deployment and Port Configuration
+
+Apache2 is one of the most widely used web servers. In penetration testing and system administration, quickly deploying and configuring a web server is essential for hosting payloads, transferring files, or testing web vulnerabilities.
+
+### Installation and Initialization
+
+Deploy the Apache2 package using the APT package manager:
+
+```bash
+MikyRedHat@htb[/htb]$ sudo apt install apache2 -y
+```
+
+Once installed, initiate the service via `systemctl`. Although an `apache2` binary exists, `systemctl` (or `service`) is the standard method for managing the daemon due to environment variable configurations.
+
+```bash
+MikyRedHat@htb[/htb]$ sudo systemctl start apache2
+```
+
+By default, Apache listens on HTTP port `80`. Browsing to `http://localhost` will display the default Apache landing page, confirming the service is operational.
+
+![Apache2 Default Landing Page](img/apache_default_page.png)
+
+### Port Troubleshooting and Reconfiguration
+
+In environments like HTB Pwnbox, port `80` may already be bound to another service, causing Apache to fail upon startup. To resolve this port collision, we must reconfigure Apache to listen on an alternate port (e.g., `8080`).
+
+Edit the port configuration file:
+
+```bash
+MikyRedHat@htb[/htb]$ sudo nano /etc/apache2/ports.conf
+```
+
+Modify the `Listen` directive:
+
+```apache
+# /etc/apache2/ports.conf
+Listen 8080
+
+<IfModule ssl_module>
+        Listen 443
+</IfModule>
+```
+
+Restart the service and verify the new binding using `curl` to fetch the HTTP headers:
+
+```bash
+MikyRedHat@htb[/htb]$ curl -I http://localhost:8080
+HTTP/1.1 200 OK
+Date: Mon, 04 Nov 2024 21:18:50 GMT
+Server: Apache/2.4.62 (Debian)
+Content-Type: text/html
+```
+
+## CLI Web Interaction Tools: cURL & Wget
+
+Interacting with web servers via CLI is a critical skill for automated testing, web scraping, and remote troubleshooting.
+
+### cURL (Client URL)
+`curl` is an essential command-line tool used to transfer data over various network protocols (HTTP, HTTPS, FTP, etc.). It prints the source code of the requested page directly to the Standard Output (STDOUT), making it invaluable for inspecting raw web responses, headers, and client-server communication without a visual browser.
+
+```bash
+MikyRedHat@htb[/htb]$ curl http://localhost
+```
+
+### Wget
+Unlike `curl`, which outputs to STDOUT by default, `wget` acts as a robust command-line download manager. It retrieves the requested resource and saves it locally to the disk.
+
+```bash
+MikyRedHat@htb[/htb]$ wget http://localhost
+# The output will be saved locally as 'index.html'
+```
+
+## Rapid Web Hosting via Python 3
+
+For quick, temporary file sharing or testing, installing a full-fledged web server like Apache is often unnecessary. Python 3 provides a built-in module to spin up a lightweight HTTP server instantly in the current working directory.
+
+```bash
+MikyRedHat@htb[/htb]$ python3 -m http.server
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+```
+
+This server outputs access logs directly to the terminal, allowing real-time monitoring of incoming `GET` requests:
+
+```bash
+127.0.0.1 - - [15/May/2026 17:56:29] "GET /readme.html HTTP/1.1" 200 -
+127.0.0.1 - - [15/May/2026 17:56:29] "GET /wp-admin/css/install.css?ver=20100228 HTTP/1.1" 200 -
+```
+
+## The Pentester Mindset: Adaptability and Research
+
+Security auditing frequently presents undocumented scenarios and unique infrastructural challenges. Success in these environments relies heavily on out-of-the-box thinking and independent research. Encountering unfamiliar configurations is not a roadblock, but an opportunity to expand methodological adaptability. Mastery comes from navigating outside the comfort zone and developing bespoke solutions for dynamic problems.
