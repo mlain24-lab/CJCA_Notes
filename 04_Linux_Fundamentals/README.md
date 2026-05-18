@@ -1998,6 +1998,7 @@ Containerization is the process of packaging and running applications within iso
 
 Unlike traditional Virtual Machines (VMs) that require a full Guest Operating System and hypervisor, containers share the host system's kernel. This shared architecture makes containerization technologies—such as Docker and Linux Containers (LXC)—significantly more efficient, scalable, and lightweight.
 
+![Container vs VM Architecture](img/container_vs_vm_architecture.png)
 
 ### The Concert Analogy
 Consider a large concert where multiple bands require customized stage setups. Instead of building an entirely new stage for each band (the Virtual Machine approach), you deploy portable, self-contained "stage pods" (Containers) containing specific instruments, lighting, and sound gear. These pods operate seamlessly on the main stage (Host OS Kernel) while maintaining strict isolation, ensuring no band's setup interferes with another's.
@@ -2122,14 +2123,16 @@ MikyRedHat@htb[/htb]$ sudo apt install lxc -y
 MikyRedHat@htb[/htb]$ sudo lxc-create -n linuxcontainer -t ubuntu
 ```
 
-#### LXC Management Utilities
+#### Essential LXC Management Utilities
 | Command | Description |
 | :--- | :--- |
 | `lxc-ls` | Lists all configured containers. |
+| `lxc-info -n <name>` | Displays detailed information and current state of the container. |
 | `lxc-start -n <name>` | Initializes the specified container. |
 | `lxc-stop -n <name>` | Halts the specified container. |
-| `lxc-attach -n <name>` | Spawns a shell inside the running container. |
-| `lxc-config -n <name> -s <key>` | Modifies storage, network, or security configurations. |
+| `lxc-attach -n <name>` | Spawns a root shell inside the running container. |
+
+*Note on Configuration: Unlike LXD, raw LXC does not use a CLI flag like `-s` via `lxc-config` to modify storage, network, or security settings. These parameters must be modified manually by editing the container's configuration file (e.g., `/var/lib/lxc/<container_name>/config` or `/usr/share/lxc/config/<container_name>.conf`).*
 
 ### LXC Hardening & Resource Limitation (cgroups)
 As a penetration tester, LXC is invaluable for setting up isolated, vulnerable environments for exploit testing. However, robust security boundaries must be established to prevent host compromise. 
@@ -2154,9 +2157,9 @@ MikyRedHat@htb[/htb]$ sudo systemctl restart lxc.service
 
 ### Process & Network Isolation (Namespaces)
 LXC relies heavily on kernel **namespaces** to decouple the container from the host:
-*   **PID Namespace:** Allocates a unique process ID tree; the container cannot see or interact with host processes.
-*   **NET Namespace:** Provides independent network interfaces, routing tables, and iptables rules.
-*   **MNT Namespace:** Mounts a separate root filesystem, ensuring local file modifications do not affect the underlying host storage.
+* **PID Namespace:** Allocates a unique process ID tree; the container cannot see or interact with host processes.
+* **NET Namespace:** Provides independent network interfaces, routing tables, and iptables rules.
+* **MNT Namespace:** Mounts a separate root filesystem, ensuring local file modifications do not affect the underlying host storage.
 
 ---
 
