@@ -1998,7 +1998,6 @@ Containerization is the process of packaging and running applications within iso
 
 Unlike traditional Virtual Machines (VMs) that require a full Guest Operating System and hypervisor, containers share the host system's kernel. This shared architecture makes containerization technologies—such as Docker and Linux Containers (LXC)—significantly more efficient, scalable, and lightweight.
 
-![Container vs VM Architecture](img/container_vs_vm_architecture.png)
 
 ### The Concert Analogy
 Consider a large concert where multiple bands require customized stage setups. Instead of building an entirely new stage for each band (the Virtual Machine approach), you deploy portable, self-contained "stage pods" (Containers) containing specific instruments, lighting, and sound gear. These pods operate seamlessly on the main stage (Host OS Kernel) while maintaining strict isolation, ensuring no band's setup interferes with another's.
@@ -2142,18 +2141,23 @@ Resource limits are defined using **cgroups**. To restrict CPU and Memory usage,
 ```shellsession
 MikyRedHat@htb[/htb]$ sudo vim /usr/share/lxc/config/linuxcontainer.conf
 ```
-Append the following parameters:
+Append the following parameters to enforce hardware limits:
 ```text
 # Allocates half the default CPU time (default is 1024)
 lxc.cgroup.cpu.shares = 512
 
-# Hard limits memory consumption to 512 Megabytes
+# Hard limits memory consumption to 512 Megabytes (Legacy Cgroups v1)
 lxc.cgroup.memory.limit_in_bytes = 512M
+
+# Modern Linux distributions (Cgroups v2) use:
+# lxc.cgroup2.memory.max = 512M
 ```
+
 Restart the LXC service to apply the new constraints:
 ```shellsession
 MikyRedHat@htb[/htb]$ sudo systemctl restart lxc.service
 ```
+*Troubleshooting Note: Tools like `free -m` inside the container will often read `/proc/meminfo` and display the host's total RAM. To verify the true Cgroups v2 limit applied by the kernel, run `cat /sys/fs/cgroup/memory.max`.*
 
 ### Process & Network Isolation (Namespaces)
 LXC relies heavily on kernel **namespaces** to decouple the container from the host:
@@ -2166,8 +2170,8 @@ LXC relies heavily on kernel **namespaces** to decouple the container from the h
 ## 4. Practical LXC Lab Exercises
 
 1. Install LXC on a virtualized host and deploy your first container.
-2. Manually configure custom network interfaces and routing for an LXC container.
-3. Build a custom LXC image from scratch and launch a new instance.
+2. Manually configure custom network interfaces (`veth`) and routing for an LXC container.
+3. Build a custom LXC image from scratch and launch a new instance via cloning/snapshots.
 4. Implement strict `cgroup` resource limits (CPU, Memory, Disk IO).
 5. Master the `lxc-*` management CLI toolset.
 6. Deploy an older, vulnerable version of Apache/Nginx within an LXC container.
