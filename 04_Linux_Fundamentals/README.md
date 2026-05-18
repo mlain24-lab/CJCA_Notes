@@ -2178,3 +2178,113 @@ LXC relies heavily on kernel **namespaces** to decouple the container from the h
 7. Configure key-based SSH access to securely manage an LXC container remotely.
 8. Establish persistent storage volumes attached to a stateless container.
 9. Safely detonate and analyze a known malware sample or exploit within a restricted LXC sandbox.
+
+# Linux Network Configuration & Security Hardening
+
+## Overview
+As a Junior Penetration Tester or SysAdmin, mastering Linux network configurations is critical for setting up robust testing environments, manipulating traffic, and securing infrastructure. This module covers interface management, Network Access Control (NAC), traffic monitoring, and system hardening.
+
+## 1. Managing Network Interfaces
+Legacy tools like `ifconfig` are deprecated in modern distributions in favor of the `ip` utility (iproute2 suite). However, both remain essential for troubleshooting and legacy system administration.
+
+### Interface Enumeration
+```bash
+# Legacy (net-tools)
+ifconfig
+
+# Modern (iproute2)
+ip addr
+```
+
+### Interface Configuration
+Activating or modifying network interfaces ensures proper communication across subnets.
+
+```bash
+# Bring interface UP
+sudo ip link set eth0 up
+# Legacy: sudo ifconfig eth0 up
+
+# Assign IP Address and Subnet Mask
+sudo ip addr add 192.168.1.2/24 dev eth0
+# Legacy: sudo ifconfig eth0 192.168.1.2 netmask 255.255.255.0
+
+# Define Default Gateway
+sudo ip route add default via 192.168.1.1 dev eth0
+# Legacy: sudo route add default gw 192.168.1.1 eth0
+```
+
+### DNS Resolution
+DNS configuration is handled via `/etc/resolv.conf`. Note that manual changes here are non-persistent on systems managed by `systemd-resolved` or `NetworkManager`.
+
+```bash
+sudo vim /etc/resolv.conf
+```
+*Content:*
+```text
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+```
+
+### Persistent Configuration (Debian/Ubuntu Legacy)
+To survive reboots, define static configurations in the interfaces file:
+
+```bash
+sudo vim /etc/network/interfaces
+```
+*Content:*
+```text
+auto eth0
+iface eth0 inet static
+  address 192.168.1.2
+  netmask 255.255.255.0
+  gateway 192.168.1.1
+  dns-nameservers 8.8.8.8 8.8.4.4
+```
+*Apply changes by restarting the networking daemon:*
+```bash
+sudo systemctl restart networking
+```
+
+## 2. Network Access Control (NAC)
+NAC ensures that only authorized and compliant devices or entities access network resources.
+
+| Access Model | Description |
+| :--- | :--- |
+| **DAC (Discretionary Access Control)** | Resource owners set permissions for users/groups (Read, Write, Execute). Flexible but highly dependent on user discipline. |
+| **MAC (Mandatory Access Control)** | The OS enforces permissions based on strict security labels and clearances. Highly secure, less flexible. Used in military/financial environments. |
+| **RBAC (Role-Based Access Control)** | Permissions are assigned based on organizational roles rather than individual identities. Highly scalable for enterprise environments. |
+
+## 3. Network Monitoring & Troubleshooting
+Monitoring traffic allows us to identify anomalies, capture cleartext credentials (e.g., FTP/Telnet), and troubleshoot connectivity issues.
+
+### Core Troubleshooting Tools
+*   **Ping**: Tests ICMP connectivity and latency to a remote host.
+*   **Traceroute**: Maps the network path (hops) packets take to a destination utilizing TTL values.
+*   **Netstat / ss**: Displays active connections, listening ports, and socket statistics.
+*   **Tcpdump / Wireshark**: Packet analyzers for deep traffic inspection.
+*   **Nmap**: Network mapper for port scanning and service enumeration.
+
+*Example: Enumerating listening services and established connections:*
+```bash
+netstat -a
+# Modern alternative: ss -tulwn
+```
+
+## 4. System Hardening
+Implementing kernel-level and network-level access controls significantly mitigates the blast radius of a compromised service.
+
+### SELinux (Security-Enhanced Linux)
+A MAC system deeply integrated into the Linux kernel. It enforces fine-grained policies defining exactly what resources a process or user can access. Highly secure but notoriously complex to manage due to its granular constraints.
+
+### AppArmor
+A user-friendly alternative to SELinux. It operates as a Linux Security Module (LSM) relying on application profiles to restrict capabilities. Standard in Ubuntu/Debian environments and easier to maintain for day-to-day operations.
+
+### TCP Wrappers
+A host-based network ACL system that filters incoming connections to network services based on client IP addresses. Simple and effective for basic perimeter service protection, typically managed via `/etc/hosts.allow` and `/etc/hosts.deny`.
+
+## 5. Homelab Practice Tasks
+To build muscle memory, execute the following tasks in an isolated VM (always take snapshots before applying MAC configurations):
+
+1.  **SELinux**: Install and configure policies to restrict file access and network service consumption per user.
+2.  **AppArmor**: Create and enforce profiles blocking users from targeting specific binaries or services.
+3.  **TCP Wrappers**: Strictly allow/deny specific IP ranges to local services like SSH to validate host-based filtering.
