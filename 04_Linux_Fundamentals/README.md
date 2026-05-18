@@ -2171,4 +2171,3 @@ LXC relies heavily on kernel **namespaces** to decouple the container from the h
 7. Configure key-based SSH access to securely manage an LXC container remotely.
 8. Establish persistent storage volumes attached to a stateless container.
 9. Safely detonate and analyze a known malware sample or exploit within a restricted LXC sandbox.
-~~~</ID/Name></Image></ID/Name></ID/Name></ID/Name></ID/Name>
