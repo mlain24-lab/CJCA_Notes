@@ -1989,3 +1989,187 @@ Swap acts as an overflow area on the disk for inactive memory pages when physica
 *   **Commands:**
     *   `mkswap`: Formats a target partition/file as a Linux swap area.
     *   `swapon`: Activates the swap space for kernel use.
+
+# Containerization & Isolation: Docker and LXC Fundamentals
+
+## 1. Overview of Containerization
+
+Containerization is the process of packaging and running applications within isolated, lightweight environments known as **containers**. These environments ensure consistent application behavior regardless of the underlying deployment infrastructure. 
+
+Unlike traditional Virtual Machines (VMs) that require a full Guest Operating System and hypervisor, containers share the host system's kernel. This shared architecture makes containerization technologies—such as Docker and Linux Containers (LXC)—significantly more efficient, scalable, and lightweight.
+
+![Container vs VM Architecture](img/container_vs_vm_architecture.png)
+
+### The Concert Analogy
+Consider a large concert where multiple bands require customized stage setups. Instead of building an entirely new stage for each band (the Virtual Machine approach), you deploy portable, self-contained "stage pods" (Containers) containing specific instruments, lighting, and sound gear. These pods operate seamlessly on the main stage (Host OS Kernel) while maintaining strict isolation, ensuring no band's setup interferes with another's.
+
+### Security Implications
+While containers provide a robust isolation barrier that minimizes the risk of cross-contamination or host compromise, they do not offer the strict hardware-level isolation of VMs. If mismanaged, vulnerabilities such as privilege escalation or container escapes can be exploited by threat actors to compromise the host system or pivot to other containers. Proper hardening and configuration management are critical.
+
+---
+
+## 2. Docker: Application-Centric Containerization
+
+Docker is an open-source platform designed to automate application deployment using self-contained units. It leverages a layered filesystem and robust resource isolation features to ensure maximum portability and flexibility, making it a standard in DevOps and modern infrastructure.
+
+### Deploying Docker Engine (Ubuntu 22.04)
+
+The following bash script automates the installation of Docker Engine, its dependencies, and configures the required user groups for operation without constant root privileges.
+
+```bash
+#!/bin/bash
+# 1. System Preparation & Dependency Installation
+sudo apt update -y
+sudo apt install ca-certificates curl gnupg lsb-release -y
+
+# 2. Add Docker's Official GPG Key
+sudo mkdir -m 0755 -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# 3. Setup the Docker Repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 4. Install Docker Engine Components
+sudo apt update -y
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+# 5. Add Current User to Docker Group (e.g., htb-student)
+sudo usermod -aG docker htb-student
+echo '[!] You must log out and log back in for the group changes to take effect.'
+
+# 6. Verify Installation
+docker run hello-world
+```
+
+### Dockerfiles & Image Building
+A `Dockerfile` acts as a blueprint containing all instructions required by the Docker Engine to build an image. 
+
+In penetration testing scenarios, containers can act as lightweight, disposable file-hosting servers. Below is a `Dockerfile` configuring an Ubuntu 22.04 image with Apache and SSH, enabling file transfers via `scp` and payload hosting via HTTP.
+
+```dockerfile
+# Base Image: Ubuntu 22.04 LTS
+FROM ubuntu:22.04
+
+# Update repository and install required packages
+RUN apt-get update && \
+    apt-get install -y apache2 openssh-server && \
+    rm -rf /var/lib/apt/lists/*
+
+# Provision a dedicated user
+RUN useradd -m docker-user && \
+    echo "docker-user:password" | chpasswd
+
+# Assign permissions and configure sudo access
+RUN chown -R docker-user:docker-user /var/www/html /var/run/apache2 /var/log/apache2 /var/lock/apache2 && \
+    usermod -aG sudo docker-user && \
+    echo "docker-user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Expose HTTP and SSH ports
+EXPOSE 22 80
+
+# Initialize services upon container start
+CMD service ssh start && /usr/sbin/apache2ctl -D FOREGROUND
+```
+
+To build this image, navigate to the directory containing the `Dockerfile` and execute:
+
+```shellsession
+MikyRedHat@htb[/htb]$ docker build -t fs_docker .
+```
+
+### Running and Managing Docker Containers
+Once built, the image acts as a read-only template. Running it spawns a container—a read-write stateful process of that image.
+
+```shellsession
+MikyRedHat@htb[/htb]$ docker run -p 8022:22 -p 8080:80 -d fs_docker
+```
+*Note: This binds host ports 8022 and 8080 to container ports 22 and 80 respectively, running the process in the background (`-d` / detached mode).*
+
+#### Essential Docker Management Commands
+| Command | Description |
+| :--- | :--- |
+| `docker ps` | Lists all currently running containers. |
+| `docker stop <ID/Name>` | Gracefully stops a running container. |
+| `docker start <ID/Name>` | Starts a previously stopped container. |
+| `docker restart <ID/Name>` | Reboots a running container. |
+| `docker rm <ID/Name>` | Deletes a stopped container. |
+| `docker rmi <Image>` | Removes a local Docker image. |
+| `docker logs <ID/Name>` | Outputs the `stdout` and `stderr` logs of a container. |
+
+---
+
+## 3. Linux Containers (LXC)
+
+Linux Containers (LXC) is a system-level virtualization technology that allows multiple isolated Linux systems to run concurrently on a single host. While Docker abstracts the application layer, LXC acts more like a lightweight VM, leveraging Linux kernel features like **cgroups** (resource allocation) and **namespaces** (process isolation).
+
+### Docker vs. LXC
+
+| Feature | LXC (System-Centric) | Docker (Application-Centric) |
+| :--- | :--- | :--- |
+| **Approach** | Behaves like a lightweight VM; runs a full OS environment. | Optimized for single applications/microservices. |
+| **Image Building** | Requires manual setup for environments and root filesystems. | Uses standardized `Dockerfiles` for automated builds. |
+| **Portability** | Tightly coupled with the host system's configuration. | Highly portable via Docker Hub and standardized formats. |
+| **Security** | Secure, but requires manual tuning of AppArmor/SELinux profiles. | Secure out-of-the-box (read-only layers, strict default profiles). |
+
+*Note: Misconfigurations in both LXC and Docker present viable vectors for Local Privilege Escalation (LPE).*
+
+### Deploying and Managing LXC (Ubuntu)
+
+```shellsession
+# Installation
+MikyRedHat@htb[/htb]$ sudo apt install lxc -y
+
+# Creating a new container from a template
+MikyRedHat@htb[/htb]$ sudo lxc-create -n linuxcontainer -t ubuntu
+```
+
+#### LXC Management Utilities
+| Command | Description |
+| :--- | :--- |
+| `lxc-ls` | Lists all configured containers. |
+| `lxc-start -n <name>` | Initializes the specified container. |
+| `lxc-stop -n <name>` | Halts the specified container. |
+| `lxc-attach -n <name>` | Spawns a shell inside the running container. |
+| `lxc-config -n <name> -s <key>` | Modifies storage, network, or security configurations. |
+
+### LXC Hardening & Resource Limitation (cgroups)
+As a penetration tester, LXC is invaluable for setting up isolated, vulnerable environments for exploit testing. However, robust security boundaries must be established to prevent host compromise. 
+
+Resource limits are defined using **cgroups**. To restrict CPU and Memory usage, edit the container's configuration file:
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo vim /usr/share/lxc/config/linuxcontainer.conf
+```
+Append the following parameters:
+```text
+# Allocates half the default CPU time (default is 1024)
+lxc.cgroup.cpu.shares = 512
+
+# Hard limits memory consumption to 512 Megabytes
+lxc.cgroup.memory.limit_in_bytes = 512M
+```
+Restart the LXC service to apply the new constraints:
+```shellsession
+MikyRedHat@htb[/htb]$ sudo systemctl restart lxc.service
+```
+
+### Process & Network Isolation (Namespaces)
+LXC relies heavily on kernel **namespaces** to decouple the container from the host:
+*   **PID Namespace:** Allocates a unique process ID tree; the container cannot see or interact with host processes.
+*   **NET Namespace:** Provides independent network interfaces, routing tables, and iptables rules.
+*   **MNT Namespace:** Mounts a separate root filesystem, ensuring local file modifications do not affect the underlying host storage.
+
+---
+
+## 4. Practical LXC Lab Exercises
+
+1. Install LXC on a virtualized host and deploy your first container.
+2. Manually configure custom network interfaces and routing for an LXC container.
+3. Build a custom LXC image from scratch and launch a new instance.
+4. Implement strict `cgroup` resource limits (CPU, Memory, Disk IO).
+5. Master the `lxc-*` management CLI toolset.
+6. Deploy an older, vulnerable version of Apache/Nginx within an LXC container.
+7. Configure key-based SSH access to securely manage an LXC container remotely.
+8. Establish persistent storage volumes attached to a stateless container.
+9. Safely detonate and analyze a known malware sample or exploit within a restricted LXC sandbox.
+~~~</ID/Name></Image></ID/Name></ID/Name></ID/Name></ID/Name>
