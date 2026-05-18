@@ -1998,7 +1998,6 @@ Containerization is the process of packaging and running applications within iso
 
 Unlike traditional Virtual Machines (VMs) that require a full Guest Operating System and hypervisor, containers share the host system's kernel. This shared architecture makes containerization technologies—such as Docker and Linux Containers (LXC)—significantly more efficient, scalable, and lightweight.
 
-![Container vs VM Architecture](img/container_vs_vm_architecture.png)
 
 ### The Concert Analogy
 Consider a large concert where multiple bands require customized stage setups. Instead of building an entirely new stage for each band (the Virtual Machine approach), you deploy portable, self-contained "stage pods" (Containers) containing specific instruments, lighting, and sound gear. These pods operate seamlessly on the main stage (Host OS Kernel) while maintaining strict isolation, ensuring no band's setup interferes with another's.
