@@ -2288,3 +2288,127 @@ To build muscle memory, execute the following tasks in an isolated VM (always ta
 1.  **SELinux**: Install and configure policies to restrict file access and network service consumption per user.
 2.  **AppArmor**: Create and enforce profiles blocking users from targeting specific binaries or services.
 3.  **TCP Wrappers**: Strictly allow/deny specific IP ranges to local services like SSH to validate host-based filtering.
+
+# Remote Desktop Protocols in Linux
+
+## Overview
+
+Remote desktop protocols are critical assets for system administrators and pentesters, providing graphical remote access for management, troubleshooting, and patching. The choice of protocol is dictated by the target OS architecture:
+
+*   **Remote Desktop Protocol (RDP):** The industry standard for Windows environments. It provides seamless, native integration for managing Windows hosts remotely.
+*   **Virtual Network Computing (VNC):** A cross-platform protocol prevalent in Linux environments. Based on the Remote Framebuffer (RFB) protocol, VNC grants graphical access to Linux remote desktops, serving a similar operational role to RDP in Windows.
+
+## X Window System (X11 / XServer)
+
+The XServer operates as the user-side component of the X11 network protocol. Predominant in Unix/Linux architectures, X11 is a suite of protocols and applications that handles GUI window generation. Modern Ubuntu-based distributions bundle XServer natively.
+
+X11 is highly valued for its **network transparency**. It typically runs over TCP/IP (or Unix sockets), allocating ports in the **TCP/6000-6009** range. For instance, launching a new desktop session on display `:0` opens TCP port `6000`. 
+
+Unlike VNC and RDP—which render graphics remotely and stream the output—X11 renders the GUI locally. This architecture significantly reduces network overhead and minimizes resource consumption on the remote target.
+
+### Enabling X11 Forwarding via SSH
+
+By default, X11 data transmission is unencrypted. To mitigate this, X11 traffic must be tunneled through SSH.
+
+Verify that `X11Forwarding` is enabled on the target server:
+
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/ssh/sshd_config | grep X11Forwarding
+X11Forwarding yes
+```
+
+Launch a remote application (e.g., Firefox) securely from the client:
+
+```bash
+MikyRedHat@htb[/htb]$ ssh -X htb-student@10.129.23.11 /usr/bin/firefox
+htb-student@10.129.23.11's password: ********
+```
+
+### X11 Security Implications
+
+When auditing Linux targets, always scan for open TCP ports 6000-6010. An exposed X server broadcasts unencrypted traffic, allowing network adversaries to intercept keystrokes, capture screen data, and dump sensitive information without deploying traditional sniffers. Tools like `xwd` (screen capture) and `xgrabsc` are commonly used to exploit this misconfiguration.
+
+Additionally, legacy vulnerabilities such as CVE-2017-2624, CVE-2017-2625, and CVE-2017-2626 highlight risks within the XOrg Server, where predictable session keys could lead to arbitrary code execution across multiple enterprise distributions (RHEL, Ubuntu, SUSE).
+
+## X Display Manager Control Protocol (XDMCP)
+
+XDMCP operates over **UDP port 177** and manages remote X Window sessions. While it allows an entire GUI (like GNOME or KDE) to be redirected to a client, **XDMCP is fundamentally insecure**. 
+
+Because the traffic lacks encryption, it is highly vulnerable to Man-in-the-Middle (MitM) attacks. Threat actors can intercept the session, spoof endpoints, and achieve unauthorized remote code execution (RCE) or data exfiltration. It should never be deployed in environments lacking strict network isolation.
+
+## Virtual Network Computing (VNC)
+
+VNC is a robust remote desktop sharing system leveraging the **RFB protocol**. It is heavily relied upon by IT operations for server maintenance, troubleshooting, and terminal services. Standard VNC servers listen on **TCP port 5900** (Display `:0`). Additional displays increment the port number (e.g., Display `:1` uses `5901`, Display `:2` uses `5902`).
+
+For secure enterprise deployments, implementations like **TigerVNC**, **RealVNC**, and **UltraVNC** are preferred due to better encryption capabilities.
+
+### TigerVNC Deployment & Configuration
+
+In this deployment, we utilize TigerVNC alongside the XFCE4 desktop manager (GNOME can introduce stability issues over VNC).
+
+**1. Install Dependencies and Set Password:**
+
+```bash
+htb-student@ubuntu:~$ sudo apt install xfce4 xfce4-goodies tigervnc-standalone-server -y
+htb-student@ubuntu:~$ vncpasswd 
+Password: ******
+Verify: ******
+Would you like to enter a view-only password (y/n)? n
+```
+
+**2. Configure the VNC Environment (`xstartup` and `config`):**
+
+```bash
+htb-student@ubuntu:~$ touch ~/.vnc/xstartup ~/.vnc/config
+htb-student@ubuntu:~$ cat <<EOT >> ~/.vnc/xstartup
+#!/bin/bash
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+/usr/bin/startxfce4
+[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+x-window-manager &
+EOT
+
+htb-student@ubuntu:~$ cat <<EOT >> ~/.vnc/config
+geometry=1920x1080
+dpi=96
+EOT
+
+htb-student@ubuntu:~$ chmod +x ~/.vnc/xstartup
+```
+
+**3. Initialize and Verify the VNC Server:**
+
+```bash
+htb-student@ubuntu:~$ vncserver
+New 'linux:1 (htb-student)' desktop at :1 on machine linux
+Starting applications specified in /home/htb-student/.vnc/xstartup
+
+htb-student@ubuntu:~$ vncserver -list
+TigerVNC server sessions:
+X DISPLAY #     RFB PORT #      PROCESS ID
+:1              5901            79746
+```
+
+### Securing VNC via SSH Tunneling (Port Forwarding)
+
+To enforce encryption, bind the VNC connection through a secure SSH tunnel.
+
+**1. Establish the Local Port Forwarding:**
+
+```bash
+MikyRedHat@htb[/htb]$ ssh -L 5901:127.0.0.1:5901 -N -f -l htb-student 10.129.14.130
+htb-student@10.129.14.130's password: *******
+```
+
+**2. Connect the VNC Client via Localhost:**
+
+```bash
+MikyRedHat@htb[/htb]$ xtightvncviewer localhost:5901
+Connected to RFB server, using protocol version 3.8
+Performing standard VNC authentication
+Password: ******
+Authentication successful
+Desktop name "linux:1 (htb-student)"
+```
