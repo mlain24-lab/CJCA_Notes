@@ -1878,3 +1878,114 @@ To validate this synchronization architecture locally in an isolated environment
 1.  Create source and destination directories: `mkdir ~/to_backup ~/synced_backup`
 2.  Set up the cron job using the loopback interface (`127.0.0.1`) to simulate the remote host.
 3.  Configure the crontab to run every minute (`* * * * *`) to immediately verify the automated delta transfers from `to_backup` to `synced_backup`.
+
+# Linux File System & Storage Management
+
+Managing file systems and storage in Linux is a foundational skill for System Administrators and Cybersecurity professionals. It encompasses organizing data, managing storage devices, and maintaining system integrity.
+
+## 1. Supported File Systems
+
+Linux's versatility allows it to support multiple file systems, each tailored for specific architectural requirements and I/O workloads:
+
+*   **ext2:** A legacy file system lacking journaling capabilities. Best suited for low-overhead scenarios like USB flash drives.
+*   **ext3 & ext4:** Advanced, journaled file systems. **ext4** is the default standard for modern Linux distributions, offering an optimal balance of performance, crash-recovery reliability, and large file support.
+*   **Btrfs:** A modern Copy-on-Write (CoW) file system. Excels in complex storage architectures due to advanced features like native snapshotting and built-in data integrity checksums.
+*   **XFS:** A high-performance, 64-bit journaling file system. Ideal for enterprise environments with heavy I/O demands and massive file sizes.
+*   **NTFS:** Developed by Microsoft. Primarily mounted in Linux for cross-platform compatibility (e.g., dual-boot setups or external drives).
+
+## 2. File System Architecture & Inodes
+
+Linux inherits the Unix hierarchical directory structure. The core mechanism behind file tracking is the **inode** (index node).
+
+*   **Inodes:** Data structures storing metadata about files and directories (permissions, ownership, size, timestamps). Crucially, inodes contain *pointers* to the physical disk blocks where the actual data resides, but they do not store the data itself or the file name.
+*   **The Inode Table:** A centralized database utilized by the kernel to track every system object. 
+
+> **Analogy:** Think of the file system as a library. Inodes are the index cards in the catalog, detailing the author, title, and shelf location. The books themselves are the actual data blocks. 
+
+*Troubleshooting Note:* A system can trigger a "No space left on device" error if the inode table is exhausted, even if physical storage capacity remains available.
+
+## 3. Object Types & Permissions
+
+Everything in Linux is treated as a file. The primary object types are:
+
+1.  **Regular Files:** Standard data containers (ASCII text, binaries, images, executables).
+2.  **Directories:** Container files acting as organizational nodes for other files and subdirectories. 
+3.  **Symbolic Links (Symlinks):** Pointers or shortcuts referencing other files across the system hierarchy, preventing data duplication.
+
+Permissions (Read, Write, Execute) are assigned independently across three categories: Owner, Group, and Others.
+
+**Checking Inodes and File Types:**
+```bash
+MikyRedHat@htb[/htb]$ ls -il
+total 0
+10678872 -rw-r--r--  1 cry0l1t3  htb  234123 Feb 14 19:30 myscript.py
+10678869 -rw-r--r--  1 cry0l1t3  htb   43230 Feb 14 11:52 notes.txt
+```
+*(Note: The first column displays the unique inode number).*
+
+## 4. Disks & Partition Management
+
+Disk management involves allocating physical storage into logical segments (partitions). Standard CLI tools include `fdisk`, `parted`, and `gdisk`.
+
+**Inspecting the Partition Table (`fdisk`):**
+```bash
+MikyRedHat@htb[/htb]$ sudo fdisk -l
+Disk /dev/vda: 160 GiB, 171798691840 bytes, 335544320 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x5223435f
+
+Device     Boot     Start       End   Sectors  Size Id Type
+/dev/vda1  *         2048 158974027 158971980 75.8G 83 Linux
+/dev/vda2       158974028 167766794   8792767  4.2G 82 Linux swap / Solaris
+```
+
+## 5. Mounting & Unmounting File Systems
+
+Before a partition can be accessed, it must be attached to a specific directory in the system hierarchy, a process known as **mounting**. The target directory is the *mount point*.
+
+### 5.1. Persistent Mounting (`/etc/fstab`)
+To ensure partitions mount automatically upon system boot, they are defined in the File System Table (`/etc/fstab`). 
+
+```text
+# /etc/fstab: static file system information.
+# <file system>                                 <mount point>  <type>  <options>                                                <dump>  <pass>
+UUID=3d6a020d-...SNIP...-9e085e9c927a           /              btrfs   subvol=@,defaults,noatime,nodiratime,space_cache         0       1
+UUID=3d6a020d-...SNIP...-9e085e9c927a           /home          btrfs   subvol=@home,defaults,noatime,nodiratime,space_cache     0       2
+UUID=21f7eb94-...SNIP...-d4f58f94e141           none           swap    sw                                                       0       0
+```
+*(Pro-tip: Use the `noauto` option in fstab to prevent automatic mounting at boot for specific drives).*
+
+### 5.2. Manual Mounting & Unmounting
+To mount a storage device (e.g., a USB drive on `/dev/sdb1`) dynamically:
+
+```bash
+MikyRedHat@htb[/htb]$ sudo mount /dev/sdb1 /mnt/usb
+MikyRedHat@htb[/htb]$ cd /mnt/usb && ls -l
+```
+
+To safely detach the device, use `umount`. You cannot unmount a file system currently in use by a process. 
+
+```bash
+MikyRedHat@htb[/htb]$ sudo umount /mnt/usb
+```
+
+### 5.3. Troubleshooting Busy File Systems
+If an unmount fails due to the device being "busy", use `lsof` to identify and terminate the locked processes:
+
+```bash
+cry0l1t3@htb:~$ lsof +D /mnt/usb | grep cry0l1t3
+vncserver 6006        cry0l1t3  mem       REG      0,24       402274 /usr/bin/perl (path dev=0,26)
+...SNIP...
+```
+
+## 6. Swap Space Management
+
+Swap acts as an overflow area on the disk for inactive memory pages when physical RAM is fully utilized, preventing out-of-memory (OOM) kernel crashes. It is also essential for system hibernation.
+
+*   **Deployment:** Swap should ideally be placed on a dedicated partition or a swapfile to minimize fragmentation. Due to the potential for sensitive data to page out to disk, encrypting swap space is a security best practice.
+*   **Commands:**
+    *   `mkswap`: Formats a target partition/file as a Linux swap area.
+    *   `swapon`: Activates the swap space for kernel use.
