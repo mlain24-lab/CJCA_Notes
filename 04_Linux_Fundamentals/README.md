@@ -2878,3 +2878,36 @@ $ truss ls
 execve("/usr/bin/ls", 0xFFBFFDC4, 0xFFBFFDC8)  argc = 1
 ...SNIP...
 ```
+
+# Linux Terminal Shortcuts & Workflow Optimization
+
+Mastering CLI shortcuts is essential for optimizing workflow efficiency, accelerating command execution, and minimizing reliance on the GUI during system administration or penetration testing. Once these keystrokes become muscle memory, they significantly reduce typing overhead.
+
+## Auto-Completion
+* **`[TAB]`**: Initiates auto-complete. Suggests context-aware options based on the provided `STDIN`, including executable binaries, current directory files, or specific command flags.
+
+## Cursor Navigation
+* **`[CTRL] + A`**: Jump to the beginning of the current line.
+* **`[CTRL] + E`**: Jump to the end of the current line.
+* **`[CTRL] + [←] / [→]`**: Move the cursor backward or forward by one entire word.
+* **`[ALT] + B / F`**: Alternative binding to move backward (`B`) or forward (`F`) by one word.
+
+## Text Manipulation (Cut & Paste)
+* **`[CTRL] + U`**: Cut (erase) all characters from the current cursor position to the beginning of the line.
+* **`[CTRL] + K`**: Cut (erase) all characters from the current cursor position to the end of the line.
+* **`[CTRL] + W`**: Cut (erase) the word immediately preceding the cursor.
+* **`[CTRL] + Y`**: Yank (paste) the most recently cut text or word into the current cursor position.
+
+## Process & Task Management
+* **`[CTRL] + C`**: Interrupts the current foreground task by sending a `SIGINT` (Signal Interrupt). Useful for halting active enumerations, scans, or scripts immediately.
+* **`[CTRL] + Z`**: Suspends the current foreground process by sending a `SIGTSTP` (Signal Terminal Stop), effectively pushing the task to the background.
+* **`[CTRL] + D`**: Sends an `EOF` (End-of-File) marker, closing the `STDIN` pipe. Often used to exit the current shell session or terminate specific input streams.
+
+## History & Buffer Management
+* **`[CTRL] + R`**: Initiates a reverse historical search. Allows for regex-like pattern matching against previously executed commands in your `.bash_history` or `.zsh_history`.
+* **`[↑] / [↓]`**: Navigate backward or forward through the local command history buffer.
+* **`[CTRL] + L`**: Clears the terminal screen buffer (functions identically to the `clear` command).
+
+## UI & Environment
+* **`[ALT] + [TAB]`**: Switch active focus between opened GUI applications.
+* **`[CTRL] + [+] / [-]`**: Increase or decrease the terminal UI zoom level.
