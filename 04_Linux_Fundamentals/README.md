@@ -2412,3 +2412,85 @@ Password: ******
 Authentication successful
 Desktop name "linux:1 (htb-student)"
 ```
+
+# Linux Security Fundamentals & TCP Wrappers
+
+## 1. Overview and Threat Landscape
+All computer systems possess an inherent risk of intrusion, though the attack surface varies significantly depending on the system's role. For instance, an internet-facing web server hosting complex applications presents a higher risk profile than an internal workstation. While Linux environments are generally less susceptible to the malware that typically plagues Windows operating systems and lack the broad attack surface of Active Directory domain-joined hosts, deploying fundamental security controls remains critical. 
+
+Security is not a static product but an ongoing process. The effectiveness of these measures is directly proportional to the system administrator's operational knowledge and proactive auditing.
+
+
+## 2. Core Security Controls
+
+### Patch Management
+Maintaining the operating system and installed packages up-to-date is the primary line of defense against known vulnerabilities.
+```bash
+MikyRedHat@htb[/htb]$ sudo apt update && sudo apt dist-upgrade
+```
+
+### Network Defense & Access Control
+*   **Firewalls:** Implement robust network-level filtering using `iptables` or `ufw` to strictly control inbound and outbound host traffic.
+*   **SSH Hardening:** Modify `sshd_config` to explicitly disable password-based authentication (enforce public key authentication) and deny direct `root` login (`PermitRootLogin no`).
+*   **Principle of Least Privilege (PoLP):** Avoid using the `root` account for daily administration. Delegate granular permissions using the `sudoers` file instead of granting full `sudo` privileges.
+*   **Intrusion Prevention:** Deploy **fail2ban** to parse log files and dynamically ban IP addresses exhibiting malicious behavior, such as repeated failed login attempts.
+
+### Auditing & Privilege Escalation Prevention
+Routine system audits are mandatory to identify misconfigurations that could lead to local privilege escalation (LPE). Key audit vectors include:
+*   Outdated kernels (some require manual compilation/updating).
+*   User permission anomalies and world-writable files.
+*   Misconfigured `cron` jobs or system services.
+*   Unwanted or unauthorized SUID/SGID binaries.
+
+### Mandatory Access Control (MAC)
+For granular, kernel-level enforcement, leverage **SELinux** or **AppArmor**. These modules enforce access control policies by labeling processes, files, and objects. Even if a user has standard permissions, MAC policies can restrict resource access (e.g., preventing a compromised web service daemon from executing a shell).
+
+### Essential Hardening Checklist
+To baseline a secure Linux system, integrate the following configurations alongside tools like **Snort**, **chkrootkit**, **rkhunter**, and **Lynis**:
+*   Remove or disable unnecessary services and legacy software.
+*   Eliminate services relying on unencrypted authentication (e.g., Telnet, FTP).
+*   Ensure **NTP** is synchronized and **Syslog** is actively forwarding logs.
+*   Enforce unique user accounts (no shared credentials).
+*   Implement strict password policies (complexity, aging, and history restriction).
+*   Configure automated account lockouts after excessive authentication failures.
+
+---
+
+## 3. TCP Wrappers
+
+TCP Wrappers provide a host-based ACL (Access Control List) mechanism to filter network access to Linux services. It operates by evaluating the incoming client's IP address or hostname against defined rulesets before granting access to a requested daemon. 
+
+*Note: TCP Wrappers filter at the application/service layer, not the port layer. They are a supplementary defense-in-depth measure and do not replace a dedicated firewall (like `iptables`).*
+
+### Configuration Files and Logic
+The system evaluates access requests using two primary files, applying the first matching rule encountered:
+1.  `/etc/hosts.allow`: Defines authorized hosts and services.
+2.  `/etc/hosts.deny`: Defines restricted hosts and services.
+
+### Examples
+
+**`/etc/hosts.allow`**
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/hosts.allow
+# Allow access to SSH from the local network
+sshd : 10.129.14.0/24
+
+# Allow access to FTP from a specific host
+ftpd : 10.129.14.10
+
+# Allow access to Telnet from any host in the inlanefreight.local domain
+telnetd : .inlanefreight.local
+```
+
+**`/etc/hosts.deny`**
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/hosts.deny
+# Deny access to all services from any host in the inlanefreight.com domain
+ALL : .inlanefreight.com
+
+# Deny access to SSH from a specific host
+sshd : 10.129.22.22
+
+# Deny access to FTP from hosts with IP addresses in the range of 10.129.22.0/24
+ftpd : 10.129.22.0/24
+```
