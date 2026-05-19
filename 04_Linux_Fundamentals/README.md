@@ -2494,3 +2494,148 @@ sshd : 10.129.22.22
 # Deny access to FTP from hosts with IP addresses in the range of 10.129.22.0/24
 ftpd : 10.129.22.0/24
 ```
+# Linux Firewall & Iptables Fundamentals
+
+## 1. Overview
+The primary objective of a firewall is to secure network infrastructure by controlling and monitoring traffic across different network segments (e.g., internal vs. external zones). Acting as the first line of defense, firewalls filter incoming and outgoing packets based on pre-defined rulesets, protocols, and ports to mitigate unauthorized access and potential threats, thus ensuring the confidentiality, integrity, and availability (CIA triad) of network resources.
+
+In Linux environments, firewall capabilities are natively handled by the **Netfilter** framework, integrated directly into the kernel. It provides hooks that intercept and modify network traffic on the fly. 
+
+Historically, the `iptables` utility (introduced in kernel 2.4 in 2000) became the de facto CLI tool for interacting with Netfilter, replacing older utilities like `ipchains` and `ipfwadm`. It allows SysAdmins to craft complex rulesets to thwart DoS attacks, block port scans, and prevent intrusions.
+
+### Modern Alternatives
+While `iptables` remains heavily used, modern Linux distributions offer alternative frontends and frameworks:
+* **nftables:** The modern successor to `iptables`. It offers enhanced performance and a cleaner syntax, though it is not backwards-compatible with `iptables` rulesets.
+* **UFW (Uncomplicated Firewall):** A user-friendly frontend built on top of `iptables`/`nftables`, designed to simplify rule management for standard use cases.
+* **Firewalld:** A dynamic daemon that manages firewall rules using "zones" and "services" without breaking active connections.
+
+---
+
+## 2. Core Architecture
+
+The `iptables` architecture is structured hierarchically. To master traffic filtering, you must understand how its five main components interact.
+
+### 2.1 Components Overview
+| Component | Description |
+| :--- | :--- |
+| **Tables** | Organize and categorize firewall rules by their broad purpose (e.g., filtering vs. NAT). |
+| **Chains** | Group a set of rules applied to a specific type of network traffic at a specific Netfilter hook. |
+| **Rules** | The actual criteria for filtering traffic and the definitive action to take if a packet matches. |
+| **Matches** | The specific conditions evaluated against a packet (e.g., source IP, destination port, protocol). |
+| **Targets** | The action triggered when a packet matches a rule (e.g., `ACCEPT`, `DROP`, `REJECT`). |
+
+### 2.2 Tables
+Tables define the overarching purpose of the rules they contain.
+
+| Table Name | Description | Built-in Chains |
+| :--- | :--- | :--- |
+| **filter** | The default table. Used strictly for filtering traffic based on IP, port, and protocol. | `INPUT`, `OUTPUT`, `FORWARD` |
+| **nat** | Used for Network Address Translation (modifying source/destination IPs). | `PREROUTING`, `POSTROUTING` |
+| **mangle** | Used for altering packet headers (e.g., changing TTL or TOS). | `PREROUTING`, `OUTPUT`, `INPUT`, `FORWARD`, `POSTROUTING` |
+| **raw** | Used for configuring exemptions from connection tracking. | `PREROUTING`, `OUTPUT` |
+
+### 2.3 Chains
+Chains organize the rules at specific points in the packet's lifecycle.
+* **Built-in Chains:** Created automatically with their parent tables.
+  * `INPUT`: For packets destined for the local system.
+  * `OUTPUT`: For packets originating from the local system.
+  * `FORWARD`: For packets routed through the system (the system acts as a router).
+  * `PREROUTING`: Alters packets as soon as they arrive, before routing decisions.
+  * `POSTROUTING`: Alters packets just before they leave the system.
+* **User-defined Chains:** Custom chains created by the admin to modularize and simplify complex rulesets (e.g., creating a dedicated chain just for web traffic).
+
+### 2.4 Targets and Matches
+When a packet enters a chain, it traverses the rules top-to-bottom. If a packet's characteristics align with a rule's **Matches**, the rule's **Target** dictates its fate.
+
+**Common Targets:**
+| Target | Action Taken |
+| :--- | :--- |
+| **ACCEPT** | Permits the packet to traverse the firewall. |
+| **DROP** | Silently discards the packet (Standard for anti-reconnaissance). |
+| **REJECT** | Discards the packet but returns an ICMP error to the sender. |
+| **LOG** | Logs packet metadata to syslog before passing it to the next rule. |
+| **SNAT / DNAT** | Modifies Source or Destination IPs (requires the `nat` table). |
+
+**Common Matches:**
+| Flag / Match | Description |
+| :--- | :--- |
+| `-p` / `--protocol` | Matches specific protocols (`tcp`, `udp`, `icmp`). |
+| `--dport` / `--sport` | Matches destination or source ports. |
+| `-s` / `-d` | Matches source (`-s`) or destination (`-d`) IP addresses/subnets. |
+| `-m state` | Leverages connection tracking (e.g., `NEW`, `ESTABLISHED`, `RELATED`). |
+| `-m multiport` | Allows defining multiple discontinuous ports in a single rule. |
+| `-m mac` | Matches based on hardware MAC addresses. |
+
+---
+
+## 3. Practical Operations (HTB CJCA Exercises)
+
+Below is the execution of core `iptables` administration tasks. 
+
+**Note:** The order of rules matters. Iptables processes rules sequentially. Use `-I` (Insert) to place a rule at the top of a chain, or `-A` (Append) to place it at the bottom.
+
+**1. Launch a web server on TCP/8080 and block incoming traffic to that port.**
+```bash
+# Start a temporary web server (Python 3)
+python3 -m http.server 8080 &
+
+# Append a DROP rule for TCP port 8080 in the filter table
+sudo iptables -A INPUT -p tcp --dport 8080 -j DROP
+```
+
+**2. Allow incoming traffic on the TCP/8080 port.**
+```bash
+# Insert an ACCEPT rule at the top (line 1) to override the previous DROP rule
+sudo iptables -I INPUT 1 -p tcp --dport 8080 -j ACCEPT
+```
+
+**3. Block traffic from a specific IP address.**
+```bash
+# Drop all incoming packets from a known malicious IP (e.g., 10.10.10.50)
+sudo iptables -A INPUT -s 10.10.10.50 -j DROP
+```
+
+**4. Allow traffic from a specific IP address.**
+```bash
+# Explicitly allow traffic from a trusted Admin IP
+sudo iptables -I INPUT 1 -s 10.10.10.200 -j ACCEPT
+```
+
+**5. Block traffic based on protocol.**
+```bash
+# Drop all incoming ICMP packets (Disable ping responses)
+sudo iptables -A INPUT -p icmp -j DROP
+```
+
+**6. Allow traffic based on protocol.**
+```bash
+# Allow all incoming ICMP packets (Enable ping responses)
+sudo iptables -I INPUT 1 -p icmp -j ACCEPT
+```
+
+**7. Create a new user-defined chain.**
+```bash
+# Create a custom chain for SSH brute-force protection/logging
+sudo iptables -N SSH_LOG_CHAIN
+```
+
+**8. Forward traffic to a specific chain.**
+```bash
+# Route all incoming SSH traffic to the custom chain for further inspection
+sudo iptables -A INPUT -p tcp --dport 22 -j SSH_LOG_CHAIN
+```
+
+**9. Delete a specific rule.**
+```bash
+# Approach A: Delete by exact match specification
+sudo iptables -D INPUT -p tcp --dport 8080 -j DROP
+
+# Approach B: Delete by line number (e.g., delete rule #1 in INPUT)
+sudo iptables -D INPUT 1
+```
+
+**10. List all existing rules.**
+```bash
+# List all rules in the filter table with high verbosity, numeric IPs, and line numbers
+sudo iptables -L -v -n --line-numbers
+```
