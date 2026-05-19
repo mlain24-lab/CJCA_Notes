@@ -2750,3 +2750,131 @@ Mastery of CLI text-processing tools is non-negotiable for parsing heavy log fil
 * `tail -f`: Real-time log monitoring.
 * `grep` / `egrep`: Pattern matching and filtering (e.g., extracting IP addresses or `Failed password` strings).
 * `awk` / `sed`: Advanced column extraction and string manipulation.
+
+# Solaris OS & Linux Distributions: A Technical Comparison
+
+## Overview of Solaris
+Solaris is a robust, Unix-based operating system originally developed by Sun Microsystems (now owned by Oracle Corporation). Designed for enterprise environments, it excels in mission-critical applications such as database management, cloud computing, and virtualization. Key capabilities include:
+
+* **Scalability & Performance:** Engineered to handle massive datasets and high-end hardware infrastructures with zero performance degradation.
+* **Virtualization:** Features a built-in hypervisor, Oracle VM Server for SPARC, enabling multiple virtual machines to run efficiently on a single physical server.
+* **Reliability & Security:** Incorporates native high availability, fault tolerance, and system management protocols, making it a standard in banking, finance, government, and large-scale data centers.
+
+## Linux Distributions vs. Solaris
+While both are powerful operating systems, they diverge significantly in core architecture and system management tools:
+
+* **Open Source vs. Proprietary:** Most Linux distributions are open-source, whereas Solaris is a proprietary, closed-source OS owned by Oracle.
+* **File Systems:** Linux commonly leverages advanced file systems like ZFS (originally developed by Sun) or ext4/btrfs, providing data compression, snapshots, and high scalability.
+* **Service Management:** Solaris utilizes the **Service Management Facility (SMF)**, an advanced framework ensuring superior reliability and availability for system services, distinct from Linux's `systemd` or `init`.
+* **Package Management:** Solaris uses the **Image Packaging System (IPS)** for robust update and package administration.
+* **Security:** Solaris includes advanced, native security features such as **Role-Based Access Control (RBAC)** and mandatory access controls out-of-the-box, providing granular privilege management.
+
+### Standard Directory Structure
+
+| Directory | Description |
+| :--- | :--- |
+| `/` | The root directory containing all other directories and files in the file system. |
+| `/bin` | Essential system binaries required for booting and basic system operations. |
+| `/boot` | Boot-related files, including the boot loader and kernel images. |
+| `/dev` | Device files representing physical and logical devices attached to the system. |
+| `/etc` | System configuration files, startup scripts, and user authentication data. |
+| `/home` | Standard user home directories. |
+| `/kernel` | Kernel modules and related system files. |
+| `/lib` | Essential shared libraries required by binaries located in `/bin` and `/sbin`. |
+| `/lost+found` | Used by the file system consistency check tool (`fsck`) to store recovered files. |
+| `/mnt` | Temporary mount point for external or temporary file systems. |
+| `/opt` | Optional, third-party software packages installed on the system. |
+| `/proc` | Virtual file system providing process and kernel status information. |
+| `/sbin` | System administration binaries generally requiring root privileges. |
+| `/tmp` | Temporary files created by the system and applications (cleared on reboot). |
+| `/usr` | System-wide read-only data, documentation, libraries, and executables. |
+| `/var` | Variable data files, including system logs, mail spools, and databases. |
+
+## Core Technical Differences & Command Equivalents
+
+### 1. System Information
+**Ubuntu / Linux:** Uses `uname` to display basic kernel and system info.
+```bash
+MikyRedHat@htb[/htb]$ uname -a
+Linux ubuntu 5.4.0-1045 #48-Ubuntu SMP Fri Jan 15 10:47:29 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
+```
+
+**Solaris:** Uses `showrev` for granular system details, including patch levels and hardware providers.
+```bash
+$ showrev -a
+Hostname: solaris
+Kernel architecture: sun4u
+OS version: Solaris 10 8/07 s10s_u4wos_12b SPARC
+Application architecture: sparc
+Hardware provider: Sun_Microsystems
+Domain: sun.com
+Kernel version: SunOS 5.10 Generic_139555-08
+```
+
+### 2. Package Management
+**Ubuntu / Linux:** Relies on `apt` or `apt-get` (Advanced Packaging Tool).
+```bash
+MikyRedHat@htb[/htb]$ sudo apt-get install apache2
+```
+
+**Solaris:** Utilizes `pkgadd` (Solaris Package Manager). Note the absence of `sudo` natively; Solaris relies on RBAC for granular privilege escalation, though `sudo` has been supported since Solaris 11.
+```bash
+$ pkgadd -d SUNWapchr
+```
+
+### 3. Permission Management
+While both systems use `chmod` for basic permissions (e.g., `chmod 700 filename`), they differ slightly in advanced search syntax.
+
+**Ubuntu / Linux:** Finding files with the SUID bit set.
+```bash
+MikyRedHat@htb[/htb]$ find / -perm 4000
+```
+
+**Solaris:** Finding SUID files requires a preceding dash `-` before the permission value due to its distinct permission architecture.
+```bash
+$ find / -perm -4000
+```
+
+### 4. NFS Configuration
+**Solaris (Server Side):** Managed via the `share` command and configured persistently in `/etc/dfs/dfstab`.
+```bash
+# Share a directory with Read/Write privileges
+$ share -F nfs -o rw /export/home
+
+# Persistent configuration file
+# cat /etc/dfs/dfstab
+share -F nfs -o rw /export/home
+```
+
+**Client Side (Both Solaris & Linux):** Mounting the NFS share follows standard syntax.
+```bash
+MikyRedHat@htb[/htb]$ mount -F nfs 10.129.15.122:/nfs_share /mnt/local
+```
+
+### 5. Process Mapping
+Identifying open files by a specific process is a critical aspect of troubleshooting and system administration.
+
+**Ubuntu / Linux:** Uses `lsof`.
+```bash
+MikyRedHat@htb[/htb]$ sudo lsof -c apache2
+```
+
+**Solaris:** Uses `pfiles`. The output is similar to `lsof`, providing the file descriptor type, number, and file name.
+```bash
+$ pfiles `pgrep httpd`
+```
+
+### 6. Executable Access & System Call Tracing
+Tracing system calls helps identify application errors, network connectivity issues, and performance bottlenecks in real-time.
+
+**Ubuntu / Linux:** Uses `strace`. Traces system calls of a defined process.
+```bash
+MikyRedHat@htb[/htb]$ sudo strace -p `pgrep apache2`
+```
+
+**Solaris:** Uses `truss`. It stands out by being capable of tracing not only system calls but also process signals and system calls made by child processes.
+```bash
+$ truss ls
+execve("/usr/bin/ls", 0xFFBFFDC4, 0xFFBFFDC8)  argc = 1
+...SNIP...
+```
