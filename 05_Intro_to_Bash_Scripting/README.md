@@ -161,3 +161,145 @@ esac
 2. **Domain Resolution:** Utilizing standard binaries like host, grep, cut, and tr, the script isolates the raw IPv4 payload and formats it cleanly for further processing.
 3. **Piping & Redirection:** The script makes heavy use of terminal piping (|) and redirection (> /dev/null 2>&1, tee -a) to manipulate output silently, logging necessary data while maintaining a clean user interface.
 4. **Execution Flow Control:** The case statement at the end ties the entire script together, demonstrating how modular functions can be called individually or chained (&&) based on user input.
+
+# Bash Scripting: Conditional Execution & Control Flow
+
+## 1. Overview
+Conditional execution dictates the control flow of a script by evaluating specific conditions. Without it, scripts would be limited to strictly linear, sequential command execution. By defining conditions, we instruct the interpreter to execute or bypass specific code blocks based on given values, variables, or command exit codes. Once a conditional block completes, the script resumes executing the subsequent lines of code.
+
+## 2. Core Components & Syntax
+Let's analyze a standard conditional block to validate user input:
+
+```bash
+#!/bin/bash
+
+# Check for given argument
+if [ $# -eq 0 ]; then
+    echo -e "Error: You need to specify the target domain.\n"
+    echo -e "Usage:"
+    echo -e "\t$0 <domain>"
+    exit 1
+else
+    domain=$1
+fi
+```
+
+### Component Breakdown:
+*   #!/bin/bash (**Shebang**): Defines the absolute path to the interpreter used to parse the script.
+*   if-else-fi (**Control Flow**): The conditional structure used to evaluate statements.
+*   echo (**Standard Output**): Prints specific output to the terminal.
+*   $# / $0 / $1 (**Special Variables**): 
+    *   $#: Holds the total number of arguments passed to the script.
+    *   $0: Holds the name of the script itself.
+    *   $1: Holds the first argument passed by the user.
+*   domain (**Variables**): A user-defined variable storing the assigned value.
+
+Conditions are typically evaluated using variables ($#, $0, $1, domain), integers (0), or strings, paired with specific comparison operators (e.g., -eq for "equal to").
+
+---
+
+## 3. The Shebang (#!)
+The shebang line must always be the very first line of a script. It dictates which interpreter the operating system should use to execute the file. 
+
+```bash
+#!/bin/bash            # Bash interpreter
+#!/usr/bin/env python  # Python interpreter (env lookup)
+#!/usr/bin/env perl    # Perl interpreter (env lookup)
+```
+
+---
+
+## 4. Conditional Structures (if-elif-else)
+Checking conditions is fundamental to scripting. It allows us to handle variables, sanitize user input, and catch errors. In Bash, this is typically handled via if-else statements or case switches.
+
+### Standard if Statement
+The most basic form simply evaluates a single condition:
+
+```bash
+#!/bin/bash
+value=$1
+
+if [ "$value" -gt 10 ]; then
+    echo "The given argument is greater than 10."
+fi
+```
+
+**Execution:**
+```shellsession
+MikyRedHat@htb[/htb]$ bash if-only.sh 5
+MikyRedHat@htb[/htb]$ bash if-only.sh 12
+The given argument is greater than 10.
+```
+
+### Handling Alternatives with elif and else
+To handle multiple potential states and define a fallback for unexpected input, we implement elif (else if) and else blocks:
+
+```bash
+#!/bin/bash
+value=$1
+
+if [ "$value" -gt 10 ]; then
+    echo "The given argument is greater than 10."
+elif [ "$value" -lt 10 ]; then
+    echo "The given argument is less than 10."
+else
+    echo "Error: The given argument is not a valid number."
+fi
+```
+
+**Execution:**
+```shellsession
+MikyRedHat@htb[/htb]$ bash if-elif-else.sh 5
+The given argument is less than 10.
+
+MikyRedHat@htb[/htb]$ bash if-elif-else.sh 12
+The given argument is greater than 10.
+
+MikyRedHat@htb[/htb]$ bash if-elif-else.sh HTB
+if-elif-else.sh: line 5: [: HTB: integer expression expected
+if-elif-else.sh: line 8: [: HTB: integer expression expected
+Error: The given argument is not a valid number.
+```
+*(Note: Bash outputs an error on lines 5 and 8 because it attempts to evaluate a string ("HTB") using integer comparison operators -gt and -lt before hitting the else fallback).*
+
+### Expanding Conditions (Input Validation)
+A practical SysAdmin/Pentester use case is validating that the correct number of parameters are passed before the script continues execution:
+
+```bash
+#!/bin/bash
+
+# Check the exact number of provided arguments
+if [ $# -eq 0 ]; then
+    echo -e "Error: You need to specify the target domain.\n"
+    echo -e "Usage:"
+    echo -e "\t$0 <domain>"
+    exit 1
+elif [ $# -eq 1 ]; then
+    domain=$1
+    echo "Target domain set to: $domain"
+else
+    echo -e "Error: Too many arguments given."
+    exit 1
+fi
+```
+*   exit 1: Terminates the script immediately and returns a non-zero exit code to the OS, indicating an error.
+
+---
+
+## 5. Practical Exercise: Base64 Encoding Loop
+The following script demonstrates a basic for loop used to encode a string multiple times.
+
+```bash
+#!/bin/bash
+# Note: To count the number of characters in a variable: echo -n "$variable" | wc -m
+
+# Variable to encode
+var="nef892na9s1p9asn2aJs71nIsm"
+
+# Iteratively encode the variable in Base64 40 times
+for counter in {1..40}; do
+    var=$(echo -n "$var" | base64)
+done
+
+echo "Final encoded payload generated."
+```
