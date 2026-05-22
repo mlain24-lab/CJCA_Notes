@@ -303,3 +303,82 @@ done
 
 echo "Final encoded payload generated."
 ```
+# Bash Scripting: Arguments, Variables, and Arrays
+
+## 1. Command-Line Arguments
+Bash scripts can accept up to nine positional arguments natively ($1 through $9), with $0 permanently reserved for the name of the executed script. These positional parameters allow us to pass data dynamically at runtime without hardcoding targets.
+
+```bash
+# Execution syntax and variable mapping
+./script.sh ARG1 ARG2 ARG3 ... ARG9
+# $0        $1   $2   $3   ... $9
+```
+
+## 2. Special Variables
+Bash provides built-in special variables to manage script execution states and handle arguments. They rely on the Internal Field Separator (IFS) to parse argument boundaries.
+
+| Variable | Description |
+| :--- | :--- |
+| $# | Returns the total number of arguments passed to the script. Useful for input validation. |
+| $@ | Retrieves the entire list of command-line arguments as an array. |
+| $n | Positional parameter (e.g., $1, $2) to retrieve specific arguments. |
+| $$ | Returns the Process ID (PID) of the currently executing process. |
+| $? | Returns the exit status of the last executed command (0 = Success, 1 = Failure). |
+
+### Practical Implementation: Target Validation
+Before executing a script, ensure it has the correct permissions (chmod +x script.sh). The following snippet demonstrates basic input validation leveraging special variables to ensure a target is provided:
+
+```bash
+#!/bin/bash
+# Check if exactly one argument is provided
+if [ $# -eq 0 ]; then
+    echo -e "Error: Target domain required.\n"
+    echo -e "Usage:\n\t$0 <domain>"
+    exit 1
+else
+    domain=$1
+fi
+```
+
+## 3. Variable Declaration and Assignment
+Unlike strictly typed programming languages, Bash treats all variable values as strings by default. Arithmetic functions are only evaluated if explicitly requested or if the variable contains exclusively numeric values.
+
+**Critical Syntax Rule:** Variable assignment must **not** contain spaces around the equals sign (=).
+
+```bash
+# INCORRECT: Bash interprets 'variable' as a command
+variable = "Error string"
+
+# CORRECT: Direct assignment
+variable="Valid string"
+echo $variable
+```
+*Note: We only use the $ prefix when referencing/calling the variable's value, not during its declaration.*
+
+## 4. Arrays
+Arrays allow us to store an ordered sequence of values under a single variable—highly beneficial when scripting scans across multiple domains or IP addresses. Bash arrays are zero-indexed.
+
+### Declaration and Expansion
+To define an array, wrap the space-separated elements in parentheses. To retrieve an element, use curly braces for variable expansion, specifying the required index enclosed in square brackets.
+
+```bash
+#!/bin/bash
+# Declaring an array of target domains
+domains=(www.inlanefreight.com ftp.inlanefreight.com vpn.inlanefreight.com)
+
+# Retrieving the first element (index 0)
+echo ${domains[0]}
+# Output: www.inlanefreight.com
+```
+
+### String Quoting Behavior
+Enclosing multiple items within single (' ') or double (" ") quotes nullifies the default IFS space separation. Bash will treat everything inside the quotes as a single, contiguous string assigned to a single array index.
+
+```bash
+#!/bin/bash
+# The first three domains are treated as a single element at index 0 due to quotes
+domains=("www.inlanefreight.com ftp.inlanefreight.com vpn.inlanefreight.com" www2.inlanefreight.com)
+
+echo ${domains[0]}
+# Output: www.inlanefreight.com ftp.inlanefreight.com vpn.inlanefreight.com
+```
