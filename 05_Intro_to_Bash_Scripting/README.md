@@ -542,3 +542,104 @@ for i in {1..40}; do
     fi
 done
 ```
+# Bash Scripting: Arithmetic Operations
+
+In Bash, arithmetic operators are essential for performing mathematical calculations and dynamically modifying integer variables. There are seven primary operators commonly utilized in scripting.
+
+## Arithmetic Operators
+
+| Operator | Description |
+| :---: | :--- |
+| `+` | Addition |
+| `-` | Subtraction |
+| `*` | Multiplication |
+| `/` | Division |
+| `%` | Modulus (Remainder) |
+| `variable++` | Post-increment (Increases the value of the variable by 1) |
+| `variable--` | Post-decrement (Decreases the value of the variable by 1) |
+
+## Practical Implementation
+
+The following script demonstrates the basic usage of these operators within a practical scenario:
+
+### `Arithmetic.sh`
+```bash
+#!/bin/bash
+increase=1
+decrease=1
+
+echo "Addition: 10 + 10 = $((10 + 10))"
+echo "Subtraction: 10 - 10 = $((10 - 10))"
+echo "Multiplication: 10 * 10 = $((10 * 10))"
+echo "Division: 10 / 10 = $((10 / 10))"
+echo "Modulus: 10 % 4 = $((10 % 4))"
+
+((increase++))
+echo "Increase Variable: $increase"
+
+((decrease--))
+echo "Decrease Variable: $decrease"
+```
+
+**Execution Output:**
+```shellsession
+MikyRedHat@htb[/htb]$ ./Arithmetic.sh
+Addition: 10 + 10 = 20
+Subtraction: 10 - 10 = 0
+Multiplication: 10 * 10 = 100
+Division: 10 / 10 = 1
+Modulus: 10 % 4 = 2
+Increase Variable: 2
+Decrease Variable: 0
+```
+
+## Calculating Variable Length
+
+Bash also provides a built-in parameter expansion to calculate the length of a string stored in a variable. By using the `${#variable}` syntax, the interpreter evaluates and returns the total character count.
+
+### `VarLength.sh`
+```bash
+#!/bin/bash
+htb="HackTheBox"
+echo ${#htb}
+```
+
+**Execution Output:**
+```shellsession
+MikyRedHat@htb[/htb]$ ./VarLength.sh
+10
+```
+
+## Real-World Application: Loop Control
+
+In network enumeration scripts (such as an ICMP sweep), increment and decrement operators are heavily utilized to manage loop states and tally results. Below is an excerpt from a `CIDR.sh` script, demonstrating how these operators control a `while` loop and track live hosts.
+
+### `CIDR.sh` Snippet
+```bash
+<SNIP>
+    echo -e "\nPinging host(s):"
+    for host in $cidr_ips
+    do
+        stat=1
+        while [ $stat -eq 1 ]
+        do
+            ping -c 2 $host > /dev/null 2>&1
+            if [ $? -eq 0 ]
+            then
+                echo "$host is up."
+                ((stat--))
+                ((hosts_up++))
+                ((hosts_total++))
+            else
+                echo "$host is down."
+                ((stat--))
+                ((hosts_total++))
+            fi
+        done
+    done
+<SNIP>
+```
+
+**Technical Breakdown:**
+* **Loop Control:** The `stat` variable acts as a flag. Once the `ping` command is executed, `((stat--))` decreases its value to `0`, successfully breaking the `while [ $stat -eq 1 ]` condition.
+* **Counters:** `((hosts_up++))` and `((hosts_total++))` function as dynamic counters, incrementing to maintain an accurate record of reachable endpoints versus the total number of scanned hosts.
