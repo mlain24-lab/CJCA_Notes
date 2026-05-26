@@ -496,7 +496,7 @@ Boolean operators return a `true` or `false` value. Logical operators allow us t
 | :--- | :--- |
 | `!` | Logical negation (NOT) |
 | `&&` | Logical AND (both conditions must be true) |
-| `||` | Logical OR (at least one condition must be true) |
+| <code>\|\|</code> | Logical OR (at least one condition must be true) |
 
 ### Logical AND / NOT Example
 ```bash
