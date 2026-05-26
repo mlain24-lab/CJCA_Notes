@@ -382,3 +382,163 @@ domains=("www.inlanefreight.com ftp.inlanefreight.com vpn.inlanefreight.com" www
 echo ${domains[0]}
 # Output: www.inlanefreight.com ftp.inlanefreight.com vpn.inlanefreight.com
 ```
+# Bash Scripting: Comparison & Logical Operators
+
+In Bash scripting, comparison operators are essential elements used to evaluate and compare specific values. Depending on the data type and the condition we need to check, these operators are categorized into four main groups: **String**, **Integer**, **File**, and **Boolean/Logical** operators.
+
+---
+
+## 1. String Operators
+
+Used to evaluate and compare string values. When working with strings, it is a best practice to enclose the variables in double quotes (e.g., `"$1"`) to prevent word splitting and ensure Bash treats the variable's content strictly as a string.
+
+| Operator | Description |
+| :--- | :--- |
+| `==` | Is equal to |
+| `!=` | Is not equal to |
+| `<` | Is less than (in ASCII alphabetical order)* |
+| `>` | Is greater than (in ASCII alphabetical order)* |
+| `-z` | Returns true if the string is empty (null) |
+| `-n` | Returns true if the string is not null |
+
+> **Note:** The `<` and `>` operators only work properly within double square brackets `[[ <condition> ]]`. They evaluate strings based on the **ASCII table** (American Standard Code for Information Interchange), which assigns specific decimal/hexadecimal values to characters. 
+
+### String Comparison Example
+```bash
+#!/bin/bash
+
+# Check the given argument
+if [ "$1" != "HackTheBox" ]; then
+    echo -e "[-] You need to provide 'HackTheBox' as an argument."
+    exit 1
+elif [ $# -gt 1 ]; then
+    echo -e "[-] Too many arguments provided."
+    exit 1
+else
+    domain=$1
+    echo -e "[+] Success! Domain set to: $domain"
+fi
+```
+
+---
+
+## 2. Integer Operators
+
+Used exclusively for comparing numerical integer values. This is particularly useful for controlling script logic based on numerical limits, argument counts, or calculated thresholds.
+
+| Operator | Description |
+| :--- | :--- |
+| `-eq` | Is equal to |
+| `-ne` | Is not equal to |
+| `-lt` | Is less than |
+| `-le` | Is less than or equal to |
+| `-gt` | Is greater than |
+| `-ge` | Is greater than or equal to |
+
+### Integer Comparison Example
+```bash
+#!/bin/bash
+
+# Evaluate the number of arguments passed to the script
+if [ $# -lt 1 ]; then
+    echo -e "[-] Number of given arguments is less than 1."
+    exit 1
+elif [ $# -gt 1 ]; then
+    echo -e "[-] Number of given arguments is greater than 1."
+    exit 1
+else
+    domain=$1
+    echo -e "[+] Number of given arguments equals 1."
+fi
+```
+
+---
+
+## 3. File Operators
+
+Critical for SysAdmin and Pentesting workflows. File operators allow the script to verify the existence, type, and specific permissions of files and directories before executing actions on them.
+
+| Operator | Description |
+| :--- | :--- |
+| `-e` | Returns true if the file exists |
+| `-f` | Tests if it is a regular file |
+| `-d` | Tests if it is a directory |
+| `-L` | Tests if it is a symbolic link |
+| `-N` | Checks if the file was modified after it was last read |
+| `-O` | Returns true if the current user owns the file |
+| `-G` | Returns true if the file's group ID matches the current user's |
+| `-s` | Tests if the file has a size greater than 0 bytes |
+| `-r` | Tests if the file has read permission |
+| `-w` | Tests if the file has write permission |
+| `-x` | Tests if the file has execute permission |
+
+### File Operator Example
+```bash
+#!/bin/bash
+
+# Check if the specified file exists
+if [ -e "$1" ]; then
+    echo -e "[+] The file exists."
+    exit 0
+else
+    echo -e "[-] The file does not exist."
+    exit 2
+fi
+```
+
+---
+
+## 4. Boolean and Logical Operators
+
+Boolean operators return a `true` or `false` value. Logical operators allow us to chain multiple conditions together. For the entire statement to execute, the combined conditions must evaluate correctly according to the logic used.
+
+| Operator | Description |
+| :--- | :--- |
+| `!` | Logical negation (NOT) |
+| `&&` | Logical AND (both conditions must be true) |
+| `||` | Logical OR (at least one condition must be true) |
+
+### Logical AND / NOT Example
+```bash
+#!/bin/bash
+
+# Validate file existence and read permissions
+if [[ -e "$1" && -r "$1" ]]; then
+    echo -e "[+] Target file exists and is readable."
+    exit 0
+elif [[ ! -e "$1" ]]; then
+    echo -e "[-] Target file does not exist."
+    exit 2
+elif [[ -e "$1" && ! -r "$1" ]]; then
+    echo -e "[-] Target file exists, but read permission is denied."
+    exit 1
+else
+    echo -e "[!] An unexpected error occurred."
+    exit 5
+fi
+```
+
+---
+
+## 5. Practical Exercise
+
+**Objective:** Encode a string multiple times using `base64` and set up an `if` condition to break the loop once the generated string matches a specific target value.
+
+```bash
+#!/bin/bash
+
+var="8dm7KsjU28B7v621Jls"
+value="ERmFRMVZ0U2paTlJYTkxDZz09Cg"
+
+for i in {1..40}; do
+    # Encode the current variable into base64
+    var=$(echo "$var" | base64)
+    
+    # Check if the current encoded string matches our target value
+    if [[ "$var" == "$value" ]]; then
+        echo -e "[+] Match found at iteration $i!"
+        echo -e "[+] Payload: $var"
+        break
+    fi
+done
+```
