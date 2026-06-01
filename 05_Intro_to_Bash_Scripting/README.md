@@ -928,5 +928,83 @@ else
     exit 1
 fi
 ```
+# Flow Control: Branches & Case Statements
 
+As previously covered in our flow control documentation, branching logic typically relies on `if-else` and `case` constructs. Having thoroughly examined `if-else` statements, we will now focus on the mechanics and implementation of `case` statements in Bash.
+
+## Bash Case Statements
+
+In Bash scripting, `case` statements function similarly to `switch-case` constructs found in languages like C, C++, and C#. The core difference between an `if-else` construct and a `case` statement is their evaluation method:
+* `if-else` evaluates arbitrary **boolean expressions** (e.g., greater-than, less-than, or complex logical comparisons).
+* `case` strictly evaluates a variable against **exact pattern matches** or string literals. 
+
+### Syntax
+
+The standard structure for a Bash `case` statement is as follows:
+
+```bash
+case <expression> in
+    pattern_1)
+        # Statements to execute if expression matches pattern_1
+        statements
+        ;;
+    pattern_2)
+        # Statements to execute if expression matches pattern_2
+        statements
+        ;;
+    pattern_3)
+        # Statements to execute if expression matches pattern_3
+        statements
+        ;;
+    *)
+        # Catch-all (default) statement
+        statements
+        ;;
+esac
+```
+
+**Breakdown:**
+* The block initiates with the `case` keyword followed by the variable (`<expression>`) to be evaluated.
+* The `in` keyword introduces the patterns.
+* When a pattern matches the expression, its corresponding block of `statements` is executed.
+* Every statement block must be explicitly terminated with a double semicolon (`;;`).
+* The `esac` keyword (`case` written backwards) closes the control block.
+
+### Practical Implementation: `CIDR.sh`
+
+In our `CIDR.sh` enumeration script, we leverage a `case` statement to handle user menu selections. The script defines specific execution paths based on the input provided to `read`:
+
+```bash
+# <SNIP>
+# Available options menu
+echo -e "Additional options available:"
+echo -e "\t1) Identify the corresponding network range of the target domain."
+echo -e "\t2) Ping discovered hosts."
+echo -e "\t3) Execute all checks."
+echo -e "\t*) Exit.\n"
+
+read -p "Select your option: " opt
+
+# Flow control based on user input
+case $opt in
+    "1") 
+        network_range 
+        ;;
+    "2") 
+        ping_host 
+        ;;
+    "3") 
+        network_range && ping_host 
+        ;;
+    *) 
+        exit 0 
+        ;;
+esac
+# <SNIP>
+```
+
+**Execution Logic:**
+* **Options 1 & 2:** Trigger individual, previously defined functions (`network_range` and `ping_host` respectively).
+* **Option 3:** Executes both functions consecutively, utilizing the logical AND operator (`&&`) to chain the commands.
+* **Catch-all (`*`):** Any input not explicitly defined acts as an exit trigger, safely terminating the script with a status code of `0`.
 
