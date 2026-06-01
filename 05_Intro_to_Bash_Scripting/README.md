@@ -1008,3 +1008,140 @@ esac
 * **Option 3:** Executes both functions consecutively, utilizing the logical AND operator (`&&`) to chain the commands.
 * **Catch-all (`*`):** Any input not explicitly defined acts as an exit trigger, safely terminating the script with a status code of `0`.
 
+# Bash Scripting: Functions
+
+## Overview
+As scripts scale in complexity, managing recurring routines becomes critical. Functions modularize code, allowing us to group multiple commands into a single, reusable block enclosed in curly brackets (`{ ... }`). This approach drastically reduces script size, enhances readability, and prevents code duplication. 
+
+Because Bash processes scripts sequentially from top to bottom, functions must always be defined *before* they are called in the execution flow.
+
+## Defining Functions
+There are two standard methods for defining functions in Bash. Both are valid, though using the `function` keyword (Method 1) is often preferred for readability.
+
+**Method 1: Using the `function` keyword**
+```bash
+function name {
+    <commands>
+}
+```
+
+**Method 2: Using parentheses**
+```bash
+name() {
+    <commands>
+}
+```
+
+*Example from `CIDR.sh` (Method 1):*
+```bash
+<SNIP>
+# Identify Network range for the specified IP address(es)
+function network_range {
+    for ip in $ipaddr
+    do
+        netrange=$(whois $ip | grep "NetRange\|CIDR" | tee -a CIDR.txt)
+        cidr=$(whois $ip | grep "CIDR" | awk '{print $2}')
+        cidr_ips=$(prips $cidr)
+        echo -e "\nNetRange for $ip:"
+        echo -e "$netrange"
+    done
+}
+<SNIP>
+```
+
+## Function Execution
+To execute a function, simply call its assigned name as if it were a standard command.
+
+*Example execution via a case statement (`CIDR.sh`):*
+```bash
+<SNIP>
+case $opt in
+    "1") network_range ;;
+    "2") ping_host ;;
+    "3") network_range && ping_host ;;
+    "*") exit 0 ;;
+esac
+```
+
+## Parameter Passing
+Functions natively accept parameters, maintaining the same structure used for passing arguments to a shell script. Inside the function, parameters are accessed using standard positional variables (`$1` to `$9`, `${n}`). Each function maintains its own isolated set of parameters, preventing collisions with the main script's arguments or other functions.
+
+**Variable Scope Note:** Unlike many other programming languages, variables defined within a Bash function are treated as **global** by default. If you define a variable inside a function, it can be called later in the main script. To restrict a variable's scope strictly to the function, it must be explicitly declared using the `local` keyword.
+
+*Example (`PrintPars.sh`):*
+```bash
+#!/bin/bash
+
+function print_pars {
+    echo $1 $2 $3
+}
+
+one="First parameter"
+two="Second parameter"
+three="Third parameter"
+
+print_pars "$one" "$two" "$three"
+```
+
+*Execution:*
+```shellsession
+MikyRedHat@htb[/htb]$ ./PrintPars.sh
+First parameter Second parameter Third parameter
+```
+
+## Return Values and Exit Codes
+When a child process (such as a function) terminates, it passes a return code to the parent process (the Bash shell). This exit status informs the parent whether the execution was successful or if specific errors occurred, allowing the script to dictate the subsequent program flow.
+
+### Standard Bash Return Codes
+| Return Code | Description |
+| :--- | :--- |
+| `1` | General errors |
+| `2` | Misuse of shell builtins |
+| `126` | Command invoked cannot execute |
+| `127` | Command not found |
+| `128` | Invalid argument to exit |
+| `128+n` | Fatal error signal "n" |
+| `130` | Script terminated by Control-C |
+| `255\*` | Exit status out of range |
+
+We can capture a function's execution status using `$?` (the exit status of the last executed command) or capture its standard output by assigning it to a variable.
+
+*Example (`Return.sh`):*
+```bash
+#!/bin/bash
+
+function given_args {
+    if [ $# -lt 1 ]; then
+        echo -e "Number of arguments: $#"
+        return 1
+    else
+        echo -e "Number of arguments: $#"
+        return 0
+    fi
+}
+
+# No arguments given
+given_args
+echo -e "Function status code: $?\n"
+
+# One argument given
+given_args "argument"
+echo -e "Function status code: $?\n"
+
+# Pass the function's stdout into a variable
+content=$(given_args "argument")
+echo -e "Content of the variable: \n\t$content"
+```
+
+*Execution:*
+```shellsession
+MikyRedHat@htb[/htb]$ ./Return.sh
+Number of arguments: 0
+Function status code: 1
+
+Number of arguments: 1
+Function status code: 0
+
+Content of the variable: 
+	Number of arguments: 1
+```
