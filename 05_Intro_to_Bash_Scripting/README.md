@@ -1145,3 +1145,61 @@ Function status code: 0
 Content of the variable: 
 	Number of arguments: 1
 ```
+# Bash Scripting: Debugging Methodologies
+
+Debugging in Bash is the systematic process of identifying, tracking, and resolving errors (bugs) within a script. Beyond basic troubleshooting, debugging techniques are foundational for vulnerability research. For instance, by supplying unexpected input types, we can trigger errors and monitor how the CPU handles them via Assembly; this is a core concept in exploit development that can lead to arbitrary code execution (a topic covered extensively in advanced exploitation modules).
+
+Bash provides built-in debugging options to trace code execution, specifically utilizing the `-x` (xtrace) and `-v` (verbose) flags.
+
+## Execution Tracing (`-x`)
+
+The `-x` (xtrace) flag instructs Bash to print each command and its arguments to standard output before executing them. This is highly effective for verifying the exact values evaluated during runtime. Traced commands are prepended with a plus sign (`+`).
+
+### Example: Standard Debugging (`CIDR.sh`)
+
+```bash
+MikyRedHat@htb[/htb]$ bash -x CIDR.sh
++ '[' 0 -eq 0 ']'
++ echo -e 'You need to specify the target domain.\n'
+You need to specify the target domain.
+
++ echo -e Usage:
+Usage:
++ echo -e '\tCIDR.sh <domain>'
+        CIDR.sh <domain>
++ exit 1
+```
+
+> **Note:** The output explicitly displays the evaluation of the `if` condition (`+ '[' 0 -eq 0 ']'`) followed by the sequential execution of the `echo` commands.
+
+## Verbose Debugging (`-v`)
+
+By combining the verbose (`-v`) and xtrace (`-x`) flags, Bash will print the script's raw source code lines as they are read, immediately followed by their execution trace. This dual output provides a comprehensive overview, allowing you to directly map the script's logic to its runtime behavior.
+
+### Example: Verbose Debugging (`CIDR.sh`)
+
+```bash
+MikyRedHat@htb[/htb]$ bash -x -v CIDR.sh
+#!/bin/bash
+# Check for given argument
+if [ $# -eq 0 ]
+then
+    echo -e "You need to specify the target domain.\n"
+    echo -e "Usage:"
+    echo -e "\t$0 <domain>"
+    exit 1
+else
+    domain=$1
+fi
++ '[' 0 -eq 0 ']'
++ echo -e 'You need to specify the target domain.\n'
+You need to specify the target domain.
+
++ echo -e Usage:
+Usage:
++ echo -e '\tCIDR.sh <domain>'
+        CIDR.sh <domain>
++ exit 1
+```
+
+> **Note:** Compared to standard debugging, this output displays the entire block of code currently being processed before logging the step-by-step execution variables.
