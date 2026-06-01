@@ -715,20 +715,96 @@ MikyRedHat@htb[/htb]$ cat discovered_hosts.txt CIDR.txt
 NetRange:       165.22.0.0 - 165.22.255.255
 CIDR:           165.22.0.0/16
 ```
-# Bash Scripting: Advanced Loops and Control Statements
+# Bash Scripting: Flow Control and Loops
 
-## Loop Control: `break` and `continue`
+Controlling the execution flow of our bash scripts is critical for operational efficiency, automation, and reliable error handling. While `if-else` conditionals handle branching, loops allow us to iterate over data sets dynamically. Every control structure relies on logical expressions (boolean values) to dictate execution.
 
-When working with loops, we often need granular control over the iteration flow. Bash provides two built-in commands for this purpose:
-* `continue`: Skips the remainder of the current iteration and jumps directly to the next one.
-* `break`: Immediately terminates the entire loop, regardless of the loop condition.
+Primary control structures include:
+* **Branches:** `if-else` conditions, `case` statements.
+* **Loops:** `for` loops, `while` loops, `until` loops.
 
-The following script (`WhileBreaker.sh`) demonstrates these concepts within a `while` loop.
+---
 
-~~~bash
+## 1. For Loops
+
+A `for` loop executes commands for every item within a specified list, array, or data stream. It continues iterating as long as it finds corresponding data. In a SysAdmin or Pentesting context, `for` loops are highly effective for iterating through IP arrays to sweep hosts, enumerate ports, or execute commands in bulk.
+
+### Standard Syntax Examples
+
+**Iterating over a simple list:**
+```bash
+for variable in 1 2 3 4; do
+    echo $variable
+done
+```
+
+**Iterating over files:**
+```bash
+for variable in file1 file2 file3; do
+    echo $variable
+done
+```
+
+**Iterating over an IP array (Network Sweeping):**
+```bash
+for ip in "10.10.10.170 10.10.10.174 10.10.10.175"; do
+    ping -c 1 $ip
+done
+```
+
+### One-Liner Execution
+For rapid enumeration directly from the terminal, `for` loops can be compressed into a single line:
+```bash
+MikyRedHat@htb[/htb]$ for ip in 10.10.10.170 10.10.10.174; do ping -c 1 $ip; done
+```
+
+### Real-World Implementation: `CIDR.sh`
+Below is a snippet demonstrating a `for` loop used to automate OSINT network range mapping. It iterates through an array of IP addresses (`$ipaddr`), queries the WHOIS database, and parses the CIDR notation.
+
+```bash
+# Identify Network range for the specified IP address(es)
+function network_range {
+    for ip in $ipaddr; do
+        netrange=$(whois $ip | grep "NetRange\|CIDR" | tee -a CIDR.txt)
+        cidr=$(whois $ip | grep "CIDR" | awk '{print $2}')
+        cidr_ips=$(prips $cidr)
+        
+        echo -e "\nNetRange for $ip:"
+        echo -e "$netrange"
+    done
+}
+```
+
+---
+
+## 2. While Loops
+
+A `while` loop is conceptually straightforward: **it executes a block of code as long as a specified condition evaluates to TRUE.** When nesting loops or implementing complex conditionals, it is crucial to maintain clean code architecture to prevent infinite loops or logic errors. A `while` loop typically relies on a counter variable or a boolean state to determine its termination point.
+
+### Real-World Implementation: Status Polling
+```bash
+stat=1
+while [ $stat -eq 1 ]; do
+    ping -c 2 $host > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "$host is up."
+        ((stat--))
+        ((hosts_up++))
+        ((hosts_total++))
+    else
+        echo "$host is down."
+        ((stat--))
+        ((hosts_total++))
+    fi
+done
+```
+
+### Interrupting Execution: `break` and `continue`
+You can manipulate the flow inside a loop using `break` (to exit the loop entirely) and `continue` (to skip the current iteration and proceed to the next).
+
+**`WhileBreaker.sh` Example:**
+```bash
 #!/bin/bash
-# WhileBreaker.sh
-
 counter=0
 
 while [ $counter -lt 10 ]; do
@@ -736,71 +812,82 @@ while [ $counter -lt 10 ]; do
     echo "Counter: $counter"
     
     if [ $counter == 2 ]; then
-        continue
+        continue # Skips the rest of the loop block for this iteration
     elif [ $counter == 4 ]; then
-        break
+        break    # Exits the loop entirely
     fi
 done
-~~~
-
-**Execution Output:**
-
-~~~shell-session
-MikyRedHat@htb[/htb]$ ./WhileBreaker.sh
-Counter: 1
-Counter: 2
-Counter: 3
-Counter: 4
-~~~
+```
 
 ---
 
-## The `until` Loop
+## 3. Until Loops
 
-The `until` loop is relatively less common than the `for` or `while` loops, but it is highly effective for specific use cases. 
+The `until` loop acts as the inverse of a `while` loop. **It executes a block of code as long as the specified condition evaluates to FALSE.** It continues running *until* the condition is met (becomes true).
 
-**Key Difference:** A `while` loop runs as long as the condition evaluates to `true`. Conversely, an `until` loop executes its block of code as long as the specified condition remains `false`. It essentially runs *until* the desired state is reached.
-
-~~~bash
+**`Until.sh` Example:**
+```bash
 #!/bin/bash
-# Until.sh
-
 counter=0
 
+# The loop runs UNTIL the counter equals 10
 until [ $counter -eq 10 ]; do
-    # Increment $counter by 1
     ((counter++))
     echo "Counter: $counter"
 done
-~~~
-
-**Execution Output:**
-
-~~~shell-session
-MikyRedHat@htb[/htb]$ ./Until.sh
-Counter: 1
-Counter: 2
-Counter: 3
-Counter: 4
-Counter: 5
-Counter: 6
-Counter: 7
-Counter: 8
-Counter: 9
-Counter: 10
-~~~
+```
 
 ---
 
-## Practical Exercise: Decryption Script
+## Loop Control Statements: `break` and `continue`
 
-Below is the skeleton of an exercise script designed to decrypt a string. The script uses multiple `sed` substitutions to decode a base64-encoded string, which is then decrypted using `openssl` (AES-128-CBC). 
+When writing enumeration or automation scripts, you will frequently need to alter the standard flow of a loop based on dynamic conditions (e.g., finding an open port, encountering an offline host). Bash provides two primary commands for this:
 
-To complete this script, a `for` loop must be implemented to iterate through potential values and dynamically generate the correct `$salt`.
+* **`break`**: Immediately terminates the current loop entirely. Execution resumes at the next command following the `done` statement. It is typically used to stop a process once a specific condition is met (e.g., stopping a brute-force loop once valid credentials are found).
+* **`continue`**: Skips the remaining commands in the *current iteration* and forces the loop to proceed to the next iteration. This is extremely useful for error handling, such as bypassing an unresponsive IP in a network sweep without terminating the entire scan.
 
-~~~bash
+### Syntax and Example: `WhileBreaker.sh`
+
+```bash
 #!/bin/bash
-# DecryptScript.sh
+counter=0
+
+while [ $counter -lt 10 ]; do
+    # Increase $counter by 1
+    ((counter++))
+    echo "Counter: $counter"
+    
+    # Condition to skip the current iteration
+    if [ $counter == 2 ]; then
+        echo "--> Skipping the rest of this iteration..."
+        continue
+        
+    # Condition to kill the loop completely
+    elif [ $counter == 4 ]; then
+        echo "--> Break condition met. Terminating loop."
+        break
+    fi
+done
+```
+
+**Output:**
+```shellsession
+MikyRedHat@htb[/htb]$ ./WhileBreaker.sh
+Counter: 1
+Counter: 2
+--> Skipping the rest of this iteration...
+Counter: 3
+Counter: 4
+--> Break condition met. Terminating loop.
+```
+---
+
+## 4. Practical Exercise: Decryption Script
+
+This exercise leverages a script designed to decode a base64 string and decrypt it using OpenSSL. It requires the implementation of a `for` loop to iterate through potential variables to find the correct `$salt`.
+
+```bash
+#!/bin/bash
 
 # Decrypt function
 function decrypt {
@@ -819,6 +906,7 @@ function decrypt {
     MzSaas7k=$(echo $Mzns7293sk | sed 's/9su2n/43n92ka/g')
     Mzns7293sk=$(echo $MzSaas7k | sed 's/ggf3iunds/dn3i8/g')
     MzSaas7k=$(echo $Mzns7293sk | sed 's/uBz/TT0K/g')
+    
     flag=$(echo $MzSaas7k | base64 -d | openssl enc -aes-128-cbc -a -d -salt -pass pass:$salt)
 }
 
@@ -830,7 +918,7 @@ hash="VTJGc2RHVmtYMTl2ZnYyNTdUeERVRnBtQWVGNmFWWVUySG1wTXNmRi9rQT0K"
 # Base64 Encoding Example:
 # user@htb$ echo "Some Text" | base64
 
-# TODO: Implement For-Loop here to generate the correct $salt
+# TODO: Implement For-Loop here to populate $salt dynamically
 
 # Check if $salt is empty
 if [[ ! -z "$salt" ]]; then
@@ -839,4 +927,6 @@ if [[ ! -z "$salt" ]]; then
 else
     exit 1
 fi
-~~~
+```
+
+
