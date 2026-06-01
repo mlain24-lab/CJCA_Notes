@@ -715,3 +715,128 @@ MikyRedHat@htb[/htb]$ cat discovered_hosts.txt CIDR.txt
 NetRange:       165.22.0.0 - 165.22.255.255
 CIDR:           165.22.0.0/16
 ```
+# Bash Scripting: Advanced Loops and Control Statements
+
+## Loop Control: `break` and `continue`
+
+When working with loops, we often need granular control over the iteration flow. Bash provides two built-in commands for this purpose:
+* `continue`: Skips the remainder of the current iteration and jumps directly to the next one.
+* `break`: Immediately terminates the entire loop, regardless of the loop condition.
+
+The following script (`WhileBreaker.sh`) demonstrates these concepts within a `while` loop.
+
+~~~bash
+#!/bin/bash
+# WhileBreaker.sh
+
+counter=0
+
+while [ $counter -lt 10 ]; do
+    ((counter++))
+    echo "Counter: $counter"
+    
+    if [ $counter == 2 ]; then
+        continue
+    elif [ $counter == 4 ]; then
+        break
+    fi
+done
+~~~
+
+**Execution Output:**
+
+~~~shell-session
+MikyRedHat@htb[/htb]$ ./WhileBreaker.sh
+Counter: 1
+Counter: 2
+Counter: 3
+Counter: 4
+~~~
+
+---
+
+## The `until` Loop
+
+The `until` loop is relatively less common than the `for` or `while` loops, but it is highly effective for specific use cases. 
+
+**Key Difference:** A `while` loop runs as long as the condition evaluates to `true`. Conversely, an `until` loop executes its block of code as long as the specified condition remains `false`. It essentially runs *until* the desired state is reached.
+
+~~~bash
+#!/bin/bash
+# Until.sh
+
+counter=0
+
+until [ $counter -eq 10 ]; do
+    # Increment $counter by 1
+    ((counter++))
+    echo "Counter: $counter"
+done
+~~~
+
+**Execution Output:**
+
+~~~shell-session
+MikyRedHat@htb[/htb]$ ./Until.sh
+Counter: 1
+Counter: 2
+Counter: 3
+Counter: 4
+Counter: 5
+Counter: 6
+Counter: 7
+Counter: 8
+Counter: 9
+Counter: 10
+~~~
+
+---
+
+## Practical Exercise: Decryption Script
+
+Below is the skeleton of an exercise script designed to decrypt a string. The script uses multiple `sed` substitutions to decode a base64-encoded string, which is then decrypted using `openssl` (AES-128-CBC). 
+
+To complete this script, a `for` loop must be implemented to iterate through potential values and dynamically generate the correct `$salt`.
+
+~~~bash
+#!/bin/bash
+# DecryptScript.sh
+
+# Decrypt function
+function decrypt {
+    MzSaas7k=$(echo $hash | sed 's/988sn1/83unasa/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/4d298d/9999/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/3i8dqos82/873h4d/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/4n9Ls/20X/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/912oijs01/i7gg/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/k32jx0aa/n391s/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/nI72n/YzF1/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/82ns71n/2d49/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/JGcms1a/zIm12/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/MS9/4SIs/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/Ymxj00Ims/Uso18/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/sSi8Lm/Mit/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/9su2n/43n92ka/g')
+    Mzns7293sk=$(echo $MzSaas7k | sed 's/ggf3iunds/dn3i8/g')
+    MzSaas7k=$(echo $Mzns7293sk | sed 's/uBz/TT0K/g')
+    flag=$(echo $MzSaas7k | base64 -d | openssl enc -aes-128-cbc -a -d -salt -pass pass:$salt)
+}
+
+# Variables
+var="9M"
+salt=""
+hash="VTJGc2RHVmtYMTl2ZnYyNTdUeERVRnBtQWVGNmFWWVUySG1wTXNmRi9rQT0K"
+
+# Base64 Encoding Example:
+# user@htb$ echo "Some Text" | base64
+
+# TODO: Implement For-Loop here to generate the correct $salt
+
+# Check if $salt is empty
+if [[ ! -z "$salt" ]]; then
+    decrypt
+    echo $flag
+else
+    exit 1
+fi
+~~~
