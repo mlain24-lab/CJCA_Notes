@@ -562,3 +562,81 @@ The native GUI tool for monitoring system health and process states. Accessible 
 Often referred to as "Task Manager on steroids", Process Explorer provides deep visibility into the OS execution state. 
 * **Capabilities:** Tracks loaded DLLs, active memory-mapped files, and specific handles (e.g., identifying which process has locked a specific file). 
 * **Troubleshooting:** Highly effective for mapping parent-child process trees, hunting malware persistence, and identifying orphaned processes holding file locks.
+
+# Auditing Windows Service Permissions
+
+## 1. Overview & Threat Landscape
+Windows services manage background, long-running processes that are critical to the operating system. Despite their importance, service permission configurations are frequently overlooked by system administrators. This oversight makes them prime targets for attackers looking to:
+* Load malicious DLLs (DLL Hijacking).
+* Execute unauthorized applications without requiring explicit administrative credentials.
+* Achieve Local Privilege Escalation (LPE).
+* Maintain stealthy persistence within the compromised host.
+
+These vulnerabilities typically arise from misconfigured service permissions introduced during third-party software installations or administrative oversights.
+
+## 2. Service Accounts & The Principle of Least Privilege
+By default, services often run under the context of the user performing the installation. For example, if an administrator installs a DHCP server using their personal account, the service relies on those specific credentials. If that administrator leaves the organization and their account is disabled, the DHCP service will fail to start, leading to network-wide IP allocation failures (a self-inflicted Denial of Service). 
+
+To prevent downtime and mitigate security risks, organizations must implement dedicated **Service Accounts**. Furthermore, applying the **Principle of Least Privilege (PoLP)** is crucial. Not all applications require maximum system authority.
+
+Notable built-in Windows service accounts include:
+* `LocalService`: Standard privileges on the local system, presents anonymous credentials on the network.
+* `NetworkService`: Standard privileges on the local system, presents the computer's credentials on the network.
+* `LocalSystem` (`NT AUTHORITY\SYSTEM`): The highest level of access on a Windows OS. Default for many services, but should be strictly audited and restricted when possible.
+
+## 3. Enumerating & Managing Services
+
+### 3.1 Graphical Interface (`services.msc`)
+The `services.msc` snap-in provides a comprehensive view of service configurations. Key properties to audit include:
+* **Path to executable:** The absolute path and command-line arguments executed upon service startup. If the target directory has weak NTFS permissions, an attacker can replace the legitimate binary with a malicious executable.
+* **Recovery Tab:** Defines actions taken upon service failure (e.g., "Run a program"). This is a known vector for attackers to trigger malicious payloads by intentionally crashing a legitimate service.
+
+### 3.2 Command-Line Interface (`sc.exe`)
+The Service Control (`sc`) utility is highly scriptable and essential for rapid enumeration during both offensive operations and incident response.
+
+**Querying Service Configuration:**
+```cmd
+C:\> sc qc wuauserv
+```
+*(Note: To query a remote host, append the IP or hostname: `sc \\<IP> query <ServiceName>`)*
+
+**Modifying Service Binaries (Requires Elevation):**
+```cmd
+C:\> sc config wuauserv binPath="C:\Windows\Temp\malicious_payload.exe"
+```
+
+**Starting and Stopping Services:**
+```cmd
+C:\> sc stop wuauserv
+C:\> sc start wuauserv
+```
+
+## 4. Security Descriptors & SDDL Auditing
+Every securable object in Windows possesses a Security Descriptor, which contains the object's owner, a **Discretionary Access Control List (DACL)** for access control, and a **System Access Control List (SACL)** for auditing/logging.
+
+You can extract a service's security descriptor using `sc sdshow`:
+```cmd
+C:\> sc sdshow wuauserv
+```
+
+### Deciphering SDDL (Security Descriptor Definition Language)
+The output of `sdshow` is formatted in SDDL. A sample DACL entry looks like this: `D:(A;;CCLCSWRPLORC;;;AU)`
+
+**Breakdown of `D:(A;;CCLCSWRPLORC;;;AU)`:**
+* `D:` Indicates the start of the DACL.
+* `A;;` Defines that the proceeding actions are **Allowed** (vs. Denied).
+* `CC` (`SERVICE_QUERY_CONFIG`): Permission to query the Service Control Manager (SCM).
+* `LC` (`SERVICE_QUERY_STATUS`): Permission to query the current status.
+* `SW` (`SERVICE_ENUMERATE_DEPENDENTS`): Permission to list dependent services.
+* `RP` (`SERVICE_START`): Permission to start the service.
+* `LO` (`SERVICE_INTERROGATE`): Permission to interrogate the service.
+* `RC` (`READ_CONTROL`): Permission to read the security descriptor.
+* `;;;AU` Defines the Security Principal. In this case, `AU` stands for **Authenticated Users**.
+
+## 5. PowerShell Automation (`Get-Acl`)
+For scalable enumeration across Active Directory domains or larger networks, PowerShell provides a more robust and human-readable output than `sc`. By querying the service registry path, we can retrieve explicit Security Identifiers (SIDs) alongside the SDDL.
+
+```powershell
+PS C:\> Get-Acl -Path HKLM:\System\CurrentControlSet\Services\wuauserv | Format-List
+```
+This cmdlet outputs the explicit Owner, Group, detailed Access Control Entries (ACEs), and the full SDDL string, making it an invaluable tool for automated vulnerability discovery and auditing.
