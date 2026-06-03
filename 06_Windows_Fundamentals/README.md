@@ -300,3 +300,146 @@ C:\htb> icacls c:\users /remove joe
 ```
 
 > **SysAdmin/Pentester Note:** `icacls` is highly effective in domain environments for managing object ownership, toggling inheritance permissions, and identifying misconfigured ACLs during privilege escalation vectors.
+
+# NTFS vs. Share Permissions
+
+## Overview
+Microsoft Windows holds over 70% of the global desktop operating system market share. This widespread adoption makes it a high-value target for malware authors, leading to the misconception that Windows is inherently less secure. In reality, malicious software can be written for any operating system. A significant vector for malware propagation in Windows environments involves network shares with misconfigured or overly lenient permissions. Notably, legacy vulnerabilities like EternalBlue (SMBv1) continue to be exploited to deploy ransomware and compromise enterprise networks.
+
+The Server Message Block (SMB) protocol facilitates access to shared resources such as files, directories, and printers across enterprise environments of all sizes.
+
+> **Note:** Visualizing concepts like SMB communication is critical for mastering network enumeration and lateral movement. Always analyze architectural diagrams carefully to understand the underlying traffic flow.
+
+## Understanding Permissions: NTFS vs. Share
+A common pitfall in system administration is conflating NTFS permissions with Share permissions. While they often apply to the same resource, they operate independently. Access control on a Windows network share hosted on an NTFS volume requires a firm understanding of both layers.
+
+### Share Permissions
+Share permissions dictate what access is granted when a user connects to a folder over the network via SMB.
+
+| Permission | Description |
+| :--- | :--- |
+| **Full Control** | Grants all Change and Read permissions, plus the ability to modify permissions for NTFS files and subfolders. |
+| **Change** | Allows reading, editing, adding, and deleting files and subfolders. |
+| **Read** | Permits viewing file and subfolder contents. |
+
+### NTFS Basic Permissions
+NTFS permissions apply locally at the file system level, regardless of how the user accesses the data (locally, RDP, or SMB).
+
+| Permission | Description |
+| :--- | :--- |
+| **Full Control** | Add, edit, move, delete files/folders, and modify NTFS permissions for all allowed objects. |
+| **Modify** | View and modify files/folders, including adding or deleting files. |
+| **Read & Execute** | Read file contents and execute programs/scripts. |
+| **List folder contents** | View the directory listing of files and subfolders. |
+| **Read** | Read the contents of files. |
+| **Write** | Write changes to existing files and add new files to a folder. |
+| **Special Permissions** | Granular, advanced permission options. |
+
+### NTFS Special Permissions
+These provide highly granular access control over specific file and directory operations, allowing SysAdmins to enforce the Principle of Least Privilege (PoLP).
+
+| Permission | Description |
+| :--- | :--- |
+| **Full control** | Grants absolute control, including taking ownership and changing permissions. |
+| **Traverse folder / execute file** | Allows navigating through folders without explicit permissions to the parent, and permits program execution. |
+| **List folder / read data** | Allows viewing directory listings and opening/viewing file contents. |
+| **Read attributes** | Allows viewing basic file/folder attributes (e.g., system, archive, read-only, hidden). |
+| **Read extended attributes** | Allows viewing program-specific extended attributes. |
+| **Create files / write data** | Allows creating files in a folder and modifying file data. |
+| **Create folders / append data** | Allows creating subfolders and appending data to existing files (prevents overwriting). |
+| **Write attributes** | Allows changing standard file attributes (does not grant file/folder creation). |
+| **Write extended attributes** | Allows changing program-specific extended attributes. |
+| **Delete subfolders and files** | Allows deleting nested subfolders and files (parent folder remains intact). |
+| **Delete** | Allows deleting the specified object (parent, subfolder, or file). |
+| **Read permissions** | Allows reading the ACL (permissions) of a file or folder. |
+| **Change permissions** | Allows modifying the ACL (permissions) of a file or folder. |
+| **Take ownership** | Allows taking ownership of an object. The owner can bypass existing permissions to grant themselves full control. |
+
+> **Key Takeaway:** NTFS permissions apply to the host system. By default, objects inherit permissions from their parent directory (e.g., `C:\`), but inheritance can be disabled to set custom ACLs. Share permissions act as a secondary gatekeeper when data is accessed over SMB. When a user connects over the network, the *most restrictive* effective permission between the Share ACL and the NTFS ACL applies.
+
+## Practical Implementation: Creating a Network Share
+To solidify our understanding of SMB and NTFS interaction, we will deploy a network share on a Windows 10 target within the lab environment.
+
+*In enterprise environments, shares typically reside on SAN/NAS infrastructure or dedicated Windows Servers. Encountering shares on a desktop OS during a penetration test usually indicates a small business setup, a misconfiguration, or a beachhead system used by an attacker for data exfiltration.*
+
+### Creating and Configuring the Share (GUI Method)
+
+1. **Folder Creation:** Create a new folder named `Company Data` on the desktop.
+2. **Advanced Sharing:** Use the Advanced Sharing settings to configure the share parameters.
+   *SysAdmin Note:* The share name defaults to the folder name. Limiting simultaneous user connections is a solid resource management and security practice.
+3. **Access Control List (ACL) Configuration:** Like NTFS, shared resources use an ACL containing Access Control Entries (ACEs)—typically security principals (users and groups).
+   *For this lab, we will apply the default `Everyone` group with `Read` access to test baseline connectivity.*
+
+## Enumeration and Access (SMBClient & CIFS)
+
+### SMB Enumeration from Linux
+Acting as the client (Pwnbox), we query the target server (Windows 10) to list available shares.
+
+```bash
+MikyRedHat@htb[/htb]$ smbclient -L SERVER_IP -U htb-student
+Enter WORKGROUP\htb-student's password: 
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    ADMIN$          Disk      Remote Admin
+    C$              Disk      Default share
+    Company Data    Disk      
+    IPC$            IPC       Remote IPC
+```
+
+### Connecting to the Target Share
+```bash
+MikyRedHat@htb[/htb]$ smbclient '\\SERVER_IP\Company Data' -U htb-student
+Password for [WORKGROUP\htb-student]:
+Try "help" to get a list of possible commands.
+
+smb: \>
+```
+
+### Troubleshooting Connectivity: Windows Defender Firewall
+If a connection fails despite correct credentials and ACLs, the primary blocker is often the Windows Defender Firewall. By default, Windows blocks incoming SMB traffic from devices outside its Workgroup or Domain.
+
+* **Workgroup vs. Domain Authentication:** In a Workgroup, authentication relies on the local SAM database. In a Windows Domain, netlogon requests are authenticated centrally against Active Directory (AD). Identifying the environment architecture is crucial for successful authentication.
+* **Firewall Profiles:** Windows groups firewall rules into three profiles: Domain, Private, and Public. Modifying specific predefined inbound rules (e.g., `File and Printer Sharing (SMB-In)`) is standard practice over completely deactivating the firewall, which is a severe security risk. (In domains, these are centrally managed via GPOs).
+
+### NTFS Permissions Review
+Assuming the firewall allows the connection, our remote access is still bound by the `Everyone: Read` Share permission. Let's examine the underlying NTFS permissions locally on the target:
+
+*SysAdmin Note: Grey checkmarks indicate inherited permissions from the parent directory (`C:\`).*
+
+### Mounting the SMB Share
+To interact seamlessly with the share directly from the Linux CLI, we can mount it locally. If we grant `Full control` to `Everyone` at the Share level, our effective access relies entirely on the granular NTFS permissions.
+
+*Ensure the CIFS utilities are installed on your Linux host:*
+```bash
+MikyRedHat@htb[/htb]$ sudo apt-get install cifs-utils
+```
+
+*Create the mount point:*
+```bash
+MikyRedHat@htb[/htb]$ sudo mount -t cifs -o username=htb-student,password=Academy_WinFun! //SERVER_IP/"Company Data" /home/user/Desktop/
+```
+
+## Post-Exploitation and Administration Monitoring
+
+Once connected, System Administrators and Incident Responders leverage built-in Windows utilities to monitor shares, audit access, and track potential breaches.
+
+### Enumerating Shares with `net share`
+Administrative shares (`C$`, `ADMIN$`, `IPC$`) are deployed by default upon Windows installation. This means an attacker with appropriate privileges can remotely access the entire `C:\` drive of any Windows system on the network via SMB.
+
+```cmd
+C:\Users\htb-student> net share
+
+Share name   Resource                        Remark
+-------------------------------------------------------------------------------
+C$           C:\                             Default share
+IPC$                                         Remote IPC
+ADMIN$       C:\WINDOWS                      Remote Admin
+Company Data C:\Users\htb-student\Desktop\Company Data
+
+The command completed successfully.
+```
+
+### Computer Management and Event Viewer
+* **Computer Management (`compmgmt.msc`):** Provides a GUI to monitor active Shares, current Sessions, and Open Files. This is a critical artifact location during Incident Response to track unauthorized SMB access and lateral movement.
+* **Event Viewer (`eventvwr.msc`):** Windows logs nearly every system action. Share access, modifications, and authentication attempts generate Security logs (e.g., Event ID 5140 for network share access), providing a detailed audit trail of operations performed on the file system.
