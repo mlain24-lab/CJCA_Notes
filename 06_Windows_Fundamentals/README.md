@@ -443,3 +443,122 @@ The command completed successfully.
 ### Computer Management and Event Viewer
 * **Computer Management (`compmgmt.msc`):** Provides a GUI to monitor active Shares, current Sessions, and Open Files. This is a critical artifact location during Incident Response to track unauthorized SMB access and lateral movement.
 * **Event Viewer (`eventvwr.msc`):** Windows logs nearly every system action. Share access, modifications, and authentication attempts generate Security logs (e.g., Event ID 5140 for network share access), providing a detailed audit trail of operations performed on the file system.
+
+# Windows Services & Processes
+
+## 1. Windows Services Overview
+
+Services are a foundational component of the Windows operating system, designed to create and manage long-running background processes. They can be configured to start automatically at system boot without user intervention and continue to run seamlessly even after the user terminates their session.
+
+Applications can also be deployed as services (e.g., network monitoring agents on a Windows Server). Windows services govern critical OS functions, including network stacks, system diagnostics, credential management, and Windows Updates.
+
+### 1.1. Service Management
+Services are primarily managed via the **Service Control Manager (SCM)**, accessible through the GUI via the `services.msc` MMC snap-in. This interface displays crucial metadata:
+* **Name & Description**
+* **Status** (Running, Stopped, Paused, Starting, Stopping)
+* **Startup Type** (Manual, Automatic, Automatic - Delayed Start)
+* **Log On As** (The account context under which the service executes)
+
+For CLI administration, services can be queried and managed using `sc.exe` or PowerShell cmdlets like `Get-Service`.
+
+```powershell
+PS C:\htb> Get-Service | Where-Object {$_.Status -eq "Running"} | Select-Object -First 2 | Format-List
+
+Name                : AdobeARMservice
+DisplayName         : Adobe Acrobat Update Service
+Status              : Running
+DependentServices   : {}
+ServicesDependedOn  : {}
+CanPauseAndContinue : False
+CanShutdown         : False
+CanStop             : True
+ServiceType         : Win32OwnProcess
+
+Name                : Appinfo
+DisplayName         : Application Information
+Status              : Running
+DependentServices   : {}
+ServicesDependedOn  : {RpcSs, ProfSvc}
+CanPauseAndContinue : False
+CanShutdown         : False
+CanStop             : True
+ServiceType         : Win32OwnProcess, Win32ShareProcess
+```
+
+> **Security Note:** Windows services operate within three primary privilege contexts: **Local Service**, **Network Service**, and **System**. Modifying service states typically requires Administrative privileges. Consequently, misconfigured service permissions (e.g., insecure service executables or unquoted service paths) represent a highly common privilege escalation vector during pentesting.
+
+---
+
+## 2. Critical System Services
+
+Windows relies on several core services that are critical to OS stability. Terminating or updating resources utilized by these services often necessitates a system reboot. 
+
+| Service / Process | Description |
+| :--- | :--- |
+| **`smss.exe`** | **Session Manager SubSystem:** Responsible for initializing and handling system sessions. |
+| **`csrss.exe`** | **Client Server Runtime Process:** The user-mode execution portion of the Windows subsystem. |
+| **`wininit.exe`** | **Windows Initialization Process:** Processes the `Wininit.ini` file, applying system changes post-reboot (e.g., after software installations). |
+| **`logonui.exe`** | **Logon User Interface:** Facilitates the graphical user login interface. |
+| **`lsass.exe`** | **Local Security Authority Subsystem Service:** Verifies user logons, generates authentication processes for `winlogon`, and enforces security policies. |
+| **`services.exe`** | **Service Control Manager:** Manages the initialization, pausing, and stopping of background services. |
+| **`winlogon.exe`** | **Windows Logon Process:** Handles the Secure Attention Sequence (SAS), loads user profiles, and locks the machine during screensaver execution. |
+| **`System`** | A background system process that hosts and executes the Windows kernel space. |
+| **`svchost.exe` (RPCSS)** | Manages system services running from dynamic-link libraries (`.dll`) leveraging the Remote Procedure Call (RPC) Service. |
+| **`svchost.exe` (Dcom/PnP)** | Manages `.dll`-based system services utilizing the Distributed Component Object Model (DCOM) and Plug and Play (PnP) infrastructures. |
+
+---
+
+## 3. Processes
+
+Processes are instances of executing programs. They operate in the background, either triggered autonomously by the OS or spawned by user applications. While third-party application processes can usually be terminated without systemic impact, killing core OS processes (like `lsass.exe`, `csrss.exe`, or `smss.exe`) will result in system instability or immediate failure (BSOD).
+
+### 3.1. High-Value Target: LSASS (`lsass.exe`)
+The **Local Security Authority Subsystem Service** is responsible for enforcing security policies. Upon a logon attempt, LSASS verifies the credentials and generates an access token defining the user's privileges. It also manages password changes and logs security events (logons/logoffs) to the Windows Security Event Log.
+> **Pentesting Relevance:** `lsass.exe` is a primary target during post-exploitation. Pentesters frequently dump the LSASS process memory to extract plaintext credentials, NTLM hashes, and Kerberos tickets using tools like Mimikatz or ProcDump.
+
+---
+
+## 4. Sysinternals Tools
+
+The **Sysinternals Suite** is a powerful collection of portable, advanced administration and diagnostic tools for Windows. They do not require formal installation and can be executed dynamically from disk or accessed remotely via a Microsoft-hosted SMB share: `\\live.sysinternals.com\tools`.
+
+**Example: Executing ProcDump directly from the live share:**
+```cmd
+C:\htb> \\live.sysinternals.com\tools\procdump.exe -accepteula
+
+ProcDump v9.0 - Sysinternals process dump utility
+Copyright (C) 2009-2017 Mark Russinovich and Andrew Richards
+Sysinternals - www.sysinternals.com
+
+Monitors a process and writes a dump file when the process exceeds the
+specified criteria or has an exception.
+...
+```
+
+**Key Sysinternals Tools:**
+* **Process Explorer:** An advanced Task Manager alternative.
+* **Process Monitor (ProcMon):** Captures real-time file system, Registry, and network activity.
+* **TCPView:** Maps network connections to specific processes.
+* **PsExec:** Allows for remote command execution over SMB, a critical tool for lateral movement.
+
+---
+
+## 5. System Monitoring Utilities
+
+### 5.1. Task Manager (`taskmgr.exe`)
+The native GUI tool for monitoring system health and process states. Accessible via `Ctrl + Shift + Esc`, `Ctrl + Alt + Del`, or by running `taskmgr` from an administrative console.
+
+| Tab | Functionality |
+| :--- | :--- |
+| **Processes** | Displays running apps and background processes with real-time CPU, Memory, Disk, and Network usage. |
+| **Performance** | Provides telemetry graphs (Uptime, CPU/RAM/Disk/GPU utilization) and acts as a gateway to the Resource Monitor. |
+| **App History** | Historical resource usage metrics per application for the current user. |
+| **Startup** | Manages applications initialized at boot and measures their impact on boot times. |
+| **Users** | Lists active user sessions and their respective process trees and resource consumption. |
+| **Details** | Exposes granular process data: Name, PID, Status, Executing User Context, and specific memory allocation. |
+| **Services** | Quick view of SCM data (Name, PID, Description, Status) with a shortcut to the `services.msc` MMC. |
+
+### 5.2. Process Explorer
+Often referred to as "Task Manager on steroids", Process Explorer provides deep visibility into the OS execution state. 
+* **Capabilities:** Tracks loaded DLLs, active memory-mapped files, and specific handles (e.g., identifying which process has locked a specific file). 
+* **Troubleshooting:** Highly effective for mapping parent-child process trees, hunting malware persistence, and identifying orphaned processes holding file locks.
