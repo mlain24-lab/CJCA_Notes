@@ -180,3 +180,123 @@ C:\PROGRAM FILES (X86)\VMWARE
 ```cmd
 tree c:\ /f | more
 ```
+# Windows File Systems & NTFS Permissions
+
+## 1. File Systems Overview
+Windows primarily supports five file system types: **FAT12, FAT16, FAT32, NTFS, and exFAT**. Modern Windows OS environments predominantly utilize NTFS, while FAT12 and FAT16 are deprecated. For standard operations, troubleshooting, and penetration testing, the focus remains on FAT32 and NTFS.
+
+### 1.1 FAT32 (File Allocation Table)
+Commonly deployed on portable storage media (USB drives, SD cards) and legacy hard drives. The "32" denotes the 32-bit data structure used to identify data clusters.
+
+**Pros:**
+* **Broad Device Compatibility:** Seamlessly integrates with digital cameras, gaming consoles, smartphones, and legacy hardware.
+* **OS Cross-Compatibility:** Natively supported across Windows (95+), macOS, and Linux.
+
+**Cons:**
+* **File Size Limit:** Capped at a strict maximum file size of 4GB per file.
+* **Lack of Native Security:** No built-in file encryption, compression, or inherent data protection mechanisms (requires third-party tools).
+
+### 1.2 NTFS (New Technology File System)
+The default and standard file system for Windows since Windows NT 3.1. It addresses FAT32's limitations by offering superior performance, improved data structuring, and extensive metadata support.
+
+**Pros:**
+* **Fault Tolerance & Reliability:** Auto-restores file system consistency post-system crash or power failure via built-in journaling (logs all file additions, modifications, and deletions).
+* **Granular Security:** Allows precise permission configurations via Access Control Lists (ACLs) at both the file and directory levels.
+* **Scalability:** Supports massive partition sizes.
+
+**Cons:**
+* **Limited Native Support:** Most mobile and legacy media devices (e.g., older smart TVs, digital cameras) lack native NTFS read/write capabilities.
+
+---
+
+## 2. NTFS Permissions
+NTFS provides robust access control through basic and advanced permissions. For administrative efficiency, files and directories inherit permissions from their parent container by default, though an administrator can explicitly disable inheritance to enforce strict least-privilege policies.
+
+| Permission Type | Description |
+| :--- | :--- |
+| **Full Control** | Complete authority to read, write, modify, and delete files/folders. |
+| **Modify** | Grants read, write, and delete capabilities. |
+| **List Folder Contents** | Allows viewing/listing of folders, subfolders, and file execution. *(Folders inherit only)* |
+| **Read and Execute** | Allows viewing/listing of files and subfolders, plus file execution. *(Files and folders inherit)* |
+| **Write** | Permits adding files to folders/subfolders and modifying file contents. |
+| **Read** | Allows viewing folder/subfolder listings and reading file contents. |
+| **Traverse Folder** | Permits/denies navigation through restricted directories to access allowed target files/folders (e.g., moving through `C:\users\bsmith\documents\` to reach a specific `.zip` archive without having list permissions on the parent directories). |
+
+---
+
+## 3. Integrity Control Access Control List (`icacls`)
+While NTFS permissions are configurable via the File Explorer GUI (Security tab), SysAdmins and Pentesters frequently leverage the `icacls` command-line utility for granular access control, automation, and enumeration.
+
+### 3.1 Enumerating Permissions
+To list NTFS permissions for a specific directory, run `icacls` against the target path:
+
+```cmd
+C:\htb> icacls c:\windows
+c:\windows NT SERVICE\TrustedInstaller:(F)
+           NT SERVICE\TrustedInstaller:(CI)(IO)(F)
+           NT AUTHORITY\SYSTEM:(M)
+           NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)
+           BUILTIN\Administrators:(M)
+           BUILTIN\Administrators:(OI)(CI)(IO)(F)
+           BUILTIN\Users:(RX)
+           BUILTIN\Users:(OI)(CI)(IO)(GR,GE)
+           CREATOR OWNER:(OI)(CI)(IO)(F)
+Successfully processed 1 files; Failed processing 0 files
+```
+
+**Inheritance Flags:**
+* `(CI)`: Container Inherit
+* `(OI)`: Object Inherit
+* `(IO)`: Inherit Only
+* `(NP)`: Do Not Propagate Inherit
+* `(I)`: Permission inherited from parent container
+
+*Example:* `NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)` indicates the SYSTEM account holds object inherit, container inherit, inherit only, and full access rights over all nested file system objects within that directory.
+
+**Basic Access Rights:**
+* `F`: Full access
+* `D`: Delete access
+* `N`: No access
+* `M`: Modify access
+* `RX`: Read and execute access
+* `R`: Read-only access
+* `W`: Write-only access
+
+### 3.2 Modifying Permissions
+**Reviewing Current Access:**
+```cmd
+C:\htb> icacls c:\Users
+c:\Users NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+         BUILTIN\Administrators:(OI)(CI)(F)
+         BUILTIN\Users:(RX)
+         BUILTIN\Users:(OI)(CI)(IO)(GR,GE)
+         Everyone:(RX)
+         Everyone:(OI)(CI)(IO)(GR,GE)
+Successfully processed 1 files; Failed processing 0 files
+```
+
+**Granting Explicit Rights:**
+Granting the user `joe` Full Control (`F`) over the `C:\users` directory. *Note: Because the `(OI)` and `(CI)` flags are omitted, `joe` will only have rights over the parent folder, not the nested subdirectories or files.*
+```cmd
+C:\htb> icacls c:\users /grant joe:f
+processed file: c:\users
+Successfully processed 1 files; Failed processing 0 files
+```
+
+**Verifying the ACL Change:**
+```cmd
+C:\htb> icacls c:\users
+c:\users WS01\joe:(F)
+         NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+         BUILTIN\Administrators:(OI)(CI)(F)
+         ...
+Successfully processed 1 files; Failed processing 0 files
+```
+
+**Revoking Access:**
+To completely strip a user's explicit permissions from the object:
+```cmd
+C:\htb> icacls c:\users /remove joe
+```
+
+> **SysAdmin/Pentester Note:** `icacls` is highly effective in domain environments for managing object ownership, toggling inheritance permissions, and identifying misconfigured ACLs during privilege escalation vectors.
