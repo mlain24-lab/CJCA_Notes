@@ -765,3 +765,92 @@ PS C:\htb> Get-ExecutionPolicy -List
 # Bypass the policy for the current active session
 PS C:\htb> Set-ExecutionPolicy Bypass -Scope Process
 ```
+
+# Windows Management Instrumentation (WMI)
+
+## Overview
+Windows Management Instrumentation (WMI) is a robust administrative framework and a core subsystem of the Windows Operating System, pre-installed since Windows 2000. It provides system administrators and security professionals with powerful capabilities for system monitoring, centralized device administration, and application management across corporate networks. 
+
+## Core Architecture & Components
+
+| Component | Description |
+| :--- | :--- |
+| **WMI Service** | The core process (`Winmgmt`) that runs automatically at boot. It acts as the primary intermediary routing requests between WMI providers, the WMI repository, and management applications. |
+| **Managed Objects** | Any physical or logical enterprise component (e.g., hard drives, network adapters, running processes) that can be queried or managed via WMI. |
+| **WMI Providers** | Interfaces that monitor events and extract data related to specific Managed Objects (e.g., Active Directory provider, Registry provider). |
+| **Classes** | Blueprints used by WMI providers to structure and pass data to the WMI service. |
+| **Methods** | Executable functions attached to classes that allow administrative actions to be performed, such as starting or killing processes on local or remote machines. |
+| **WMI Repository** | The centralized database where all static WMI-related data and class definitions are stored. |
+| **CIM Object Manager** | The system component that processes application queries, requests data from WMI providers, and returns the structured output to the consumer. |
+| **WMI API** | The application programming interface that enables external software to interact natively with the WMI infrastructure. |
+| **WMI Consumer** | Any application or script that sends queries to objects via the CIM Object Manager. |
+
+## Administrative & Operational Use Cases
+WMI is heavily utilized in enterprise environments for both day-to-day IT operations and security auditing. Key use cases include:
+* Querying status and telemetry information for local/remote endpoints.
+* Hardening and configuring security policies on remote machines.
+* Modifying Identity and Access Management (IAM) settings (user/group permissions).
+* Adjusting core system properties and environment variables.
+* Achieving Remote Code Execution (RCE) for administrative tasks.
+* Scheduling background processes and automated tasks.
+* Configuring and forwarding system event logging.
+
+## WMI Command-Line Interface (WMIC)
+While WMI administrative tasks can be heavily automated using PowerShell, operations can also be executed directly via the Command Prompt using `WMIC`. 
+
+> **Note:** Microsoft has officially deprecated WMIC in modern Windows builds in favor of PowerShell cmdlets, but it remains highly relevant for legacy systems and "Living off the Land" (LotL) techniques.
+
+### Global Switches & Context
+To view a comprehensive listing of WMIC global switches, aliases, and modes, you can spawn an interactive shell or query the help module:
+
+```cmd
+C:\htb> wmic /?
+```
+
+### Enumeration Example
+WMIC relies on aliases coupled with verbs (actions), adverbs (modifiers), and switches. To quickly retrieve baseline OS information, the `LIST` verb and `BRIEF` adverb can be utilized:
+
+```cmd
+C:\htb> wmic os list brief
+
+BuildNumber  Organization  RegisteredUser  SerialNumber             SystemDirectory      Version
+19041                      Owner           00123-00123-00123-AAOEM  C:\Windows\system32  10.0.19041
+```
+
+## PowerShell Integration
+Modern Windows environments utilize native PowerShell cmdlets to interface with WMI, offering deeper integration with object-oriented outputs.
+
+### Enumerating WMI Classes (`Get-WmiObject`)
+The `Get-WmiObject` cmdlet retrieves instances of WMI classes. It is highly effective for gathering intelligence on remote machines.
+
+```powershell
+PS C:\htb> Get-WmiObject -Class Win32_OperatingSystem | select SystemDirectory,BuildNumber,SerialNumber,Version | ft
+
+SystemDirectory     BuildNumber SerialNumber            Version
+---------------     ----------- ------------            -------
+C:\Windows\system32 19041       00123-00123-00123-AAOEM 10.0.19041
+```
+
+### Executing WMI Methods (`Invoke-WmiMethod`)
+The `Invoke-WmiMethod` cmdlet is used to call methods within WMI objects. This is heavily utilized for remote execution, file manipulation, and process instantiation.
+
+```powershell
+PS C:\htb> Invoke-WmiMethod -Path "CIM_DataFile.Name='C:\users\public\spns.csv'" -Name Rename -ArgumentList "C:\Users\Public\kerberoasted_users.csv"
+
+__GENUS          : 2
+__CLASS          : __PARAMETERS
+__SUPERCLASS     :
+__DYNASTY        : __PARAMETERS
+__RELPATH        :
+__PROPERTY_COUNT : 1
+__DERIVATION     : {}
+__SERVER         :
+__NAMESPACE      :
+__PATH           :
+ReturnValue      : 0
+PSComputerName   :
+```
+> **Success Indicator:** A `ReturnValue` of `0` typically denotes that the method executed successfully without errors.
+
+## Security Implications
+WMI's architecture makes it a dual-edged sword. While it is an indispensable tool for Blue Team operations (monitoring, incident response, SIEM telemetry), it is equally valuable for Red Team operators. Threat actors routinely leverage WMI for stealthy enumeration, persistent access, and lateral movement across Active Directory environments, bypassing traditional file-based detection mechanisms.
