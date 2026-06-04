@@ -640,3 +640,26 @@ For scalable enumeration across Active Directory domains or larger networks, Pow
 PS C:\> Get-Acl -Path HKLM:\System\CurrentControlSet\Services\wuauserv | Format-List
 ```
 This cmdlet outputs the explicit Owner, Group, detailed Access Control Entries (ACEs), and the full SDDL string, making it an invaluable tool for automated vulnerability discovery and auditing.
+
+# Windows Sessions & Account Types
+
+Understanding Windows session types and account privileges is a foundational concept for both system administration and identifying privilege escalation vectors.
+
+## 1. Interactive Logon Sessions
+An interactive (or local) logon session is established when a user explicitly authenticates to a local system or an Active Directory domain by supplying valid credentials.
+
+**Standard Initiation Methods:**
+* **Direct/Physical Console:** Logging in locally at the machine interface.
+* **Secondary Logon:** Requesting a session under a different security context using the `runas` command via the CLI.
+* **Remote Access:** Establishing a GUI session over the network via Remote Desktop Protocol (RDP).
+
+## 2. Non-Interactive Logon Sessions
+Unlike standard user profiles, non-interactive accounts do not require explicit login credentials (passwords). These are built-in accounts strictly utilized by the Windows operating system to automatically manage background services, applications, and scheduled tasks upon system boot, without requiring human interaction.
+
+### Non-Interactive Account Tiers
+
+| Account Type | System Identifier | Privilege Level & Description |
+| :--- | :--- | :--- |
+| **Local System** | `NT AUTHORITY\SYSTEM` | The most powerful built-in account in the Windows OS. It is utilized for critical OS-related tasks (e.g., starting core Windows services). *Note: This account possesses higher execution privileges than the local Administrators group.* |
+| **Network Service** | `NT AUTHORITY\NetworkService` | Operates with privileges similar to a standard local user on the host machine but has the capability to establish authenticated sessions for certain network services across the domain. |
+| **Local Service** | `NT AUTHORITY\LocalService` | A restricted, less privileged version of the SYSTEM account. It operates with limited local functionality, comparable to a standard user account, and is designed to run isolated local services safely. |
