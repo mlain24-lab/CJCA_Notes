@@ -663,3 +663,105 @@ Unlike standard user profiles, non-interactive accounts do not require explicit 
 | **Local System** | `NT AUTHORITY\SYSTEM` | The most powerful built-in account in the Windows OS. It is utilized for critical OS-related tasks (e.g., starting core Windows services). *Note: This account possesses higher execution privileges than the local Administrators group.* |
 | **Network Service** | `NT AUTHORITY\NetworkService` | Operates with privileges similar to a standard local user on the host machine but has the capability to establish authenticated sessions for certain network services across the domain. |
 | **Local Service** | `NT AUTHORITY\LocalService` | A restricted, less privileged version of the SYSTEM account. It operates with limited local functionality, comparable to a standard user account, and is designed to run isolated local services safely. |
+
+# Interacting with the Windows Operating System
+
+## 1. Graphical User Interface (GUI) & Remote Desktop Protocol (RDP)
+
+### Graphical User Interface (GUI)
+While standard users rely on GUIs to abstract the complexity of the command line, system administrators frequently leverage GUI-based MMC (Microsoft Management Console) snap-ins for enterprise management tasks, such as administering Active Directory, configuring IIS, or querying databases. 
+
+### Remote Desktop Protocol (RDP)
+RDP is a proprietary Microsoft protocol that provides a remote graphical interface over a network connection. 
+* **Port:** Operates on dedicated TCP port `3389`.
+* **Use Case:** Essential for quick, remote administration of servers and workstations. It is also the standard protocol for providing remote workforce access, typically secured via a Virtual Private Network (VPN) tunnel.
+
+---
+
+## 2. The Windows Command Line (CMD)
+
+Command-line interfaces provide granular control over the OS, allowing administrators to troubleshoot efficiently and automate repetitive tasks (e.g., bulk Active Directory user creation). In Windows, the two primary CLI environments are Command Prompt (CMD) and PowerShell.
+
+### CMD (`cmd.exe`)
+The legacy Windows command interpreter. It handles one-off network diagnostics (e.g., `ipconfig`), batch scripting, and system configuration. 
+
+* **Execution:** Launched via the Start Menu, the Run dialog, or directly from `C:\Windows\system32\cmd.exe`.
+* **Built-in Documentation:** * Run `help` to list available commands.
+  * Run `help <command-name>` or `<command-name> /?` for detailed syntax and parameters.
+
+**Example: Scheduled Tasks & IP Configuration**
+```cmd
+C:\htb> help schtasks
+C:\htb> ipconfig /all
+```
+
+---
+
+## 3. Windows PowerShell
+
+PowerShell is a robust, object-oriented command shell and scripting language designed specifically for system administration and automation. Built on the `.NET` Framework, it allows direct, programmatic access to the Windows OS and file system.
+
+### Cmdlets
+PowerShell operates using **cmdlets** (lightweight command-line tools). They follow a strict `Verb-Noun` naming convention.
+
+* **Basic Execution:** `Get-ChildItem` (Lists directory contents).
+* **Arguments:** Handled via flags. Press `Tab` to iterate through available parameters.
+* **Complex Execution:** `Get-ChildItem -Path C:\Users\Administrator\Downloads -Recurse`
+
+### Aliases
+To streamline operations and provide parity with legacy CMD or Linux environments, PowerShell utilizes aliases for common cmdlets.
+* `cd` or `sl` = `Set-Location`
+* `ls` or `gci` = `Get-ChildItem`
+
+**Managing Aliases:**
+```powershell
+PS C:\htb> Get-Alias                  # View all aliases
+PS C:\htb> New-Alias -Name "Show-Files" Get-ChildItem
+```
+
+### The Help System
+PowerShell's help system requires manual updating to maintain local documentation.
+* `Update-Help` : Downloads and installs the latest help files locally.
+* `Get-Help <cmdlet-name>` : Displays local documentation.
+* `Get-Help <cmdlet-name> -Online` : Opens the official Microsoft documentation in a web browser.
+
+---
+
+## 4. Script Execution and Security Policies
+
+### Running Scripts & The PowerShell ISE
+The PowerShell ISE (Integrated Scripting Environment) provides a GUI for writing, testing, and debugging scripts on the fly. 
+
+Scripts can be executed locally, loaded into memory, or imported as modules to make their functions globally available in the current session:
+```powershell
+# Execute script and pipe output to format-list
+PS C:\htb> .\PowerView.ps1; Get-LocalGroup | fl
+
+# Import module to access its custom cmdlets
+PS C:\htb> Import-Module .\PowerView.ps1
+PS C:\htb> Get-Module | select Name, ExportedCommands | fl
+```
+
+### Execution Policies
+The Execution Policy is a safety feature (not a strict security boundary) designed to prevent the accidental execution of malicious scripts. 
+
+| Policy | Description |
+| :--- | :--- |
+| **AllSigned** | Requires all scripts and configuration files to be digitally signed by a trusted publisher. |
+| **Bypass** | Nothing is blocked; no warnings or prompts are displayed. |
+| **Default** | Maps to `Restricted` (Windows Desktop) or `RemoteSigned` (Windows Server). |
+| **RemoteSigned** | Downloaded scripts must be signed. Locally created scripts do not require a signature. |
+| **Restricted** | Permits individual commands but blocks all script execution (`.ps1`, `.psm1`). |
+| **Undefined** | Removes the currently assigned execution policy. |
+| **Unrestricted** | Default for non-Windows machines. Runs unsigned scripts but warns on intranet zone executions. |
+
+**Bypassing Execution Policies**
+Because Execution Policies are not robust security controls, they can be easily bypassed by users with standard privileges by altering the policy scope strictly for their active process session.
+
+```powershell
+# Check current policies across all scopes
+PS C:\htb> Get-ExecutionPolicy -List
+
+# Bypass the policy for the current active session
+PS C:\htb> Set-ExecutionPolicy Bypass -Scope Process
+```
