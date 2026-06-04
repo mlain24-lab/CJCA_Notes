@@ -854,3 +854,24 @@ PSComputerName   :
 
 ## Security Implications
 WMI's architecture makes it a dual-edged sword. While it is an indispensable tool for Blue Team operations (monitoring, incident response, SIEM telemetry), it is equally valuable for Red Team operators. Threat actors routinely leverage WMI for stealthy enumeration, persistent access, and lateral movement across Active Directory environments, bypassing traditional file-based detection mechanisms.
+
+
+# Microsoft Management Console (MMC)
+
+## Overview
+The Microsoft Management Console (MMC) is a native Windows administrative framework designed to manage hardware, software, and network components across an enterprise environment. Active since Windows Server 2000, MMC acts as a unified, modular interface for hosting specialized administrative tools known as **snap-ins**.
+
+## Core Functionality & Snap-ins
+MMC allows system administrators to construct custom management consoles tailored to specific operational workflows. By grouping relevant snap-ins, you can centrally manage services, policies, and logs without relying on disparate standalone applications.
+
+* **Snap-ins:** Modular GUI tools (e.g., *Services*, *Event Viewer*, *Group Policy Object Editor*).
+* **Targeting Scope:** Snap-ins can be configured to manage either the local system or remote network hosts, making it a critical component for centralized IT infrastructure administration.
+
+## Deployment & Configuration Workflow
+
+1. **Initialize Console:** Execute `mmc.exe` from the Start menu or the Run dialog (`Win + R`). Upon initial launch, it opens a blank "Console Root" environment.
+2. **Load Modules:** Navigate to `File` $\rightarrow$ `Add/Remove Snap-in...` (or use `Ctrl + M`) to access the available snap-ins matrix.
+3. **Define Target Host:** When adding a component (such as the *Services* snap-in), the system prompts for the target machine. Select either `Local computer` or designate `Another computer` (via hostname or IP address) for remote administration.
+4. **Export Configuration:** Once the custom workspace is fully assembled, save the configuration as a Microsoft Saved Console (`.msc`) file.
+   * *Default Path:* Saved profiles default to the Windows Administrative Tools directory (`%AppData%\Microsoft\Windows\Start Menu\Programs\Administrative Tools`).
+   * *Execution:* Saving the `.msc` file allows for the immediate execution and deployment of customized administrative views in future troubleshooting or management sessions.
