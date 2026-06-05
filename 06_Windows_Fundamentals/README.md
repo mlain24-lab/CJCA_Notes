@@ -964,3 +964,144 @@ Server Core is the optimal choice for resource efficiency and hardened security.
 | **Control Panel** | ❌ Not Available | ✅ Available |
 | **Windows Explorer** | ❌ Not Available | ✅ Available |
 | **Web Browsers (IE / Edge)** | ❌ Not Available | ✅ Available |
+
+# Windows Security
+
+Security is a foundational pillar of Windows operating systems. Due to their complex architecture, extensive built-in features, and overlapping configuration layers, Windows environments present a vast attack surface. Even fully patched systems remain vulnerable to local and remote exploits if misconfigured. 
+
+Over the years, Microsoft has significantly improved the Windows security posture. As networks become increasingly interconnected and threat actors more sophisticated, administrators are provided with advanced, built-in features to harden systems, actively monitor activity, and detect intrusion attempts.
+
+Windows relies on strict security principles to enforce access control and authentication across the OS. These principles apply to all entities—such as users, network computers, threads, and processes—authorizing them for specific actions. This security model operates on the principle of least privilege to minimize unauthorized access, making it highly challenging for attackers or malware to exploit the system.
+
+## Security Identifier (SID)
+
+Every security principal on a Windows system is assigned a unique Security Identifier (SID), generated automatically by the OS. This allows Windows to uniquely distinguish between entities—even those with identical usernames—and assign granular rights based on their specific SID. SIDs are variable-length string values stored in the security database and are attached to a user's access token to validate authorized actions.
+
+A SID is composed of an **Identifier Authority** and a **Relative ID (RID)**. In an Active Directory (AD) domain environment, the SID also incorporates the domain SID.
+
+```powershell
+PS C:\htb> whoami /user
+
+USER INFORMATION
+----------------
+
+User Name           SID
+=================== =============================================
+ws01\bob            S-1-5-21-674899381-4069889467-2080702030-1002
+```
+
+### SID Breakdown Structure
+`(SID)-(revision level)-(identifier-authority)-(subauthority1)-(subauthority2)-(etc)`
+
+| Component | Example | Description |
+| :--- | :--- | :--- |
+| **SID** | `S` | Identifies the string as a Security Identifier. |
+| **Revision Level** | `1` | The specification version (historically always `1`). |
+| **Identifier-Authority** | `5` | A 48-bit string identifying the authority (computer or network) that generated the SID. |
+| **Subauthority 1** | `21` | Variable number identifying the user's relation or group relative to the creating authority. |
+| **Subauthority 2** | `674899381...` | Identifies the specific computer or domain that created the SID. |
+| **Subauthority 3 (RID)** | `1002` | The Relative ID (RID) distinguishing the specific account. It defines whether the user is a standard user, guest, administrator, or belongs to another default group. |
+
+## Security Accounts Manager (SAM) and Access Control
+
+The **Security Accounts Manager (SAM)** is a database file in Windows that stores user passwords and authorizes local users and groups to execute specific processes.
+
+Access rights are strictly managed by **Access Control Entries (ACE)** residing within **Access Control Lists (ACL)**. ACLs define exactly which users, groups, or processes are permitted to interact with a securable object (e.g., executing a binary, modifying a file).
+
+Securable object permissions are defined by their security descriptor, classified into two primary ACL types:
+* **Discretionary Access Control List (DACL):** Defines access permissions granted or denied to specific users and groups.
+* **System Access Control List (SACL):** Directs the generation of audit logs for attempts to access a securable object.
+
+Every thread and process initiated by a user undergoes a strict authorization check. Central to this process are **access tokens**, validated by the **Local Security Authority (LSA)**. Alongside the SID, these tokens carry critical security-relevant data. Understanding this tokenization and authorization flow is critical for identifying privilege escalation vectors during pentesting.
+
+## User Account Control (UAC)
+
+**User Account Control (UAC)** is a fundamental security mechanism designed to prevent malware from executing or manipulating processes that could compromise the OS. UAC utilizes **Admin Approval Mode** to prevent unauthorized software installation and system-wide modifications. 
+
+When a standard user attempts an action requiring administrative privileges, execution is halted, and a consent prompt appears. For unprivileged users, execution is denied unless valid administrator credentials are provided. For administrators, UAC asks for explicit confirmation before elevating the process token. This prompt acts as an interactive barrier, successfully interrupting silent executions of malicious scripts or payloads until explicit authorization is granted.
+
+## Windows Registry
+
+The **Windows Registry** is a critical, hierarchical database storing low-level configurations for the operating system and installed applications. It is strictly segmented into computer-specific and user-specific data. The database can be interacted with via the `regedit` GUI or command-line tools.
+
+The tree-structure consists of root keys (main folders), subkeys (subfolders), and values (entries). The Registry supports 11 primary value types:
+
+| Value Type | Description |
+| :--- | :--- |
+| **REG_BINARY** | Raw binary data in any form. |
+| **REG_DWORD** | A 32-bit number. |
+| **REG_DWORD_LITTLE_ENDIAN** | A 32-bit number in little-endian format (Standard for Windows architectures). |
+| **REG_DWORD_BIG_ENDIAN** | A 32-bit number in big-endian format (Common in UNIX architectures). |
+| **REG_EXPAND_SZ** | A null-terminated string containing unexpanded environment variables (e.g., `%PATH%`). |
+| **REG_LINK** | A null-terminated Unicode string containing the target path of a symbolic link. |
+| **REG_MULTI_SZ** | A sequence of null-terminated strings, terminated by an empty string (`\0`). |
+| **REG_NONE** | No defined value type. |
+| **REG_QWORD** | A 64-bit number. |
+| **REG_QWORD_LITTLE_ENDIAN** | A 64-bit number in little-endian format. |
+| **REG_SZ** | A standard null-terminated string (Unicode or ANSI). |
+
+All root keys begin with `HKEY`. For example, `HKEY_LOCAL_MACHINE` (HKLM) stores configurations relevant to the local system environment. HKLM loads essential subkeys (`SAM`, `SECURITY`, `SYSTEM`, `SOFTWARE`, `HARDWARE`, and `BCD`) into memory during boot. 
+
+The system-wide registry hives are physically stored in: `C:\Windows\System32\Config\`
+User-specific hives (`HKCU`) are located in the user's profile directory: `C:\Users\<USERNAME>\NTUSER.DAT`
+
+### Run and RunOnce Keys (Persistence Vectors)
+
+Specific registry hives contain logical groups of keys and values responsible for loading software into memory upon system boot or user login. In a pentesting context, these are critical persistence vectors.
+
+The four primary autostart keys are:
+1. `HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run`
+2. `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`
+3. `HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+4. `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+
+**Example: Querying HKLM Run Keys**
+```powershell
+PS C:\htb> reg query HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run
+
+HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run
+    SecurityHealth    REG_EXPAND_SZ    %windir%\system32\SecurityHealthSystray.exe
+    RTHDVCPL          REG_SZ           "C:\Program Files\Realtek\Audio\HDA\RtkNGUI64.exe" -s
+    Greenshot         REG_SZ           C:\Program Files\Greenshot\Greenshot.exe
+```
+
+## Application Whitelisting and AppLocker
+
+**Application whitelisting** enforces a "zero-trust" execution environment where only explicitly approved software, scripts, and executables are permitted to run. This dramatically reduces the attack surface compared to blacklisting, mitigating the threat of zero-day malware and unauthorized tools. NIST highly recommends whitelisting for high-security environments.
+
+**AppLocker**, Microsoft's native whitelisting solution, provides granular control over executables, scripts, MSIs, DLLs, and packaged apps. Administrators can enforce rules based on:
+* Publisher name (derived from digital signatures).
+* Product or File name.
+* Version, File paths, or Cryptographic hashes.
+
+AppLocker rules can be deployed universally or targeted to specific Active Directory Security Groups. Best practice dictates deploying AppLocker in Audit Mode initially to analyze operational impact before enforcing restrictive policies.
+
+## Local Group Policy
+
+Group Policy provides a centralized framework for configuring OS settings. While typically deployed via Domain Controllers as Group Policy Objects (GPOs) in an AD environment, settings can also be enforced locally using **Local Group Policy** (`gpedit.msc`), even on non-domain joined systems.
+
+Local Group Policy is highly effective for system hardening, allowing administrators to restrict software execution, enforce robust password policies, and enable advanced security features.
+
+A prime example is **Credential Guard**, a virtualization-based security (VBS) feature that isolates the LSA process, neutralizing credential theft attacks (such as Pass-the-Hash or Mimikatz). Additionally, features like fine-grained auditing and AppLocker are managed natively through the Local Group Policy Editor under `Computer Configuration` -> `Administrative Templates`.
+
+## Windows Defender Antivirus
+
+**Windows Defender Antivirus** is the native, built-in endpoint protection solution for modern Windows operating systems. Evolving from a simple anti-spyware tool to a robust security suite, it currently operates with a minimal footprint, avoiding the system bloat common in third-party AV solutions.
+
+Key capabilities include:
+* **Real-time Protection:** Scans execution flows and memory dynamically.
+* **Cloud-Delivered Protection:** Uses telemetry and automated sample submission to analyze unknown binaries heuristically, locking files during analysis.
+* **Tamper Protection:** Secures core AV services, preventing local administrators, malicious scripts, or rogue GPOs from disabling the antivirus.
+* **Controlled Folder Access:** Acts as native anti-ransomware protection, restricting unauthorized processes from modifying protected directories.
+
+**Checking Defender Status via PowerShell:**
+```powershell
+PS C:\htb> Get-MpComputerStatus | Select-Object -Property AMServiceEnabled, AntispywareEnabled, RealTimeProtectionEnabled, IsTamperProtected
+
+AMServiceEnabled          : True
+AntispywareEnabled        : True
+RealTimeProtectionEnabled : True
+IsTamperProtected         : True
+```
+
+While Defender consistently scores high in detection rates, it is not a silver bullet. Core security must rely on a defense-in-depth strategy, prioritizing patch management and secure configurations. Highly obfuscated payloads, custom in-memory droppers, or evasive frameworks can still successfully bypass Defender's active monitoring mechanisms.
