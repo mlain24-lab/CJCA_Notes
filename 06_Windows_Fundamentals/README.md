@@ -912,3 +912,55 @@ Once inside the Bash shell, the environment operates identically to a standalone
 user@WS01:/mnt/c/htb$ uname -a
 Linux WS01 4.4.0-18362-Microsoft #476-Microsoft Fri Nov 01 16:53:00 PST 2019 x86_64 x86_64 x86_64 GNU/Linux
 ```
+# Windows Server Architecture: Desktop Experience vs. Server Core
+
+## Overview
+Introduced in Windows Server 2008, **Server Core** is a minimalistic deployment option engineered to provide essential server functionality. By stripping away the graphical user interface (GUI), Server Core drastically reduces management overhead, hardware resource utilization (disk space and memory), and the overall attack surface, making it the preferred standard for secure, production-grade environments.
+
+## Key Characteristics & Administration
+In a Server Core deployment, administrative overhead is minimized. All configuration, maintenance, and management operations are executed via:
+* **Command-Line Interface (CLI)**
+* **Windows PowerShell**
+* **Remote Management Protocols** (e.g., MMC, Remote Server Administration Tools [RSAT], or Windows Admin Center)
+
+### Initial Provisioning (`Sconfig`)
+Once deployed, the initial setup is streamlined through `Sconfig`, a text-based interface (driven by a VBScript executed via `WScript`). It facilitates critical bootstrapping tasks, including:
+* Network configuration (IP/DNS setup)
+* Active Directory domain joining and account management
+* Windows Updates fetching and deployment
+* Remote management configuration (WinRM)
+* OS activation
+
+### GUI Tool & Sysinternals Compatibility
+Although Server Core lacks a standard Desktop Experience footprint, it retains local support for specific, lightweight administrative graphical tools and Sysinternals utilities for troubleshooting purposes:
+* **Supported Native Tools:** Registry Editor (`regedit`), Notepad, System Information (`msinfo32`), Windows Installer (`msiexec`), Task Manager (`taskmgr`), and PowerShell.
+* **Supported Sysinternals:** Active Directory Explorer (AD Explorer), Process Explorer, Process Monitor, and TCPView.
+
+## Deployment Constraints
+* **Immutable Installation (Windows Server 2019+):** Starting with Server 2019, the selection between Server Core and Desktop Experience is final at the time of installation. Cross-conversion (rolling back from Server Core to Desktop Experience, or vice versa) is no longer supported by the OS architecture.
+* **Incompatible Applications:** Certain heavy-duty server applications require the full Desktop Experience dependencies to function. Notable unsupported applications on Server Core include:
+    * System Center Virtual Machine Manager (SCVMM) 2019
+    * System Center Data Protection Manager 2019
+    * SharePoint Server 2019
+    * Project Server 2019
+
+## Executive Summary
+Server Core is the optimal choice for resource efficiency and hardened security. However, it introduces a steeper learning curve and demands solid CLI/PowerShell proficiency. Ultimately, the architectural decision between Desktop Experience and Server Core must be driven by business requirements, specific application compatibility, and the operational maturity of the IT administrators maintaining the infrastructure.
+
+## Application Compatibility Matrix
+
+| Application / Utility | Server Core | Desktop Experience |
+| :--- | :---: | :---: |
+| **Command Prompt (`cmd`)** | ✅ Available | ✅ Available |
+| **Windows PowerShell / .NET** | ✅ Available | ✅ Available |
+| **Registry Editor (`regedit`)** | ✅ Available | ✅ Available |
+| **Task Manager (`taskmgr`)** | ✅ Available | ✅ Available |
+| **Remote Desktop Services (RDS)** | ✅ Available | ✅ Available |
+| **Disk Management (`diskmgmt.msc`)** | ❌ Not Available | ✅ Available |
+| **Server Manager** | ❌ Not Available | ✅ Available |
+| **Microsoft Management Console (`mmc.exe`)**| ❌ Not Available | ✅ Available |
+| **Event Viewer (`eventvwr`)** | ❌ Not Available | ✅ Available |
+| **Services (`services.msc`)** | ❌ Not Available | ✅ Available |
+| **Control Panel** | ❌ Not Available | ✅ Available |
+| **Windows Explorer** | ❌ Not Available | ✅ Available |
+| **Web Browsers (IE / Edge)** | ❌ Not Available | ✅ Available |
