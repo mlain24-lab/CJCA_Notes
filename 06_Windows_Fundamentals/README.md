@@ -875,3 +875,40 @@ MMC allows system administrators to construct custom management consoles tailore
 4. **Export Configuration:** Once the custom workspace is fully assembled, save the configuration as a Microsoft Saved Console (`.msc`) file.
    * *Default Path:* Saved profiles default to the Windows Administrative Tools directory (`%AppData%\Microsoft\Windows\Start Menu\Programs\Administrative Tools`).
    * *Execution:* Saving the `.msc` file allows for the immediate execution and deployment of customized administrative views in future troubleshooting or management sessions.
+
+# Windows Subsystem for Linux (WSL)
+
+## Overview
+Windows Subsystem for Linux (WSL) is a compatibility layer that enables native execution of Linux binaries directly on Windows 10 and Windows Server 2019. Originally designed for developers and SysAdmins requiring native Linux command-line utilities (e.g., `bash`, `sed`, `awk`, `grep`) on their Windows workstations, it has since evolved into a core feature for cross-platform development and pentesting. 
+
+**WSL 2** (released May 2019) represents a major architectural upgrade, introducing a true, genuine Linux kernel running alongside Windows. It leverages a lightweight subset of Hyper-V features to drastically improve file system I/O performance and provide full system call compatibility.
+
+## Deployment
+To enable WSL, execute the following command in an elevated PowerShell session (Run as Administrator). Once the feature is enabled and the system reboots, you can install your preferred Linux distribution via the Microsoft Store or manually unpack and deploy it via the command line.
+
+```powershell
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+```
+
+## System Interaction & Environment
+WSL deploys an executable named `bash.exe`. Executing `bash` from any Windows console spawns a full Linux shell, providing the standard Linux directory structure and native look-and-feel.
+
+### Directory Structure
+The file system hierarchy perfectly mirrors a standard Linux host:
+```bash
+PS C:\htb> bash
+user@WS01:/mnt/c/htb$ ls /
+bin   dev  etc   home  init  lib    lib32  lib64   libx32
+media mnt  opt   proc  root  run    sbin   snap    srv
+sys   tmp  usr   var   boot
+```
+
+### Cross-System Volume Mounting
+A key feature of WSL is its seamless integration with the host operating system. Windows local drives (e.g., `C$`) are automatically mounted under the `/mnt` directory (e.g., `/mnt/c`), allowing bidirectional file access and seamless lateral movement between the Windows host and the WSL environment.
+
+Once inside the Bash shell, the environment operates identically to a standalone Linux OS, enabling standard command execution, package management, and system enumeration.
+
+```bash
+user@WS01:/mnt/c/htb$ uname -a
+Linux WS01 4.4.0-18362-Microsoft #476-Microsoft Fri Nov 01 16:53:00 PST 2019 x86_64 x86_64 x86_64 GNU/Linux
+```
