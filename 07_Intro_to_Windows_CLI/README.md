@@ -32,6 +32,7 @@ Use the following syntax to authenticate to the provided Windows hosts:
 
 ~~~bash
 ssh htb-student@<IP-Address>
+~~~
 
 # 07.1_CMD_Basics
 
