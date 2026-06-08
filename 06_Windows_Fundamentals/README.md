@@ -1105,3 +1105,80 @@ IsTamperProtected         : True
 ```
 
 While Defender consistently scores high in detection rates, it is not a silver bullet. Core security must rely on a defense-in-depth strategy, prioritizing patch management and secure configurations. Highly obfuscated payloads, custom in-memory droppers, or evasive frameworks can still successfully bypass Defender's active monitoring mechanisms.
+
+
+# Skills Assessment - Windows Fundamentals
+
+## Objective
+Perform a security assessment and remediate permissions on an internally hosted HR share following an insider threat incident. This demonstration covers secure file sharing practices, NTFS permissions, and service enumeration via the command line to check for potential tampering in a Windows environment.
+
+## Execution Playbook
+
+### 1 & 2. Directory Structure Creation
+Provision the root shared folder and the nested HR directory.
+```powershell
+# Create root Company Data folder and nested HR subfolder
+New-Item -Path "C:\Company Data" -ItemType Directory
+New-Item -Path "C:\Company Data\HR" -ItemType Directory
+```
+
+### 3. User Account Provisioning
+Create the target user. The `/passwordchg:no` flag satisfies the requirement to uncheck "User must change password at logon".
+```cmd
+net user Jim "P@ssw0rd123!" /add /passwordchg:no
+```
+
+### 4 & 5. Security Group Configuration
+Implement Role-Based Access Control (RBAC) by creating the security group and assigning the user to it.
+```cmd
+net localgroup HR /add
+net localgroup HR Jim /add
+```
+
+### 6. Securing the Root Share (Company Data)
+Configure the SMB Share and NTFS permissions, disabling inheritance to prevent permissions from bleeding down from the root `C:\` drive.
+
+**Share Permissions:**
+```powershell
+# Create the SMB share and explicitly grant 'Change' and 'Read' to the HR group
+New-SmbShare -Name "Company Data" -Path "C:\Company Data" -ChangeAccess "HR"
+
+# Strip the default 'Everyone' access to enforce least privilege
+Revoke-SmbShareAccess -Name "Company Data" -AccountName "Everyone" -Force
+```
+
+**NTFS Permissions:**
+```cmd
+:: Disable inheritance and remove all inherited permissions (/inheritance:r)
+icacls "C:\Company Data" /inheritance:r
+
+:: Grant Modify (M) to the HR group. Modify inherently includes Read & Execute (RX), 
+:: List folder contents, Read (R), and Write (W).
+:: (OI)(CI) ensures Object and Container Inheritance for nested files/folders.
+icacls "C:\Company Data" /grant "HR":(OI)(CI)(M)
+```
+
+### 7. Securing the Subfolder (HR)
+Apply strict NTFS permissions to the nested folder, completely isolating it from any unintended machine inheritance.
+```cmd
+:: Disable inheritance
+icacls "C:\Company Data\HR" /inheritance:r
+
+:: Grant explicit Modify access (which covers Read, Execute, List, and Write)
+icacls "C:\Company Data\HR" /grant "HR":(OI)(CI)(M)
+```
+
+### 8. Service Enumeration & Tampering Check (PowerShell)
+Query detailed service information to detect potential tampering, unauthorized state changes, or malicious executables masquerading as legitimate services.
+
+```powershell
+# List all running and stopped services
+Get-Service
+
+# Extract detailed properties of a specific service to check for anomalies
+Get-Service -Name <ServiceName> | Select-Object *
+
+# Advanced Query: Use CIM/WMI to verify the executable path (PathName) and StartMode, 
+# which is critical for identifying hijacked service binaries.
+Get-CimInstance -ClassName Win32_Service -Filter "Name='<ServiceName>'" | Format-List Name, StartMode, State, PathName
+```
