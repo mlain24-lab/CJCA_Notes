@@ -73,3 +73,38 @@ In scenarios involving user lockout or system failure, booting from installation
 4. **Outcome:** Instead of the accessibility menu, the system launches the replaced binary (`cmd.exe`) with **`NT AUTHORITY\SYSTEM`** privileges, granting full control over the machine without valid user credentials.
 
 *Note: This highlights the absolute necessity of full-disk encryption (e.g., BitLocker) and strict physical access controls to prevent unauthorized modification of system binaries.*
+
+# 07_Intro_to_Windows_CLI: Command Prompt Help & Productivity
+
+## 1. Offline Help System
+In restricted environments (e.g., internal network engagements with strict firewall egress filtering), relying on external documentation is not an option. Mastering the built-in CMD help utility is essential for maintaining operational tempo during system enumeration ??(Enumeration: The process of extracting information from a target system, such as users, software versions, and network details).
+
+### 1.1 Built-in Help
+* **`help`**: Executes the general help function, listing available built-in commands with brief descriptions.
+* **`help [command_name]`**: Retrieves specific syntax and functional details for a targeted command.
+* **`[command_name] /?`**: The standard Windows switch to request help for a specific command. This is often more reliable than the `help` command, as some binaries do not register with the help utility.
+
+## 2. Terminal Productivity
+Operational efficiency is paramount. Use the following commands and key-bindings to manage your session output and history effectively.
+
+### 2.1 Screen Management
+* **`cls`**: Clears the current terminal buffer. Use this to maintain a clean workspace and prevent log contamination when transitioning between different enumeration tasks.
+
+### 2.2 Command History
+CMD maintains a session-based history. Unlike Bash (which uses `~/.bash_history` for persistent storage ??(Man pages: Manual pages, a standard form of documentation on Unix-like systems)), CMD history is ephemeral and wipes when the terminal instance is closed.
+
+* **`doskey /history`**: Displays the full command history for the active session.
+* **Keybindings**:
+    * **Up/Down Arrows**: Navigate through historical entries.
+    * **F3**: Retypes the entire previous entry to the prompt.
+    * **F7**: Opens a pop-up graphical list of command history for selection.
+    * **F5**: Cycles through previous commands sequentially.
+
+### 2.3 Process Control
+* **`Ctrl + C`**: Immediately interrupts the current foreground process. Essential for stopping unresponsive commands or terminating long-running network scans (e.g., `ping` sweeps) prematurely. 
+    * *Warning*: Improper termination of certain binaries may cause them to hang or leave handles open. Monitor process behavior carefully.
+
+## 3. External References
+When internet access is available, prioritize high-fidelity, concise resources:
+* **Microsoft Learn**: The authoritative source for command syntax and OS-level technical specifications.
+* **SS64**: A highly efficient, CLI-focused reference repository for CMD, PowerShell, and Bash syntax.
