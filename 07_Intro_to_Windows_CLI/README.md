@@ -319,3 +319,65 @@ To minimize the forensic footprint and maintain efficiency, avoid arbitrary sear
 While these commands are standard, they generate audit logs. In mature environments, rely on these tools cautiously, as the use of `net *` commands is often a primary indicator of compromise (IoC) monitored by EDR/NIDS ?? (Endpoint Detection and Response / Network Intrusion Detection System - Advanced security monitoring tools / Herramientas avanzadas de monitoreo de seguridad para endpoints y detección de intrusiones en red).
 
 *Note: As a standard user, execution of these tools in a production environment should be handled with extreme care to avoid triggering SIEM alerts or incident response workflows.*
+
+
+## Windows CLI: File Enumeration, Comparison, and Data Sorting
+
+Effective file system enumeration is a critical skill for both System Administration and Penetration Testing. It allows for the identification of sensitive files, configuration changes, and potential attack vectors.
+
+### 1. File Enumeration
+Locating binaries and specific files within the filesystem is the first step in reconnaissance and system auditing.
+
+#### Using `where`
+The `where` command displays the location of files that match a search pattern. By default, it searches directories specified in the system's PATH environment variable.
+
+* Standard Search: Searches within the system PATH.
+    where calc.exe
+
+* Recursive Search (/R): Used to search entire directory trees when the target is outside the system PATH (e.g., user profiles).
+    where /R C:\Users\student\ bio.txt
+
+* Wildcard Usage: Supports globbing for flexible searching.
+    where /R C:\Users\student\ *.csv
+
+#### Searching within files: `find` vs `findstr`
+* `find`: Used for simple string matching. It lacks robust pattern support but is fast for quick text searches.
+    * /V: Displays all lines *not* containing the specified string.
+    * /N: Displays line numbers.
+    * /I: Ignores case sensitivity.
+    find /N /I /V "IP Address" example.txt
+
+* `findstr`: A more powerful utility designed for complex pattern matching and Regular Expressions (Regex). Consider this the Windows equivalent of Linux's `grep`.
+    findstr "search_pattern" filename
+
+---
+
+### 2. File Evaluation and Comparison
+When auditing systems (e.g., checking for modified configuration files or unauthorized changes), we use comparison utilities to detect differences.
+
+#### `comp` (Byte-level comparison)
+Compares files byte-by-byte. Best suited for verifying binary integrity or detecting minor character changes.
+* /A: Displays differences in ASCII format rather than decimal.
+* /L: Includes line numbers in the output.
+
+#### `fc` (File Compare - Line-level comparison)
+A more robust tool than `comp`. `fc` compares files and reports line-by-line differences, making it ideal for text files, scripts, and logs.
+* /N: Displays line numbers.
+* /C: Case-insensitive comparison.
+* /U: Compares files as Unicode text.
+* /W: Compresses white space (tabs/spaces) to avoid false positives during comparison.
+
+*Example:*
+    fc passwords.txt modded.txt /N
+
+---
+
+### 3. Data Sorting
+The `sort` command reads input from files or pipelines, sorts the data, and outputs to the console or a file.
+
+* Redirection (/O): Writes the sorted output to a specified file.
+* Unique (/unique): Filters out duplicate entries, displaying only unique lines.
+
+*Example: Sorting a file and filtering unique entries*
+    sort.exe .\file-1.md /O .\sorted.md
+    sort.exe .\sorted.md /unique
