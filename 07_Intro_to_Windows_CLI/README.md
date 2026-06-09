@@ -167,3 +167,102 @@ During an assessment, specific Windows directories serve as strategic locations 
 | `%PUBLIC%` | `C:\Users\Public` | Publicly accessible directory allowing any interactive logon account full read/write/execute permissions. Often less heavily monitored for suspicious activity compared to the global Temp directory. |
 | `%ProgramFiles%` | `C:\Program Files` | Contains 64-bit installed applications. Essential for software enumeration and identifying vulnerable application versions. |
 | `%ProgramFiles(x86)%` | `C:\Program Files (x86)` | Contains 32-bit installed applications. Critical for complete attack surface mapping. |
+
+# Windows CLI: Working with Directories and Files
+
+This documentation outlines fundamental and advanced techniques for managing files and directories via the Windows Command Prompt (CMD). Mastery of these built-in binaries is critical for system administration, post-exploitation enumeration, and secure infrastructure operations.
+
+---
+
+## 1. Directory Enumeration & Creation
+
+Understanding and manipulating the filesystem hierarchy is the first step in host enumeration. 
+
+* **`dir`**: Lists the contents of the current working directory.
+* **`tree /F`**: Provides a graphical, recursive listing of all directories and files within a specified path.
+* **`mkdir` / `md`**: Creates a new directory.
+
+```cmd
+C:\Users\htb\Desktop> mkdir new-directory
+C:\Users\htb\Desktop> md another-dir
+```
+
+## 2. Directory Deletion & Modification
+
+### Removing Directories
+* **`rd` / `rmdir`**: Deletes a directory. 
+* **Targeting Non-Empty Directories**: By default, `rd` will fail if the directory contains files. Append the `/S` switch to forcefully erase the directory and all nested contents.
+
+```cmd
+C:\Users\htb\Desktop> rd /S Git-Pulls
+Git-Pulls, Are you sure (Y/N)? Y
+```
+
+### Advanced Directory Manipulation
+While `move` easily transfers directories and their contents from a source to a destination, `xcopy` and `robocopy` offer robust administrative and pentesting capabilities.
+
+* **`xcopy`**: Highly useful for retaining or resetting file attributes during transfers. 
+    * *Pentester Use Case*: Excellent for moving locked or system files without introducing third-party tools to the host environment.
+    * `xcopy source dest /E`: Copies directories and subdirectories, including empty ones.
+    * `xcopy source dest /K`: Retains source file attributes (like Read-only) on the destination.
+* **`robocopy` (Robust File Copy)**: The modern successor to `xcopy`, designed for large syncs and retaining granular data (timestamps, ownership, ACLs, and hidden/read-only flags).
+    * *Bypassing Attribute Restrictions*: Using the `/MIR` (Mirror) switch can occasionally bypass standard access errors, though it demands caution as it mirrors the exact state of the source (deleting destination files if they don't exist in the source).
+    * *Exfiltration Tactic*: `robocopy /E /MIR /A-:SH <source> <dest>` copies the directory tree while actively stripping System (`S`) and Hidden (`H`) attributes.
+
+---
+
+## 3. File Enumeration & Viewing
+
+Inspecting file contents natively without triggering locks or raising alerts is a standard procedure when hunting for plaintext credentials or sensitive configurations.
+
+* **`type`**: Outputs the exact contents of a file to the terminal. Crucially, it **does not lock** the file during execution.
+* **`more`**: Paginates large file outputs to prevent buffer overflow in the terminal.
+    * `more /S <file>`: Compresses sequential blank lines into a single blank space for easier reading.
+* **`openfiles`**: (Requires Administrator privileges) Displays files currently opened by local or remote users. Can forcefully disconnect sessions linked to locked files.
+
+---
+
+## 4. Input/Output (I/O) Redirection & Chaining
+
+Mastering operator logic allows for complex command chaining and automated file modification on the fly.
+
+| Operator | Function | Example |
+| :--- | :--- | :--- |
+| `>` | Overwrites output to a file (creates if it doesn't exist). | `ipconfig /all > details.txt` |
+| `>>` | Appends output to the end of a file. | `echo "new line" >> file.txt` |
+| `<` | Feeds file content as input to a command. | `find /i "password" < dump.txt` |
+| `\|` (Pipe) | Passes output of Command A as input to Command B. | `ipconfig /all \| find /i "IPv4"` |
+| `&` | Executes Command A, then Command B (regardless of success). | `ping 8.8.8.8 & type log.txt` |
+| `&&` | Executes Command B **only if** Command A succeeds. | `cd Backup && echo "Success" > log.txt` |
+| `\|\|` | Executes Command B **only if** Command A fails. | `cd Restricted \|\| echo "Access Denied"` |
+
+---
+
+## 5. File Creation, Modification & Deletion
+
+### Creating & Renaming Files
+* **Echo**: Quick file generation and string manipulation.
+    ```cmd
+    C:\> echo "Super Secret Password" > creds.txt
+    ```
+* **Fsutil**: Generates empty files of a specific byte size. Useful for testing disk quotas or creating payload placeholders.
+    ```cmd
+    C:\> fsutil file createNew payload.bin 1024
+    ```
+* **Rename**: `ren` or `rename` alters the file name directly. (`ren old.txt new.txt`)
+
+### Deleting Files & Handling Attributes
+* **`del` / `erase`**: Standard deletion commands. Accepts wildcards (`*`) or lists of files.
+* **Force Deletion**: `del /F <file>` bypasses standard read-only blocks.
+* **Attribute-Based Targeting**: Use the `/A` switch to identify and interact with protected files.
+    * **Identify**: `dir /A:H` (Hidden files) or `dir /A:R` (Read-only files).
+    * **Erase**: `del /A:H *` or `del /A:R *` removes files matching those specific attributes within the directory.
+
+---
+
+## 6. Copying & Moving Files
+
+Standard file manipulation binaries for localized operations:
+
+* **`copy`**: Duplicates files from source to destination. Append `/V` to validate that the new files were written correctly without corruption.
+* **`move`**: Transfers files to a new directory. Unlike `copy`, `move` can also rename directories and files simultaneously during the transfer.
