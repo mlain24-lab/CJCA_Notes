@@ -108,3 +108,62 @@ CMD maintains a session-based history. Unlike Bash (which uses `~/.bash_history`
 When internet access is available, prioritize high-fidelity, concise resources:
 * **Microsoft Learn**: The authoritative source for command syntax and OS-level technical specifications.
 * **SS64**: A highly efficient, CLI-focused reference repository for CMD, PowerShell, and Bash syntax.
+
+# Windows System Navigation & Filesystem Enumeration
+
+## 1. Introduction
+A foundational skill for any Junior SysAdmin or Pentester is the ability to swiftly navigate the Windows filesystem via the Command Prompt (`cmd.exe`). Efficient movement and enumeration are critical for both administrative troubleshooting and attack surface mapping during an engagement. 
+
+## 2. Directory Listing (`dir`)
+The `dir` command provides a detailed list of files and subdirectories within the current working directory. It is the primary tool for initial reconnaissance of a folder's contents.
+
+```cmd
+C:\Users\htb\Desktop> dir
+```
+* **Usage Notes:** Executing `dir` without arguments displays the contents of the current directory, including file sizes, creation/modification dates, and directory tags (`<DIR>`). Use `dir /?` to explore advanced searching, sorting, and filtering arguments.
+
+## 3. Navigating the Filesystem (`cd` / `chdir`)
+The `cd` (Change Directory) or `chdir` command is used to identify the current working directory or navigate to a different location within the filesystem hierarchy.
+
+* **Print Current Directory:** Executing `cd` without arguments outputs the current working path, which serves as your point of reference for all subsequent operations.
+    ```cmd
+    C:\htb> cd
+    ```
+
+### 3.1. Absolute vs. Relative Paths
+Understanding the distinction between absolute and relative paths is imperative for agile CLI navigation.
+
+* **Absolute Path:** Specifies the complete route starting from the root directory (e.g., `C:\`) down to the target destination. The `C:\` designation has historically represented the primary internal hard drive since the MS-DOS era.
+    ```cmd
+    C:\htb> cd C:\Users\htb\Pictures
+    ```
+* **Relative Path:** Specifies the route relative to the current working directory. It utilizes `.` (current directory) and `..` (parent directory) to traverse the hierarchy without referencing the root.
+    ```cmd
+    C:\htb> cd .\Pictures
+    C:\Users\htb\Pictures> cd ..\..\..\
+    ```
+    > **Pro Tip:** The `..\..\..\` command allows for rapid upward traversal directly back to the root directory in a single execution.
+
+## 4. Deep Filesystem Enumeration (`tree`)
+To gain a comprehensive overview of the directory structure without manually traversing each folder, use the `tree` command. This is highly valuable during the reconnaissance phase to identify configuration files, project assets, or hardcoded credentials (e.g., `passwords.txt`, `secrets.txt`).
+
+* **Directory Tree:** Lists only folders and subfolders.
+    ```cmd
+    C:\htb\student> tree
+    ```
+* **Complete Tree (Files & Folders):** Appending the `/F` switch instructs the command to display all files within each directory.
+    ```cmd
+    C:\htb> tree /F
+    ```
+    > **Warning:** This generates extensive output on populated systems. Be prepared to interrupt the execution with `Ctrl + C` or pipe the output to a file (e.g., `tree /F > fs_dump.txt`) for structured analysis.
+
+## 5. High-Value Directories (Adversary Perspective)
+During an assessment, specific Windows directories serve as strategic locations for dropping payloads, staging data, or uncovering sensitive information due to their default permission structures. 
+
+| Environment Variable | Absolute Path | Description & Tactical Value |
+| :--- | :--- | :--- |
+| `%SYSTEMROOT%\Temp` | `C:\Windows\Temp` | Global temporary directory. Accessible to all users with full read, write, and execute permissions. A prime location for low-privilege payload staging. |
+| `%TEMP%` | `C:\Users\<user>\AppData\Local\Temp` | User-specific temporary directory. Grants full ownership to the attached user account. Highly useful when controlling a domain-joined or local user session. |
+| `%PUBLIC%` | `C:\Users\Public` | Publicly accessible directory allowing any interactive logon account full read/write/execute permissions. Often less heavily monitored for suspicious activity compared to the global Temp directory. |
+| `%ProgramFiles%` | `C:\Program Files` | Contains 64-bit installed applications. Essential for software enumeration and identifying vulnerable application versions. |
+| `%ProgramFiles(x86)%` | `C:\Program Files (x86)` | Contains 32-bit installed applications. Critical for complete attack surface mapping. |
