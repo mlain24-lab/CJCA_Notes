@@ -266,3 +266,56 @@ Standard file manipulation binaries for localized operations:
 
 * **`copy`**: Duplicates files from source to destination. Append `/V` to validate that the new files were written correctly without corruption.
 * **`move`**: Transfers files to a new directory. Unlike `copy`, `move` can also rename directories and files simultaneously during the transfer.
+
+# Host Enumeration and System Information Gathering (Windows)
+
+## Overview
+Host enumeration is a foundational practice for both SysAdmins (diagnostics, integrity monitoring) and Penetration Testers (vulnerability assessment, privilege escalation, lateral movement). The objective is to establish comprehensive situational awareness of the target host and its environment.
+
+## Enumeration Categories
+A structured approach prevents "information overload." We categorize gathered data into four primary domains:
+
+| Category | Description |
+| :--- | :--- |
+| **General System Info** | Hostname, OS version, build details, and installed hotfixes/patches. |
+| **Networking Info** | IP configuration, DNS, active connections, and reachable subnets. |
+| **Domain Information** | Active Directory ?? (Microsoft's directory service used for managing permissions and access in a network / Servicio de directorio de Microsoft utilizado para gestionar permisos y accesos en una red). |
+| **User Information** | Local users, groups, privileges, environment variables, and running tasks. |
+
+## Methodology
+To minimize the forensic footprint and maintain efficiency, avoid arbitrary searching. Adhere to a systematic reconnaissance flow:
+1.  **Analyze current standing:** Who is the user? What are their privileges?
+2.  **Scope the network:** What other hosts are reachable? Where is the traffic going?
+3.  **Identify pivot points:** Are there open network shares or misconfigured services?
+
+---
+
+## Command Reference (CMD)
+
+### 1. General System Information
+* **`systeminfo`**: Provides comprehensive host data. High utility, but "noisy" in terms of logging.
+* **`hostname`**: Displays the machine name.
+* **`ver`**: Prints the OS version.
+
+### 2. Networking Enumeration
+* **`ipconfig`**: Standard utility for viewing TCP/IP configuration.
+    * `ipconfig /all`: Verbose output (MAC address, DHCP status, DNS servers).
+* **`arp /a`**: Displays the ARP Cache ?? (A table containing mappings of IP addresses to physical MAC addresses / Una tabla que contiene mapeos de direcciones IP a direcciones MAC físicas). Crucial for identifying adjacent hosts in the network.
+
+### 3. User & Privilege Analysis
+* **`whoami`**: Essential for identifying the current session context.
+    * `whoami /priv`: Displays current security privileges (critical for identifying escalation paths).
+    * `whoami /groups`: Lists all group memberships (SIDs/Attributes).
+* **`net user`**: Lists user accounts defined on the local host.
+* **`net localgroup`**: enumerates local groups to identify potential access vectors (e.g., "Administrators", "Remote Desktop Users").
+
+### 4. Resource & Share Enumeration
+* **`net share`**: Lists available network shares. Essential for finding sensitive files or staging areas.
+* **`net view`**: Displays resources (shares, printers) on the domain/network.
+
+---
+
+## Critical Considerations for Penetration Testing
+While these commands are standard, they generate audit logs. In mature environments, rely on these tools cautiously, as the use of `net *` commands is often a primary indicator of compromise (IoC) monitored by EDR/NIDS ?? (Endpoint Detection and Response / Network Intrusion Detection System - Advanced security monitoring tools / Herramientas avanzadas de monitoreo de seguridad para endpoints y detección de intrusiones en red).
+
+*Note: As a standard user, execution of these tools in a production environment should be handled with extreme care to avoid triggering SIEM alerts or incident response workflows.*
