@@ -501,3 +501,102 @@ From an offensive and defensive assessment perspective, environment variables ex
 | **`%USERPROFILE%`** | Maps to `C:\Users\{username}`. Speeds up targeting of user directories, SSH keys, and local data. |
 | **`%ProgramFiles%`** | Path to 64-bit application installations (`C:\Program Files`). |
 | **`%ProgramFiles(x86)%`** | Path to 32-bit applications running under WOW64. Its presence confirms a 64-bit architecture. |
+
+# Windows Service Management and Enumeration
+
+## Overview
+Monitoring and controlling services on a host is an essential responsibility for a systems administrator and a critical capability for an attacker during post-exploitation. Interrogating services allows operators to discover privilege escalation vectors, establish persistence, or disable defensive mechanisms like antivirus software.
+
+---
+
+## The Service Controller (`sc.exe`)
+The `sc.exe` utility is a native Windows command-line program that communicates directly with the **Service Control Manager (SCM)**. It allows for local and remote service interrogation, configuration modification, and state management.
+
+### Basic Usage and Help Context
+Running `sc` without parameters displays the tool's description, syntax options, and operational commands.
+
+    C:\htb> sc
+
+### Service Enumeration
+To list active Win32 services on the target system, utilize the `query` command filtered by `type= service`.
+
+> **Critical Syntax Note:** The space after the equal sign (`=`) is mandatory for `sc.exe` to parse the argument properly (e.g., `type= service`). Alternate spacings like `type=service` or `type =service` will fail.
+
+    C:\htb> sc query type= service
+
+### Targeting Defensive Controls (Windows Defender)
+Auditing host defenses is a priority upon initial access. Operators can query the status of the Windows Defender service (`windefend`) to verify its execution state.
+
+    C:\htb> sc query windefend
+
+* **Privilege Restrictions:** Standard, non-elevated users lack the permissions required to stop or pause critical services, resulting in an `Access is denied` error.
+* **Protected Processes:** Certain native security services, such as `windefend`, are protected against tampering even from local administrative accounts. They accept control requests exclusively from the **SYSTEM** account. Attempting to force-stop these processes blindly will fail and generate significant security event log telemetry, alerting the Blue Team.
+
+    C:\WINDOWS\system32> sc stop windefend
+    Access is denied.
+
+### Controlling Service States
+When operating within an elevated context (Local Administrator), secondary or non-protected services can be stopped or started to manipulate system behavior. For instance, the Print Spooler service (`Spooler`) can be toggled as follows:
+
+#### Querying the Target Service
+    C:\WINDOWS\system32> sc query Spooler
+
+#### Issuing a Stop Control Request
+    C:\WINDOWS\system32> sc stop Spooler
+
+#### Issuing a Start Control Request
+    C:\WINDOWS\system32> sc start Spooler
+
+---
+
+## Modifying Service Configuration
+The `config` parameter allows administrators and attackers to modify service parameters persistently within the Windows Registry and the SCM database. Changes to an active service's configuration require a service restart to take effect.
+
+> **Operational Warning:** Modifications to service configurations (such as altering the binary path or startup type) persist across reboots. Operators must exercise caution to prevent permanent system instability.
+
+### Defensive Evasion Case Study: Disabling Windows Updates
+Modern Windows systems (Version 10 and above) rely on multiple cooperative services for update management, primarily `wuauserv` (Windows Update Service) and `bits` (Background Intelligent Transfer Service). Disabling these ensures the host remains unpatched, preserving older vulnerabilities.
+
+#### 1. Terminate the Active Service Instances
+    C:\WINDOWS\system32> sc stop bits
+
+#### 2. Persistent Modification of Startup Type to Disabled
+    C:\WINDOWS\system32> sc config wuauserv start= disabled
+    [SC] ChangeServiceConfig SUCCESS
+
+    C:\WINDOWS\system32> sc config bits start= disabled
+    [SC] ChangeServiceConfig SUCCESS
+
+#### 3. Verification of Disabled State
+Attempts to manually restart the services will fail with SCM Error 1058:
+    C:\WINDOWS\system32> sc start wuauserv
+    [SC] StartService FAILED 1058:
+    The service cannot be started, either because it is disabled or because it has no enabled devices associated with it.
+
+> **Operational Rollback:** To revert these modifications and restore default behavior, reset the startup type to automatic: `sc config <service_name> start= auto`.
+
+---
+
+## Alternative Service Enumeration Utilities
+
+### 1. Tasklist
+The `tasklist` utility paired with the `/svc` flag maps active Process Identifiers (PIDs) to their respective hosted services. This is highly effective for identifying which specific `svchost.exe` instance is running a target service.
+
+    C:\htb> tasklist /svc
+
+### 2. Net Utility
+A legacy administrative tool used to list active services or execute state toggles (`net start`, `net stop`, `net pause`, `net continue`). Running `net start` without arguments outputs all currently running services.
+
+    C:\htb> net start
+
+### 3. Windows Management Instrumentation Command-Line (`wmic`)
+The `wmic service` component allows operators to pull structured attributes including `Name`, `ProcessId`, `StartMode`, and `State`.
+
+    C:\htb> wmic service list brief
+
+> **Note:** `wmic` is formally deprecated in modern Windows builds. Operators should pivot to PowerShell equivalents (`Get-Service` or `Get-CimInstance`) when operational constraints allow.
+
+---
+
+## Next Steps
+Interacting with Windows services via the command line is foundational for non-GUI post-exploitation and privilege escalation. Understanding how these components behave under different integrity levels ensures cleaner execution and better operational security. The subsequent sections will address the PowerShell equivalents of these commands and transition into Windows Scheduled Tasks.
