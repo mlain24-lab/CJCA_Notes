@@ -381,3 +381,123 @@ The `sort` command reads input from files or pipelines, sorts the data, and outp
 *Example: Sorting a file and filtering unique entries*
     sort.exe .\file-1.md /O .\sorted.md
     sort.exe .\sorted.md /unique
+
+# Windows Environment Variables
+
+Environment variables are global or local configuration settings applied to a host. They dictate how applications and scripts interact with the Operating System, reference data, and locate executables. 
+
+In Windows environments, these variables are **not case-sensitive**, can include spaces or numbers, but **cannot start with a number or contain an equal sign (`=`)**. 
+
+Standard system variables are conventionally written in uppercase with underscores separating words (e.g., `%STRONG_VARIABLE%`).
+
+---
+
+## 1. Variable Scope & Architecture
+
+Scope defines the context and boundaries within which a variable can be accessed or modified. Windows categorizes environment variables into three distinct scopes:
+
+
+
+### Scope Breakdown
+
+| Scope | Description | Permissions Required | Registry Location |
+| :--- | :--- | :--- | :--- |
+| **System (Machine)** | Core OS variables loaded at runtime. Globally accessible by all users and system accounts. | Local Administrator / Domain Admin | `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment` |
+| **User** | Variables defined for and isolated to the currently active user session. | Current Active User / Local Admin / Domain Admin | `HKCU\Environment` |
+| **Process** | Volatile, transient sub-scope variables defined within a running process. Inherits from System/User scopes. | Current Process / Parent Process | None (Stored strictly in volatile Process Memory) |
+
+---
+
+## 2. Global vs. Local Variables (Technical Demonstration)
+
+### Global Variables
+Global variables are accessible system-wide across concurrent sessions. For instance, both users `alice` and `bob` can query the built-in global variable `%WINDIR%`:
+
+```cmd
+C:\Users\alice> echo %WINDIR%
+C:\Windows
+
+C:\Users\bob> echo %WINDIR%
+C:\Windows
+```
+
+### Local Variables
+Local variables are volatile and constrained to the process or CLI session where they were instantiated. If `alice` declares a local variable, it remains completely isolated from `bob`'s context:
+
+```cmd
+C:\Users\alice> set SECRET=HTB{5UP3r_53Cr37_V4r14813}
+C:\Users\alice> echo %SECRET%
+HTB{5UP3r_53Cr37_V4r14813}
+
+C:\Users\bob> echo %SECRET%
+%SECRET%
+
+C:\Users\bob> set %SECRET%
+Environment variable %SECRET% not defined
+```
+
+---
+
+## 3. CLI Management: `set` vs. `setx`
+
+Managing environment variables efficiently from the Command Prompt requires understanding the operational lifetime of the utilities used.
+
+* **`set`**: Manipulates variables strictly within the **current CLI session** (Process Scope). Closing the terminal destroys these changes.
+* **`setx`**: Writes changes directly to the **Windows Registry** (User or System Scope), ensuring permanence across reboots and new sessions.
+
+### Utility Mechanics
+
+#### Viewing Variables
+To dump all active variables, execute `set`. To print a specific variable's literal value, utilize `echo`:
+
+```cmd
+C:\Users\htb> echo %PATH%
+C:\Users\htb\Desktop
+```
+
+#### Creating & Updating Variables
+When using `set`, use the assignment operator (`=`). When using `setx`, use space-separated parameters (`setx <variable_name> <value>`).
+
+```cmd
+:: Session-scoped allocation (Temporary)
+C:\htb> set DCIP=172.16.5.2
+C:\htb> echo %DCIP%
+172.16.5.2
+
+:: Persistent allocation via Registry injection
+C:\htb> setx DCIP 172.16.5.2
+SUCCESS: Specified value was saved.
+
+:: Modifying an existing persistent variable
+C:\htb> setx DCIP 172.16.5.5
+SUCCESS: Specified value was saved.
+```
+> **Note:** Changes made via `setx` will not track in the *current* terminal window; they require spawning a new command prompt session or a new logon session to take effect.
+
+#### Removing Variables
+Variables cannot be explicitly deleted; instead, they are purged by resetting their values to null (`""`).
+
+```cmd
+C:\htb> setx DCIP ""
+SUCCESS: Specified value was saved.
+
+:: Verification in a new session
+C:\htb> set DCIP
+Environment variable DCIP not defined
+```
+
+---
+
+## 4. High-Value Target Variables for Reconnaissance
+
+From an offensive and defensive assessment perspective, environment variables expose a wealth of clear-text architectural data during host enumeration.
+
+| Variable Name | Technical Intel & Description |
+| :--- | :--- |
+| **`%PATH%`** | Directories searched for executable binaries. Crucial for binary hijacking and DLL hijacking vectors. |
+| **`%OS%`** | Exposes the baseline operating system running on the host workstation. |
+| **`%SYSTEMROOT%`** | Points to `C:\Windows`. Houses core binaries, configurations, and critical OS subsystems. |
+| **`%LOGONSERVER%`** | Returns the authenticating hostname (e.g., Domain Controller). Identifies if the host is domain-joined. |
+| **`%USERPROFILE%`** | Maps to `C:\Users\{username}`. Speeds up targeting of user directories, SSH keys, and local data. |
+| **`%ProgramFiles%`** | Path to 64-bit application installations (`C:\Program Files`). |
+| **`%ProgramFiles(x86)%`** | Path to 32-bit applications running under WOW64. Its presence confirms a 64-bit architecture. |
