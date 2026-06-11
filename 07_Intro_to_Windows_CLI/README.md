@@ -705,3 +705,174 @@ C:\htb> schtasks /delete /tn "My Secret Task" /f
 
 SUCCESS: The scheduled task "My Secret Task" was successfully deleted.
 ```
+# CMD vs. PowerShell: The Modern CLI Paradigm
+
+While the legacy Windows Command-Line Interpreter (`cmd.exe`) has been a staple for decades, modern Windows administration and penetration testing demand a more robust framework. This module explores PowerShell, detailing its fundamental differences from CMD, help system navigation, directory traversal, and operational efficiency tips.
+
+## Core Differences: PowerShell vs. CMD
+
+PowerShell and CMD are both native to Windows environments, but their underlying architectures and capabilities differ significantly. 
+
+| Feature | CMD (`cmd.exe`) | PowerShell (`powershell.exe`) |
+| :--- | :--- | :--- |
+| **Language Support** | Limited to Batch and legacy CMD commands. | Interprets Batch, CMD, native PS cmdlets, and aliases. |
+| **Command Utilization** | Output cannot be passed directly into another command as a structured object (limited to text parsing). | Pipeline output is passed as structured .NET objects, enabling complex data manipulation. |
+| **Output Format** | Plain text only. | Object-oriented formatting. |
+| **Execution Flow** | Strictly sequential execution. | Supports multi-threading and parallel job execution. |
+
+PowerShell transcends the traditional CLI definition; it is a full-fledged automation framework and scripting language. Built on the .NET framework, its open-source evolution has expanded its footprint to Linux and macOS environments.
+
+## The Strategic Value of PowerShell 
+
+For IT Administrators, SOC Analysts, and Penetration Testers, PowerShell is an indispensable asset. It serves as the backbone for managing Windows Server environments, Active Directory, Azure, and Microsoft 365.
+
+### System Administration Context
+SysAdmins leverage PowerShell for day-to-day automation, including:
+* Provisioning servers and configuring roles.
+* Managing Active Directory lifecycles (users, groups, permissions).
+* Interacting with Azure AD and virtual machines.
+* Managing local and network share ACLs.
+* Automating telemetry gathering and log monitoring.
+
+### Cybersecurity Context (Offensive & Defensive)
+As a junior pentester, understanding PowerShell is crucial. Its module import capabilities allow seamless execution of custom tooling in target environments. 
+> **Operational Security (OpSec) Note:** While PowerShell is incredibly powerful, it features robust logging mechanisms (e.g., Script Block Logging). If operational stealth is a priority during an engagement, falling back to CMD or bypassing logging controls is often necessary to avoid detection by defenders.
+
+---
+
+## Invoking PowerShell
+
+Depending on our access vector (local peripheral, RDP, or remote shell), PowerShell can be spawned using several methods:
+
+1. **Windows Search:** Simply query `PowerShell` in the start menu.
+2. **Windows Terminal:** Microsoft's modern terminal emulator that consolidates CMD, PowerShell, and WSL into a unified, tabbed interface.
+3. **PowerShell ISE (Integrated Scripting Environment):** A native IDE ideal for developing, debugging, and testing PowerShell scripts.
+4. **Via CMD:** Crucial during post-exploitation. If a reverse shell drops you into `cmd.exe`, executing `powershell.exe` spawns a sub-shell, granting access to advanced cmdlets to further enumerate or pivot across the network.
+
+---
+
+## Anatomy of the PowerShell Prompt
+
+When accessing the shell, the prompt provides immediate contextual awareness:
+
+```powershell
+PS C:\Users\htb-student> ipconfig 
+
+Ethernet adapter VMware Network Adapter VMnet8:
+   Connection-specific DNS Suffix  . :
+   Link-local IPv6 Address . . . . . : fe80::adb8:3c9:a8af:114%25
+   IPv4 Address. . . . . . . . . . . : 172.16.110.1
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+```
+
+* **`PS`**: Indicates an active PowerShell session.
+* **`C:\Users\htb-student>`**: Displays the Current Working Directory (CWD).
+* Most legacy CMD commands (like `ipconfig`) execute seamlessly within PowerShell due to built-in aliases.
+
+---
+
+## The Help System (`Get-Help`)
+
+Memorizing syntax is inefficient; understanding how to query the documentation is key. The `Get-Help` cmdlet is the primary tool for feature discovery.
+
+```powershell
+PS C:\Users\htb-student> Get-Help Test-Wsman
+```
+
+By default, the output displays the `NAME`, `SYNTAX`, `ALIASES`, and `REMARKS`. 
+To ensure the local help repository is populated with the latest documentation from Microsoft, always run the updater in an elevated session:
+
+```powershell
+PS C:\Windows\system32> Update-Help
+```
+
+Once updated, running `Get-Help Test-Wsman` will yield a much deeper `SYNOPSIS`, `DESCRIPTION`, and `RELATED LINKS`.
+> **Pro-Tip:** Append the `-Online` parameter (e.g., `Get-Help Test-Wsman -Online`) to open the official Microsoft documentation in your default browser.
+
+---
+
+## Core Navigation Cmdlets
+
+Navigating the file system relies on intuitive Verb-Noun cmdlets.
+
+### 1. Identify Current Location
+```powershell
+PS C:\Users\DLarusso> Get-Location
+
+Path
+----
+C:\Users\DLarusso
+```
+
+### 2. Enumerate Directory Contents
+```powershell
+PS C:\htb> Get-ChildItem 
+
+Directory: C:\Users\DLarusso
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----         10/26/2021  10:26 PM               .ssh
+d-r---          9/18/2022  12:35 PM               Desktop
+d-r---          9/18/2022   1:01 PM               Documents
+```
+
+### 3. Change Directory
+```powershell
+PS C:\htb> Set-Location .\Documents\
+PS C:\Users\DLarusso\Documents>
+```
+
+### 4. Read File Output
+```powershell
+PS C:\htb> Get-Content Readme.md  
+```
+
+---
+
+## CLI Efficiency: Tips & Tricks
+
+### Discovering Cmdlets (`Get-Command`)
+If you forget a specific cmdlet, use `Get-Command` to filter the loaded modules by verb or noun.
+
+* **Filter by Verb:** `Get-Command -Verb Get`
+* **Filter by Noun:** `Get-Command -Noun Windows*` (The `*` acts as a wildcard).
+
+### Managing Session History
+PowerShell tracks command history via two mechanisms: the built-in session history and the `PSReadLine` module.
+
+1. **Session History:** Use `Get-History` to view commands from the current session. You can re-execute a command by its ID using the `Invoke-History` alias `r` (e.g., `r 14`).
+2. **PSReadLine History:** Maintains a persistent log across all sessions, stored at `$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt`. 
+   * *Security Benefit:* `PSReadLine` automatically redacts sensitive strings like `password`, `token`, and `apikey` to prevent credential exposure in log files.
+
+### Screen Management
+To declutter the terminal without losing defined variables, use the `Clear-Host` cmdlet (or its aliases `clear` / `cls`).
+
+### Essential Keyboard Shortcuts
+Mastering hotkeys accelerates CLI workflows, especially during remote shells without GUI access:
+* **`CTRL+R`**: Reverse search through command history.
+* **`CTRL+L`**: Clear the screen.
+* **`Escape`**: Erase the current prompt line.
+* **`Up/Down Arrows`**: Cycle through recent commands.
+* **`F7`**: Opens a Terminal User Interface (TUI) with a scrollable history.
+
+### Tab Completion
+Hit `TAB` (or `SHIFT+TAB` to reverse) while typing to auto-complete paths, parameters, and cmdlet names.
+
+### Using Aliases
+Aliases are shortcut names for cmdlets or executables, drastically reducing keystrokes. View all mapped aliases using `Get-Alias`.
+
+You can also map custom aliases for your current session:
+```powershell
+PS C:\Windows\system32> Set-Alias -Name gh -Value Get-Help
+```
+
+**Common Linux-to-PowerShell Aliases:**
+If you are coming from a Linux/Bash background (e.g., Kali), PowerShell has you covered:
+* `pwd` $\rightarrow$ `Get-Location`
+* `ls` $\rightarrow$ `Get-ChildItem`
+* `cd` $\rightarrow$ `Set-Location`
+* `cat` $\rightarrow$ `Get-Content`
+* `curl` / `wget` $\rightarrow$ `Invoke-WebRequest`
+* `clear` $\rightarrow$ `Clear-Host`
+* `man` $\rightarrow$ `Get-Help`
