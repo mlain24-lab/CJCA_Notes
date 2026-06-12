@@ -997,3 +997,142 @@ As a Junior SysAdmin or Pentester, familiarize yourself with these industry-stan
 3. **Empire / Situational Awareness:** Post-exploitation framework maintained by BC Security, providing deep host and domain telemetry.
 4. **Inveigh:** A robust C#/PowerShell tool for network spoofing and MITM attacks (LLMNR/NBNS/mDNS/DNS/DHCPv6 spoofing).
 5. **BloodHound / SharpHound:** Data collectors and graphical analysis tools used to map hidden privilege relationships within Active Directory environments.
+
+# Windows User and Group Management
+
+As a System Administrator, user and group management is a fundamental skill. Users are not only our primary administrative asset but also frequently represent an organization's largest attack vector. From an offensive security perspective, understanding how to enumerate, interpret, and exploit user and group configurations is a critical pathway for gaining initial access and elevating privileges during a penetration testing engagement.
+
+This module covers the core concepts of local and domain accounts, group structures, and their management via PowerShell.
+
+## User Accounts Overview
+
+User accounts grant authorized personnel access to a host's resources. In specific scenarios, the operating system also relies on specially provisioned accounts to execute automated services or administrative actions. System accounts generally fall into four primary categories:
+
+* **Service Accounts**
+* **Built-in Accounts**
+* **Local Users**
+* **Domain Users**
+
+### Default Local User Accounts
+
+Every Windows installation automatically generates several default accounts to facilitate host management and core OS functionality.
+
+| Account | Description |
+| :--- | :--- |
+| **Administrator** | Utilized for executing unrestricted administrative tasks on the local host. |
+| **DefaultAccount** | Managed by the system for multi-user authentication applications (e.g., Xbox utility). |
+| **Guest Account** | A limited-rights account for users lacking a standard profile. It is disabled by default to maintain a secure baseline. |
+| **WDAGUtilityAccount** | Managed by the system for the Windows Defender Application Guard, utilized for sandboxing application sessions. |
+
+## Introduction to Active Directory (AD)
+
+Active Directory (AD) is a centralized directory service for Windows environments, acting as the primary identity and access gatekeeper for an enterprise. It centralizes the management of users, endpoints, security groups, network devices, file shares, Group Policy Objects (GPOs), and organizational trusts. Authenticated domain members can seamlessly access authorized network resources, while unauthenticated entities are restricted.
+
+### Local vs. Domain-Joined Users
+
+* **Domain Users:** Granted rights centrally from the domain controller to access network resources (file servers, printers, intranets) based on Security Identifier (SID) and group memberships. They can authenticate on any domain-joined host, provided they have the necessary rights.
+* **Local Users:** Possess permissions and authentication rights exclusively on the standalone host where their account was created.
+
+Understanding these access scopes is critical; leveraging the nuances between local and domain accounts often dictates the success of lateral movement and privilege escalation phases during an engagement.
+
+## User Groups and Logical Sorting
+
+Groups provide a logical structure for sorting user accounts, enabling the assignment of granular Access Control Lists (ACLs) and resource provisioning without the overhead of manual, per-user management. While useful on a standalone host, logical grouping is a critical component for maintaining a robust security posture across an enterprise domain containing thousands of objects.
+
+### Enumerating Local Groups
+
+To identify local groups on a standalone host, utilize the `Get-LocalGroup` cmdlet.
+
+```powershell
+PS C:\htb> Get-LocalGroup
+
+Name                                Description
+----                                -----------
+Administrators                      Administrators have complete and unrestricted access to the computer/domain
+Backup Operators                    Backup Operators can override security restrictions for the sole purpose of back...
+Remote Desktop Users                Members in this group are granted the right to logon remotely
+# <SNIP>
+```
+
+## Managing Local Accounts & Groups via PowerShell
+
+PowerShell utilizes the `Get`, `New`, and `Set` verbs to query, provision, and modify objects. For local management, the `*LocalUser` and `*LocalGroup` cmdlets are standard.
+
+### Identifying and Provisioning Local Users
+
+```powershell
+# Enumerate all local users
+PS C:\htb> Get-LocalUser  
+
+# Create a new local user without a password 
+# Note: Depending on the OS build, omitting a password may trigger a Microsoft Live account login prompt.
+PS C:\htb> New-LocalUser -Name "JLawrence" -NoPassword
+```
+
+### Modifying User Attributes
+
+```powershell
+# Securely prompt for a password and set it, along with a description
+PS C:\htb> $Password = Read-Host -AsSecureString
+PS C:\htb> Set-LocalUser -Name "JLawrence" -Password $Password -Description "CEO EagleFang"
+```
+
+### Managing Local Group Membership
+
+```powershell
+# Inspect the membership of the local "Users" group
+PS C:\Windows\system32> Get-LocalGroupMember -Name "Users"
+
+# Add a specific user to the "Remote Desktop Users" group
+PS C:\htb> Add-LocalGroupMember -Group "Remote Desktop Users" -Member "JLawrence"
+
+# Verify successful addition
+PS C:\htb> Get-LocalGroupMember -Name "Remote Desktop Users" 
+```
+
+## Managing Domain Users and Groups
+
+Domain administration requires the `ActiveDirectory` PowerShell module, which is distributed as part of the Remote Server Administration Tools (RSAT). 
+
+### Installing the Active Directory Module
+
+```powershell
+# Install the RSAT Active Directory features natively
+PS C:\htb> Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online
+
+# Verify the module is available and loaded
+PS C:\htb> Get-Module -Name ActiveDirectory -ListAvailable 
+```
+
+### Enumerating Domain Users
+
+The `Get-ADUser` cmdlet allows for broad directory enumeration or targeted attribute filtering.
+
+```powershell
+# Retrieve all AD users (Warning: Can produce excessive output in large domains)
+PS C:\htb> Get-ADUser -Filter *
+
+# Retrieve a specific user by their SamAccountName
+PS C:\htb> Get-ADUser -Identity TSilver
+
+# Query users based on a specific extended attribute (e.g., Email domain)
+PS C:\htb> Get-ADUser -Filter {EmailAddress -like '*greenhorn.corp'}
+```
+*Note: Key properties returned include `DistinguishedName` (the object's relative path in the AD schema), `SamAccountName` (the login identifier), `ObjectGUID`, and the `SID`.*
+
+### Provisioning and Modifying AD Users
+
+```powershell
+# Provision a new AD user, configuring standard and extended attributes simultaneously
+PS C:\htb> New-ADUser -Name "MTanaka" -Surname "Tanaka" -GivenName "Mori" -Office "Security" -OtherAttributes @{'title'="Sensei";'mail'="MTanaka@greenhorn.corp"} -Accountpassword (Read-Host -AsSecureString "AccountPassword") -Enabled $true 
+
+# Validate the creation and format the output dynamically
+PS C:\htb> Get-ADUser -Identity MTanaka -Properties * | Format-Table Name,Enabled,GivenName,Surname,Title,Office,Mail
+
+# Modify an existing user's description
+PS C:\htb> Set-ADUser -Identity MTanaka -Description "Sensei to Security Analysts Rocky, Colt, and Tum-Tum"  
+```
+
+## Security Implications: Enumeration and Privilege Escalation
+
+From a penetration testing standpoint, enumerating AD users and groups frequently exposes critical misconfigurations. Excessive permissions, deeply nested group memberships, and weak password policies provide excellent leverage points. Visualizing these complex AD relationships with tools like BloodHound is a standard industry practice to map out potential attack paths for domain privilege escalation.
