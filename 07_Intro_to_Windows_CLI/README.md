@@ -876,3 +876,124 @@ If you are coming from a Linux/Bash background (e.g., Kali), PowerShell has you 
 * `curl` / `wget` $\rightarrow$ `Invoke-WebRequest`
 * `clear` $\rightarrow$ `Clear-Host`
 * `man` $\rightarrow$ `Get-Help`
+
+
+# PowerShell: Cmdlets and Modules
+
+Understanding cmdlets and modules is crucial for both System Administration and Penetration Testing. PowerShell's modular and expandable architecture makes it a powerhouse tool for enumerating, managing, and auditing Windows environments.
+
+## 1. PowerShell Cmdlets
+Microsoft defines a **cmdlet** as a "single-feature command that manipulates objects in PowerShell."
+
+Cmdlets strictly follow a `Verb-Noun` naming convention, making their intended function highly intuitive (e.g., `Test-WSMan` consists of the verb `Test` and the noun `WSMan`). 
+
+* **Structure:** `Verb-Noun -Parameter Option`
+* **Under the Hood:** Unlike standard PowerShell functions, cmdlets are typically compiled binaries written in C# or other .NET languages.
+* **Discovery:** Use `Get-Command` to list available cmdlets, functions, and aliases. Look at the `CommandType` property to identify the specific type of executable.
+* **Documentation:** Use `Get-Help <cmdlet>` to view usage options and `Get-Member` to expose the properties and methods of the objects returned by the cmdlet.
+
+## 2. PowerShell Modules
+A PowerShell module is a packaged collection of structured PowerShell code designed for deployment and sharing. A module can contain:
+* Cmdlets
+* Script files (`.ps1`, `.psm1`)
+* Functions
+* Assemblies (`.dll`)
+* Related resources (manifests and help files)
+
+### Case Study: PowerSploit (PowerView)
+To understand module anatomy, we can examine the `PowerSploit` project (specifically `PowerView.ps1`). While the repository is officially archived, its logic remains a fundamental reference for Active Directory enumeration and exploitation.
+
+#### The Module Manifest (`.psd1`)
+A PowerShell Data File (`.psd1`) acts as the module's manifest. It defines the module's metadata and dependencies, including:
+* Module versioning and tracking
+* GUID
+* Author and Copyright information
+* PowerShell compatibility requirements
+* Exported modules, functions, and cmdlets
+
+#### The Script Module (`.psm1`)
+A PowerShell Script Module (`.psm1`) contains the core logic (the "meat") of the module.
+```powershell
+Get-ChildItem $PSScriptRoot | ? { $_.PSIsContainer -and !('Tests','docs' -contains $_.Name) } | % { Import-Module $_.FullName -DisableNameChecking }
+```
+* **Breakdown:** * `Get-ChildItem` fetches items in the directory (`$PSScriptRoot`).
+  * `?` (`Where-Object`) filters for directories, excluding `Tests` and `docs`.
+  * `%` (`ForEach-Object`) iterates through the remaining folders and executes `Import-Module`, utilizing `-DisableNameChecking` to suppress unapproved verb warnings.
+
+## 3. Managing and Using Modules
+Before utilizing a module, you must determine its status on the host (loaded, installed, or missing).
+
+### Enumerating Modules
+To list currently loaded modules in the session:
+```powershell
+Get-Module
+```
+To list all installed modules available on the system (even if not currently loaded):
+```powershell
+Get-Module -ListAvailable
+```
+
+### Importing Modules
+Once a module is on the target host, it must be loaded into the current session to execute its functions.
+```powershell
+# Syntax overview
+Get-Help Import-Module
+
+# Importing a custom module from a specific path
+Import-Module .\PowerSploit.psd1
+```
+*Note: Modern PowerShell automatically imports installed modules from the default `$env:PSModulePath` when a cmdlet is invoked. Custom modules dropped onto a target during an engagement must be imported manually.*
+
+To check the default paths where PowerShell searches for modules:
+```powershell
+$env:PSModulePath
+```
+
+## 4. Execution Policy & Bypasses
+PowerShell's **Execution Policy** is an administrative safety control, *not* a security boundary. It dictates the conditions under which PowerShell loads configuration files and runs scripts.
+
+If the policy is set to `Restricted`, attempting to load a script will throw an `UnauthorizedAccess` error.
+
+### Checking and Modifying the Policy
+```powershell
+# Check current policy
+Get-ExecutionPolicy
+
+# Set policy system-wide (Requires Admin privileges - High OPSEC risk if left unchanged)
+Set-ExecutionPolicy Unrestricted
+```
+
+### Pentester/SysAdmin Workflow: Scope Bypass
+To bypass the execution policy without leaving persistent configuration changes on the host (better OPSEC), modify the policy strictly for the current process:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+This ensures the restriction is lifted only for the active session and reverts automatically upon closure.
+
+## 5. Discovering Module Capabilities
+To inspect the specific cmdlets, functions, and aliases introduced by an imported module:
+```powershell
+Get-Command -Module PowerSploit
+```
+
+## 6. Package Management: PowerShell Gallery & GitHub
+The [PowerShell Gallery](https://www.powershellgallery.com/) is the central repository for PowerShell content. Interaction is handled natively via the `PowerShellGet` module.
+
+### Searching and Installing
+To search for a module (e.g., `AdminToolbox`):
+```powershell
+Find-Module -Name AdminToolbox
+```
+To install it directly via the pipeline (requires administrative privileges):
+```powershell
+Find-Module -Name AdminToolbox | Install-Module
+```
+
+## 7. Essential Toolkit Reference
+As a Junior SysAdmin or Pentester, familiarize yourself with these industry-standard modules:
+
+1. **AdminToolbox:** A master collection of tools for AD, Exchange, Virtualization, and Network management.
+2. **ActiveDirectory (RSAT):** Official Microsoft module for remote administration of AD users, groups, and policies.
+3. **Empire / Situational Awareness:** Post-exploitation framework maintained by BC Security, providing deep host and domain telemetry.
+4. **Inveigh:** A robust C#/PowerShell tool for network spoofing and MITM attacks (LLMNR/NBNS/mDNS/DNS/DHCPv6 spoofing).
+5. **BloodHound / SharpHound:** Data collectors and graphical analysis tools used to map hidden privilege relationships within Active Directory environments.
