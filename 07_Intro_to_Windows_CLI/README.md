@@ -1236,3 +1236,123 @@ Permissions dictate the Access Control Entries (ACEs) within an object's Access 
 * **Traverse Folder:** Permits bypassing higher-level directories to access nested files/folders without granting read access to the parent's full contents.
 
 *Note: Windows NTFS operates on an inheritance model. Parent directory permissions cascade to child objects by default, streamlining administration. Inheritance can be explicitly disabled to enforce custom, granular access controls on specific sensitive assets.*
+
+# Windows CLI: Finding & Filtering Content in PowerShell
+
+Mastering the ability to search, find, and filter content is a critical operational requirement for any SysAdmin or Pentester using the command-line interface. This section details how PowerShell leverages object-oriented outputs, property-based filtering, and the Pipeline to streamline data enumeration.
+
+## 1. Understanding PowerShell Output (The Object Paradigm)
+
+Unlike traditional shells (Bash or `cmd.exe`) that output plain text strings, PowerShell outputs **Objects**. Understanding this paradigm is crucial for effective scripting and system administration.
+
+* **Object:** An individual instance of a class within PowerShell (e.g., a specific computer, a specific user).
+* **Class:** The blueprint or schema that defines what an object is and how it is structured.
+* **Properties:** The data or attributes associated with an object (e.g., a user's name, password expiration date, or SID).
+* **Methods:** The functions or actions that can be performed on or by the object.
+
+### Examining Object Properties and Methods
+To inspect the structure of an object, we pipe the output to `Get-Member`. This is highly useful during the reconnaissance phase to understand what data is available to us.
+
+```powershell
+PS C:\htb> Get-LocalUser administrator | Get-Member
+```
+
+To view all properties and their current values for a specific object, we utilize `Select-Object` with the wildcard `*`:
+
+```powershell
+PS C:\htb> Get-LocalUser administrator | Select-Object -Property *
+```
+
+## 2. Filtering, Sorting, and Grouping Objects
+
+When dealing with large datasets (like Active Directory users or running services), dumping all properties is inefficient. We can filter the output to display only the properties relevant to our current task.
+
+### Property Filtering
+Filtering down to specific attributes (e.g., checking which accounts have recently set passwords):
+
+```powershell
+PS C:\htb> Get-LocalUser * | Select-Object -Property Name, PasswordLastSet
+```
+
+### Sorting and Grouping
+To identify patterns or group specific configurations (like determining how many accounts are actively enabled), we chain `Sort-Object` and `Group-Object`:
+
+```powershell
+PS C:\htb> Get-LocalUser * | Sort-Object -Property Name | Group-Object -Property Enabled
+```
+
+## 3. Advanced Filtering with `Where-Object`
+
+Some cmdlets, like `Get-Service`, generate an overwhelming amount of data. If we need to assess the host for defensive mechanisms (e.g., EDRs, Antivirus) after landing an initial shell, `Where-Object` (alias: `where`) evaluates property values against specific conditions.
+
+### Defensive Evasion Scenario: Hunting for Windows Defender
+Before executing further payloads, we must enumerate running defensive services.
+
+```powershell
+PS C:\htb> Get-Service | Where-Object DisplayName -like '*Defender*'
+```
+
+### Comparison Operators Reference
+PowerShell utilizes specific flags for logical evaluations within `Where-Object`:
+
+| Operator | Description |
+| :--- | :--- |
+| `-like` | Utilizes wildcard expressions (`*`) for pattern matching. (e.g., `*Defender*`). |
+| `-match` | Performs a Regular Expression (RegEx) match against the supplied value. |
+| `-eq` | Specifies an exact, strict match (Equal To) to the property value. |
+| `-contains`| Checks if a collection contains an exact specified item. |
+| `-not` | Matches if the property is null, does not exist, or resolves to `$False`. |
+
+## 4. The PowerShell Pipeline (`|`) & Chain Operators
+
+The Pipeline (`|`) allows us to pass the object output of one cmdlet directly as the input to the next, enabling complex chaining of administrative tasks.
+
+### Counting Unique Instances
+In this example, we retrieve all running processes, sort them, filter out duplicates, and count the total objects:
+
+```powershell
+PS C:\htb> Get-Process | Sort-Object | Get-Unique | Measure-Object
+```
+
+### Pipeline Chain Operators (`&&` and `||`)
+*Note: Available natively in PowerShell 7+.*
+Chain operators allow for conditional execution based on the success or failure of the preceding command, essential for robust automation scripts.
+
+* `&&` (AND): Executes the right-side command **only if** the left-side command succeeds.
+* `||` (OR): Executes the right-side command **only if** the left-side command fails (error handling).
+
+```powershell
+# Executes ping only if reading the text file is successful
+PS C:\htb> Get-Content '.\test.txt' && ping 8.8.8.8
+
+# Executes ping only if the file path is incorrect or the read fails
+PS C:\htb> Get-Content '.\testss.txt' || ping 8.8.8.8
+```
+
+## 5. Enumerating Content and Sensitive Data (Looting)
+
+During post-exploitation or system audits, locating sensitive files (credentials, keys, config files) is a priority. Native tools allow us to maintain stealth ("Living off the Land") without dropping external binaries like WinPEAS.
+
+### Recursive File Hunts (`Get-ChildItem`)
+Searching for common development or documentation extensions:
+
+```powershell
+PS C:\htb> Get-ChildItem -Path C:\Users\MTanaka\ -File -Recurse -ErrorAction SilentlyContinue | Where-Object {($_.Name -like "*.txt" -or $_.Name -like "*.py" -or $_.Name -like "*.ps1" -or $_.Name -like "*.md" -or $_.Name -like "*.csv")}
+```
+
+### Deep Content Inspection (`Select-String`)
+`Select-String` (alias: `sls`) is the PowerShell equivalent to Linux `grep`. We can pipe our filtered file objects directly into `Select-String` to parse the files' internal content for sensitive keywords.
+
+```powershell
+PS C:\htb> Get-ChildItem -Path C:\Users\MTanaka\ -File -Recurse -ErrorAction SilentlyContinue | Where-Object {($_.Name -like "*.txt" -or $_.Name -like "*.py" -or $_.Name -like "*.ps1" -or $_.Name -like "*.md" -or $_.Name -like "*.csv")} | Select-String "Password","credential","key","UserName"
+```
+
+### High-Value Target Directories
+When enumerating a host, prioritize checking these locations for operational loot:
+1.  **`C:\Users\<User>\AppData\`**: Contains application configs, temporary caches, and saved sessions.
+2.  **`C:\Users\<User>\` (Hidden items)**: Check for `.ssh` folders, VPN profiles, and local keystores (`Get-ChildItem -Hidden`).
+3.  **PowerShell History File**: A goldmine for plaintext credentials and admin workflows.
+    * *Path:* `C:\Users\<USERNAME>\AppData\Roaming\Microsoft\Windows\Powershell\PSReadline\ConsoleHost_history.txt`
+    * *Cmdlet Check:* `Get-Content (Get-PSReadlineOption).HistorySavePath`
+4.  **Clipboard Contents**: `Get-Clipboard`
+5.  **Scheduled Tasks**: Review automated jobs for hardcoded credentials or privilege escalation vectors.
