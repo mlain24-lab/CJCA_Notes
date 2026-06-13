@@ -1136,3 +1136,103 @@ PS C:\htb> Set-ADUser -Identity MTanaka -Description "Sensei to Security Analyst
 ## Security Implications: Enumeration and Privilege Escalation
 
 From a penetration testing standpoint, enumerating AD users and groups frequently exposes critical misconfigurations. Excessive permissions, deeply nested group memberships, and weak password policies provide excellent leverage points. Visualizing these complex AD relationships with tools like BloodHound is a standard industry practice to map out potential attack paths for domain privilege escalation.
+
+# PowerShell: File & Directory Management
+
+## Overview
+This section outlines essential PowerShell cmdlets for file and directory manipulation, focusing on deployment, bulk operations, and foundational access control. Mastering these cmdlets is critical for efficient system administration, automation scripting, and local enumeration during security audits.
+
+## Core Cmdlets for Object Management
+
+| Command | Alias | Description |
+| :--- | :--- | :--- |
+| `Get-Item` | `gi` | Retrieves an object (e.g., file, directory, registry key). |
+| `Get-ChildItem` | `ls`, `dir`, `gci` | Enumerates the contents of a directory or registry hive. |
+| `New-Item` | `md`, `mkdir`, `ni` | Instantiates new objects (files, directories, symlinks). |
+| `Set-Item` | `si` | Modifies object property values. |
+| `Copy-Item` | `copy`, `cp`, `ci` | Duplicates an existing object. |
+| `Rename-Item` | `ren`, `rni` | Modifies the name of an object. |
+| `Remove-Item` | `rm`, `del`, `rmdir` | Deletes the specified object. |
+| `Get-Content` | `cat`, `type` | Reads and outputs the contents of a file. |
+| `Add-Content` | `ac` | Appends string data to the end of a file. |
+| `Set-Content` | `sc` | Overwrites existing file content with new data. |
+| `Clear-Content` | `clc` | Purges file content while preserving the file object itself. |
+| `Compare-Object` | `diff`, `compare` | Evaluates differences between two or more objects/contents. |
+
+## Practical Scenario: Automated Directory & File Provisioning
+**Objective:** Scaffold a standard directory tree and populate it with templated Markdown files for departmental documentation.
+
+### 1. Directory Tree Creation
+Leveraging `New-Item` and the `mkdir` alias to build the required infrastructure.
+
+```powershell
+# Verify current working directory and navigate to target path
+Get-Location
+cd C:\Users\MTanaka\Documents
+
+# Instantiate root directory
+New-Item -Name "SOPs" -ItemType Directory
+
+# Scaffold nested subdirectories
+cd SOPs
+mkdir "Physical Sec"
+mkdir "Cyber Sec"
+mkdir "Training"
+
+# Verify structure
+Get-ChildItem
+```
+
+### 2. File Instantiation
+Using `New-Item` to generate empty `.md` files across the newly created directories.
+
+```powershell
+New-Item "Readme.md" -ItemType File
+New-Item ".\Physical Sec\Physical-Sec-draft.md" -ItemType File
+New-Item ".\Cyber Sec\Cyber-Sec-draft.md" -ItemType File
+New-Item ".\Training\Employee-Training-draft.md" -ItemType File
+
+# Review final tree topology
+tree /F
+```
+
+### 3. Content Injection
+Appending templated standard headers using `Add-Content`.
+
+```powershell
+Add-Content .\Readme.md "Title: Insert Document Title Here`nDate: x/x/202x`nAuthor: MTanaka`nVersion: 0.1 (Draft)"
+
+# Verify data injection
+Get-Content .\Readme.md
+```
+*Note: While functional, manual provisioning is inefficient for large-scale environments. Optimal workflows leverage PowerShell scripting and variables to automate this pipeline fully.*
+
+## Bulk Object Modification
+**Objective:** Systematically modify file properties using pipeline logic.
+
+### Single File Renaming
+```powershell
+Rename-Item ".\Cyber Sec\Cyber-Sec-draft.md" -NewName "Infosec-SOP-draft.md"
+```
+
+### Bulk Renaming via Pipeline
+Programmatically converting multiple `.txt` files to `.md` format.
+
+```powershell
+# Pipe Get-ChildItem output to Rename-Item, using a script block to replace the extension
+Get-ChildItem -Path *.txt | Rename-Item -NewName { $_.Name -replace "\.txt", ".md" }
+```
+
+## NTFS Permissions & Access Control
+Permissions dictate the Access Control Entries (ACEs) within an object's Access Control List (ACL), defining the interaction scope for users and groups. Implementing the Principle of Least Privilege (PoLP) is critical to mitigate unauthorized data access or tampering.
+
+### Standard Permission Sets
+* **Full Control:** Complete authority over the object, including modifying permissions and taking ownership.
+* **Modify:** Read, write, and delete capabilities for files and directories.
+* **List Folder Contents:** Ability to enumerate child objects within a directory and execute binaries (applies only to directories).
+* **Read and Execute:** View file contents and execute payloads/scripts (`.ps1`, `.exe`, etc.).
+* **Write:** Instantiate new child objects and append data to existing files.
+* **Read:** Enumerate directories and inspect file contents.
+* **Traverse Folder:** Permits bypassing higher-level directories to access nested files/folders without granting read access to the parent's full contents.
+
+*Note: Windows NTFS operates on an inheritance model. Parent directory permissions cascade to child objects by default, streamlining administration. Inheritance can be explicitly disabled to enforce custom, granular access controls on specific sensitive assets.*
