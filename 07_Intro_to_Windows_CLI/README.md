@@ -1466,3 +1466,101 @@ Invoke-Command -ComputerName ACADEMY-ICL-DC, LOCALHOST -ScriptBlock { Get-Servic
 - `-ScriptBlock {}`: Contains the exact PowerShell command to be executed remotely.
 
 Mastering these cmdlets ensures rapid incident response, effective infrastructure management, and the ability to detect malicious persistence across the network.
+
+# Working with the Windows Registry
+
+## 1. Overview
+The Windows Registry is a centralized, hierarchical database used to store information necessary to configure the system for one or more users, applications, and hardware devices. From both an offensive (Pentesting) and defensive (SysAdmin) perspective, the Registry is a critical vector for establishing persistence, enumerating host configurations, and auditing security settings (e.g., Windows Defender status, installed software, execution policies).
+
+## 2. Core Structure: Keys and Values
+
+### Registry Keys
+Keys function as logical containers, similar to directories in a file system. They store sub-keys and values. A host system's root registry keys are stored physically in `C:\Windows\System32\Config\`.
+
+### Registry Values
+Values are the actual data objects stored within a key. They consist of three fundamental attributes:
+* **Name:** The identifier of the value.
+* **Type:** The data format specification (e.g., `REG_SZ` for strings, `REG_DWORD` for 32-bit numbers).
+* **Data:** The actual configuration parameter, setting, or path.
+
+## 3. Standard Registry Hives
+Windows organizes the Registry into five primary root hives:
+
+| Hive Name | Abbreviation | Description |
+| :--- | :--- | :--- |
+| `HKEY_LOCAL_MACHINE` | HKLM | Contains hardware, operating system, memory, and device driver data. Critical for host-wide physical state configurations. |
+| `HKEY_CURRENT_CONFIG` | HKCC | Contains the current hardware profile (essentially a redirection from HKLM's `CurrentControlSet`). |
+| `HKEY_CLASSES_ROOT` | HKCR | Defines file extension associations, UI extensions, and COM class registrations. |
+| `HKEY_CURRENT_USER` | HKCU | Defines OS and software settings specific to the currently logged-in user. |
+| `HKEY_USERS` | HKU | Contains settings for the default user profile and all active user profiles on the local machine. |
+
+## 4. Querying the Registry
+
+### Using PowerShell Cmdlets
+PowerShell provides the `Get-Item`, `Get-ChildItem`, and `Get-ItemProperty` cmdlets to interact with the Registry, treating it as a standard drive (e.g., `HKLM:\`, `HKCU:\`).
+
+**Enumerate running services via the CurrentVersion\Run key:**
+```powershell
+Get-Item -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run | Select-Object -ExpandProperty Property
+```
+
+**Recursive search through subkeys:**
+```powershell
+Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion -Recurse
+```
+
+**Extract clean, readable property values:**
+```powershell
+Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
+```
+
+### Using Reg.exe (DOS CLI)
+`reg.exe` is a native executable highly optimized for registry operations and targeted string searches.
+
+**Basic Query:**
+```cmd
+reg query HKEY_LOCAL_MACHINE\SOFTWARE\7-Zip
+```
+
+**Advanced Search (Targeting strings across values):**
+```cmd
+REG QUERY HKCU /F "Password" /t REG_SZ /S /K
+```
+* `/F`: Sets the search pattern ("Password").
+* `/t`: Specifies the data type (`REG_SZ`).
+* `/S`: Executes a recursive search through all subkeys.
+* `/K`: Narrows the search exclusively to Key names.
+
+## 5. Modifying and Creating Registry Entries (Persistence)
+The `RunOnce` key executes a specified payload upon the next user login and automatically deletes the key afterward. This is a standard vector for maintaining operational access across reboots.
+
+**Scenario:** Adding a persistence payload using PowerShell.
+
+**1. Create a new Key within RunOnce:**
+```powershell
+New-Item -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\ -Name TestKey
+```
+
+**2. Set a Value pointing to the payload executable:**
+```powershell
+New-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\TestKey -Name "access" -PropertyType String -Value "C:\Users\htb-student\Downloads\payload.exe"
+```
+
+**Equivalent operation using Reg.exe:**
+```cmd
+reg add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce\TestKey" /v access /t REG_SZ /d "C:\Users\htb-student\Downloads\payload.exe"
+```
+
+## 6. Deleting Registry Entries
+*Warning: Removing incorrect entries can cause critical system instability.*
+
+**Remove the persistence value via PowerShell:**
+```powershell
+Remove-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\TestKey -Name "access"
+```
+
+**Verify Deletion:**
+```powershell
+Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\TestKey
+```
+*(If no output or error is returned regarding the "access" property, the deletion was successful).*
