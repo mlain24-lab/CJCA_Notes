@@ -1564,3 +1564,89 @@ Remove-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnc
 Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\TestKey
 ```
 *(If no output or error is returned regarding the "access" property, the deletion was successful).*
+
+# Working with the Windows Event Log: Analysis & Operations
+
+## 1. Overview
+From a SOC Analyst or IT Administrator's perspective, monitoring and categorizing Windows events is critical for proactive defense and threat hunting. Conversely, from an offensive (Pentester) standpoint, enumerating event logs reveals the environment's logging maturity, potential misconfigurations, and occasionally, sensitive information like clear-text credentials. 
+
+The **Windows Event Log** is a core service (running within `svchost.exe`) that provides a standardized, centralized mechanism for the OS and applications to record hardware and software events. 
+
+## 2. Event Classifications
+
+### 2.1. Log Categories
+Windows primarily organizes logs into five major categories:
+
+| Category | Description |
+| :--- | :--- |
+| **System** | Events related to the Windows OS and its native components (e.g., driver failures, service startups). |
+| **Security** | Audited security events (e.g., logon success/failure, file creation/deletion). Crucial for attack detection. |
+| **Application** | Events triggered by installed software/applications (e.g., third-party software crashes). |
+| **Setup** | Events generated during the OS installation or Active Directory role deployments (on Domain Controllers). |
+| **Forwarded** | Logs gathered and forwarded from other hosts within the corporate network. |
+
+### 2.2. Event Types & Severity Levels
+Every event is tagged with a type and a severity level to facilitate filtering and triaging:
+
+| Event Type | Severity Level | Description |
+| :--- | :---: | :--- |
+| **Verbose** | 5 | Granular progress or success messages. |
+| **Information** | 4 | Successful operations of applications, drivers, or services (no issues). |
+| **Warning** | 3 | Potential future issues (e.g., low disk space). The system can typically recover without data loss. |
+| **Error** | 2 | Significant problems (e.g., a service failing to load). Requires sysadmin review but not immediate panic. |
+| **Critical** | 1 | Urgent issues causing system/application instability. Demands immediate sysadmin intervention. |
+| **Success Audit** | N/A | Recorded when a security access attempt succeeds (e.g., user logon). |
+| **Failure Audit** | N/A | Recorded when a security access attempt fails (e.g., password spraying indicators). |
+
+## 3. Log Architecture & Storage
+* **Service Name:** Windows Event Log
+* **Process Context:** `svchost.exe` (Started automatically at boot; stopping it causes system instability).
+* **Storage Path:** `C:\Windows\System32\winevt\logs`
+* **File Extension:** `.evtx`
+* **Core Elements:** Log Name, Date/Time, Task Category, Event ID (unique identifier), Source, Level, User, and Computer.
+
+## 4. Interacting with Event Logs (CLI & PowerShell)
+Querying logs via command line is essential for scripting and remote administration. Both tools require local Administrator privileges for comprehensive access.
+
+### 4.1. Using `wevtutil` (Windows Events Command Line Utility)
+A native executable used to retrieve, export, archive, and clear logs.
+
+```cmd
+:: Enumerate all available log names on the system
+wevtutil el
+
+:: Get configuration details for a specific log (size, path, permissions)
+wevtutil gl "Windows PowerShell"
+
+:: Retrieve status information (record count, creation time)
+wevtutil gli "Windows PowerShell"
+
+:: Query the last 5 events from the Security log in text format
+wevtutil qe Security /c:5 /rd:true /f:text
+
+:: Export the System log to a specific path for offline analysis
+wevtutil epl System C:\system_export.evtx
+```
+
+### 4.2. Using `Get-WinEvent` (PowerShell)
+A highly versatile PowerShell cmdlet that allows for object-oriented querying and filtering via hash tables.
+
+```powershell
+# List all logs with their current record count and maximum size
+Get-WinEvent -ListLog *
+
+# Check details for a specific log
+Get-WinEvent -ListLog Security
+
+# Query the 5 most recent events in the Security log and expand the message
+Get-WinEvent -LogName 'Security' -MaxEvents 5 | Select-Object -ExpandProperty Message
+
+# Query oldest events first
+Get-WinEvent -LogName 'Security' -MaxEvents 5 -Oldest
+
+# Filter via Hash Tables: Search for Logon Failures (Event ID 4625)
+Get-WinEvent -FilterHashTable @{LogName='Security';ID='4625'}
+
+# Filter via Hash Tables: Search for Critical events (Level 1) in the System log
+Get-WinEvent -FilterHashTable @{LogName='System';Level='1'} | Select-Object -ExpandProperty Message
+```
