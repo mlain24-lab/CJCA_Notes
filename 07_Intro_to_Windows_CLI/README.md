@@ -1356,3 +1356,113 @@ When enumerating a host, prioritize checking these locations for operational loo
     * *Cmdlet Check:* `Get-Content (Get-PSReadlineOption).HistorySavePath`
 4.  **Clipboard Contents**: `Get-Clipboard`
 5.  **Scheduled Tasks**: Review automated jobs for hardcoded credentials or privilege escalation vectors.
+
+
+# Windows Services Management & Triage via PowerShell
+
+## 1. Overview
+Service administration is a critical component of host management, endpoint security, and maintaining an organization's overall security posture. In the Windows OS, services are standalone, background-running components that manage processes and application dependencies without requiring user interaction. 
+
+Windows categorizes services into three primary groups:
+- **Local Services**
+- **Network Services**
+- **System Services**
+
+From an administrative and defensive perspective, monitoring service states is essential to detect anomalies (e.g., disabled endpoint protection or persistence mechanisms). From an offensive (Pentester) perspective, misconfigured service permissions are a common vector for Local Privilege Escalation (LPE).
+
+PowerShell facilitates robust service management through the `Microsoft.PowerShell.Management` module.
+
+### Core Cmdlets
+You can explore available service cmdlets using the built-in help system:
+```powershell
+Get-Help *-Service
+```
+*Key Cmdlets:* `Get-Service`, `Start-Service`, `Stop-Service`, `Restart-Service`, `Set-Service`, `New-Service`, `Remove-Service` (Requires PS v7+; use `sc.exe` for older versions).
+
+---
+
+## 2. Local Service Enumeration & Incident Triage
+**Scenario:** A user reports suspicious background activity, sudden OS sluggishness, and alerts indicating that Windows Defender has been disabled. 
+
+### Step 2.1: Service Discovery
+To begin troubleshooting, we enumerate all running services to identify misconfigurations. Services typically have a status of `Running`, `Stopped`, or `Paused`, and startup types defined as `Manual`, `Automatic`, or `Disabled`.
+
+```powershell
+# Enumerate all services and format the output
+Get-Service | Format-Table DisplayName, Status
+
+# Count the total number of services on the host
+Get-Service | Measure-Object
+```
+
+### Step 2.2: Precision Filtering (Investigating Defender)
+Filtering the pipeline allows us to isolate specific services related to our troubleshooting scope.
+
+```powershell
+# Isolate services related to Windows Defender
+Get-Service | Where-Object DisplayName -like '*Defender*' | Format-Table DisplayName, ServiceName, Status
+```
+*Finding:* The `Microsoft Defender Antivirus Service` (`WinDefend`) status is `Stopped`.
+
+### Step 2.3: Restoring Critical Services
+To secure the host, we immediately restart the disabled security service using its `ServiceName`.
+
+```powershell
+# Start the Defender service
+Start-Service WinDefend
+
+# Verify the service is active
+Get-Service WinDefend
+```
+
+---
+
+## 3. Handling Suspicious Services (Containment)
+During routine enumeration, anomalous services may be discovered. For example, finding a service with an irregular `DisplayName` (e.g., `Totally still used for Print Spooli...` mapped to the `Spooler` service).
+
+To mitigate potential threats while the security team investigates, the service must be halted and its startup configuration disabled.
+
+```powershell
+# Stop the suspicious service
+Stop-Service Spooler
+
+# Verify the current properties
+Get-Service spooler | Select-Object -Property Name, StartType, Status, DisplayName
+
+# Disable the service from starting upon reboot
+Set-Service -Name Spooler -StartType Disabled
+
+# Confirm the new startup state
+Get-Service -Name Spooler | Select-Object -Property StartType
+```
+*Note: Service modification requires administrative privileges (Local Admin or Domain Admin).*
+
+---
+
+## 4. Remote Service Administration & Scaling
+In an Active Directory environment, querying remote hosts is essential for enterprise-wide threat hunting and administration. 
+
+### 4.1 Querying Remote Hosts
+The `-ComputerName` parameter allows you to target specific remote machines.
+
+```powershell
+# Enumerate services on a Domain Controller
+Get-Service -ComputerName ACADEMY-ICL-DC
+
+# Filter for active services only on the remote host
+Get-Service -ComputerName ACADEMY-ICL-DC | Where-Object {$_.Status -eq "Running"}
+```
+
+### 4.2 Executing Commands at Scale (`Invoke-Command`)
+To cross-reference anomalies (like the altered `Spooler` service) or verify security compliance across multiple endpoints simultaneously, `Invoke-Command` is highly efficient.
+
+```powershell
+# Query the status of Defender across multiple hosts
+Invoke-Command -ComputerName ACADEMY-ICL-DC, LOCALHOST -ScriptBlock { Get-Service -Name 'windefend' }
+```
+**Breakdown:**
+- `Invoke-Command`: Executes a command on local/remote computers.
+- `-ComputerName`: Accepts a comma-separated list of target hosts.
+- `-ScriptBlock {}`: Contains the exact PowerShell command to be executed remotely.
+
+Mastering these cmdlets ensures rapid incident response, effective infrastructure management, and the ability to detect malicious persistence across the network.
