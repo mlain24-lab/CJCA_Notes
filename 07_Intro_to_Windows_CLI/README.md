@@ -1650,3 +1650,160 @@ Get-WinEvent -FilterHashTable @{LogName='Security';ID='4625'}
 # Filter via Hash Tables: Search for Critical events (Level 1) in the System log
 Get-WinEvent -FilterHashTable @{LogName='System';Level='1'} | Select-Object -ExpandProperty Message
 ```
+# Networking Management from the CLI
+
+## 1. Overview
+PowerShell significantly expands our administrative capabilities within the Windows OS, specifically regarding network configuration, diagnostics, and remote management. This documentation covers essential commands to audit network interfaces (IP addresses, adapter settings, DNS) and establish secure remote administrative access utilizing SSH and WinRM.
+
+Understanding these fundamentals is critical both for daily IT administration (Helpdesk/SysAdmin tasks) and for host enumeration and lateral movement during penetration testing engagements.
+
+## 2. Common Windows Networking Protocols
+While Windows networking shares the standard TCP/IP stack with Linux/Unix, there are specific protocols frequently encountered in Active Directory environments and Windows enterprise networks:
+
+| Protocol | Description |
+| :--- | :--- |
+| **SMB** | Server Message Block. Facilitates resource/file sharing and standard authentication between hosts. (Open-source equivalent: SAMBA). |
+| **NetBIOS** | Network Basic Input/Output System. A session-layer mechanism; originally the transport for SMB. Currently used as a fallback Name Service (NBT-NS) when DNS fails. |
+| **LDAP** | Lightweight Directory Access Protocol. Cross-platform protocol utilized for authentication and authorization within directory services like Active Directory. |
+| **LLMNR** | Link-Local Multicast Name Resolution. A multicast protocol providing name resolution on local links (same broadcast domain) if DNS is unavailable. |
+| **DNS** | Domain Name System. Standard naming resolution protocol translating hostnames to IP addresses. |
+| **HTTP/HTTPS** | Hypertext Transfer Protocol (Secure). Standard protocols for requesting and transmitting data over the web. |
+| **Kerberos** | Network authentication protocol relying on tickets to grant authorization to domain resources. Standard in modern Active Directory environments. |
+| **WinRM** | Windows Remote Management. Microsoft's implementation of WS-Management. Used for remote hardware/software administration, enumeration, and as a remote scripting engine. |
+| **RDP** | Remote Desktop Protocol. Provides a graphical interface for remote host management. |
+| **SSH** | Secure Shell. Provides encrypted remote CLI access, file transfer, and secure tunneling over insecure networks. |
+
+---
+
+## 3. Querying Network Settings (Native Executables)
+Before modifying configurations or attempting lateral movement, we must enumerate the target's current network state. 
+
+### `ipconfig`
+Displays basic network interface configurations (IPv4/IPv6, subnet mask, default gateway). Appending `/all` provides detailed metrics including DHCP lease times, physical (MAC) addresses, and DNS configurations.
+
+```powershell
+PS C:\htb> ipconfig /all
+# Highlights from output:
+# - Primary Dns Suffix: greenhorn.corp
+# - IPv4 Address: 10.129.203.105 (Preferred) / 172.16.5.100 (Preferred)
+# - DNS Servers: 1.1.1.1, 8.8.8.8, 172.16.5.155
+```
+*Note for Pentesters: Discovering a dual-homed host (multiple network interfaces on different subnets, as seen above) makes it a prime target for pivoting into restricted network segments.*
+
+### `arp`
+The Address Resolution Protocol translates IP addresses to MAC addresses. Running `arp -a` displays the cached ARP table, revealing other hosts this machine has recently communicated with (e.g., Gateways, Domain Controllers).
+
+```powershell
+PS C:\htb> arp -a
+```
+
+### `nslookup`
+A built-in tool for querying the Domain Name System to map IP addresses to hostnames or vice versa.
+
+```powershell
+PS C:\htb> nslookup ACADEMY-ICL-DC
+# Resolves the DC hostname to its IP address (172.16.5.155)
+```
+
+### `netstat`
+Displays active network connections, routing tables, and listening ports. The `-an` flag resolves all connections to numerical IP addresses and ports.
+
+```powershell
+PS C:\htb> netstat -an
+# Look for standard listening ports: 22 (SSH), 135 (RPC), 445 (SMB), 3389 (RDP), 5985 (WinRM HTTP).
+```
+
+---
+
+## 4. PowerShell Net Cmdlets
+PowerShell provides granular modules (`NetAdapter`, `NetConnection`, `NetTCPIP`) for network administration.
+
+| Cmdlet | Use Case |
+| :--- | :--- |
+| `Get-NetIPInterface` | Retrieves visible network adapter properties and states. |
+| `Get-NetIPAddress` | Retrieves IP configurations per adapter (PowerShell equivalent of `ipconfig`). |
+| `Get-NetNeighbor` | Retrieves the ARP cache (PowerShell equivalent of `arp -a`). |
+| `Get-NetRoute` | Prints the current routing table. |
+| `Set-NetAdapter` | Modifies Layer-2 properties (VLAN ID, MAC, Description). |
+| `Set-NetIPInterface` | Modifies interface metrics (DHCP status, MTU). |
+| `New-NetIPAddress` / `Set-NetIPAddress` | Creates or modifies static IP configurations. |
+| `Disable-NetAdapter` / `Enable-NetAdapter` | Disables or enables a physical/logical NIC. |
+| `Restart-NetAdapter` | Reboots an adapter to apply configuration changes. |
+| `Test-NetConnection` | Advanced diagnostic tool supporting Ping, TCP port checks, and traceroute. |
+
+### Configuration Example: Setting a Static IP
+To transition an adapter from DHCP to a static IP address, we first disable DHCP on the target interface, apply the new IP/Subnet, and restart the adapter to flush the changes.
+
+```powershell
+# 1. Identify the Interface Index
+PS C:\htb> Get-NetIPInterface
+
+# 2. Disable DHCP on the targeted interface (e.g., Index 25)
+PS C:\htb> Set-NetIPInterface -InterfaceIndex 25 -Dhcp Disabled
+
+# 3. Assign the static IP and Subnet Mask (PrefixLength)
+PS C:\htb> Set-NetIPAddress -InterfaceIndex 25 -IPAddress 10.10.100.54 -PrefixLength 24
+
+# 4. Restart the adapter to apply changes
+PS C:\htb> Restart-NetAdapter -Name 'Ethernet 3'
+
+# 5. Verify connectivity
+PS C:\htb> Test-NetConnection
+```
+
+---
+
+## 5. Remote Access Management
+Administering systems at scale or engaging a target remotely requires secure access protocols.
+
+### 5.1 Secure Shell (SSH)
+Since 2018, OpenSSH (Client and Server) is natively supported in Windows.
+
+**Installation and Service Configuration:**
+```powershell
+# Check installation status
+PS C:\htb> Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
+
+# Install SSH Server component
+PS C:\htb> Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+
+# Start the service and configure it to boot automatically
+PS C:\htb> Start-Service sshd
+PS C:\htb> Set-Service -Name sshd -StartupType 'Automatic'
+```
+
+**Connecting:**
+```shell
+# Syntax is identical whether connecting from a Linux terminal or Windows CMD/PowerShell
+ssh htb-student@10.129.224.248
+```
+*Note: SSH defaults to a CMD shell on Windows. Type `powershell` once connected to upgrade the session.*
+
+### 5.2 Windows Remote Management (WinRM)
+WinRM is the industry standard for Windows remote administration. It listens on TCP ports `5985` (HTTP) and `5986` (HTTPS). It is enabled by default on Windows Server OS but often requires manual configuration on Windows 10/11 endpoints.
+
+**Quick Configuration:**
+```powershell
+PS C:\htb> winrm quickconfig
+```
+This command automatically:
+1. Starts the WinRM service.
+2. Configures inbound/outbound Windows Defender Firewall rules.
+3. Grants remote administrative rights to local users.
+
+*Security Best Practices:* In production environments, harden WinRM by restricting `TrustedHosts` to jump boxes or management IPs, enforcing HTTPS transport, and ensuring Kerberos authentication within an Active Directory domain.
+
+**Testing WinRM Connectivity:**
+```powershell
+# Unauthenticated check (verifies service is listening)
+PS C:\htb> Test-WSMan -ComputerName "10.129.224.248"
+
+# Authenticated check (returns OS version if credentials are valid)
+PS C:\htb> Test-WSMan -ComputerName "10.129.224.248" -Authentication Negotiate
+```
+
+**Establishing an Interactive PowerShell Session (PSSession):**
+```powershell
+# From Windows or a Linux host with PowerShell Core installed
+PS C:\htb> Enter-PSSession -ComputerName 10.129.224.248 -Credential htb-student -Authentication Negotiate
+```
