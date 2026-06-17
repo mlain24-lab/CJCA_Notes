@@ -2943,7 +2943,8 @@ Mastering stdout/stdin manipulation allows you to extract actionable intelligenc
 * **System Identity:** `uname -a` (Kernel version) | `hostname` (Machine name).
 * **User Context:** `id` (Crucial for checking if you belong to `sudo`, `adm`, or `docker` groups).
 * **Active Connections:** `ss -tulwn` or `netstat -antp` (Identifies listening ports and internal services).
-* **Find SUID Binaries (PrivEsc Vector):** ```bash
+* **Find SUID Binaries (PrivEsc Vector):** 
+```bash
   find / -perm -4000 -type f -exec ls -al {} \; 2>/dev/null
   ```
 * **Process Tracking:** `ps aux | grep root` (Identify processes running under high-privileged accounts).
