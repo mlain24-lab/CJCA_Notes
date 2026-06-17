@@ -1344,3 +1344,100 @@ A cipher mode dictates how a block cipher algorithm (processing fixed 64 or 128-
 | **OFB** | Output Feedback | Used for stream encryption in real-time communications. Generates the keystream independently, making it highly suitable for noisy channels (PKCS, SSH). |
 | **CTR** | Counter | High-performance mode that encrypts real-time data streams by turning a block cipher into a stream cipher. Widely used in IPsec and BitLocker. |
 | **GCM** | Galois/Counter Mode | The modern gold standard. Protects both confidentiality and data integrity (authenticated encryption). Heavily used in wireless communications, VPNs, and secure protocols (TLS 1.3). |
+
+# 🛠️ Module 03: Introduction to Networking - Master Cheat Sheet
+
+> **Operational Scope:** Quick reference guide for network architecture, OSI/TCP/IP models, subnetting (VLSM), Layer 2/3 attacks, Cisco IOS fundamentals, and cryptography. Optimized for rapid infrastructure enumeration, routing analysis, and post-exploitation pivoting.
+
+## 1. 🧮 IPv4 Subnetting & VLSM (Field Ops)
+
+El cálculo rápido de subredes es crítico para acotar el alcance en escaneos con Nmap o configurar enrutamiento. 
+
+**The "Magic Number" Trick:** $256 - \text{Decimal Mask} = \text{Salto de Red}$
+
+| CIDR | Máscara | Magic Number (Salto) | Usable Hosts | Ejemplo de Inicio de Redes |
+| :--- | :--- | :--- | :--- | :--- |
+| **/24** | `.0` | $256$ | $254$ | `.0` |
+| **/25** | `.128` | $128$ | $126$ | `.0`, `.128` |
+| **/26** | `.192` | $64$ | $62$ | `.0`, `.64`, `.128`, `.192` |
+| **/27** | `.224` | $32$ | $30$ | Múltiplos de 32 (0, 32, 64...) |
+| **/28** | `.240` | $16$ | $14$ | Múltiplos de 16 (0, 16, 32...) |
+| **/29** | `.248` | $8$ | $6$ | Múltiplos de 8 (0, 8, 16...) |
+
+> **Pentester Tip:** Si el target es `192.168.1.50/27`, el salto es 32. La red va de `.32` a `.63` (Broadcast). El rango escaneable (usables) es de `.33` a `.62`. No escanees toda la `/24` a ciegas.
+
+---
+
+## 2. 🧠 OSI Model & Data Encapsulation
+
+Conocer la PDU (Protocol Data Unit) es fundamental para analizar tráfico en Wireshark.
+
+| Layer (OSI) | PDU | Hardware / Protocolo | Función Técnica |
+| :--- | :--- | :--- | :--- |
+| **7. Application** | Data | HTTP, FTP, DNS | Interfaz directa con la aplicación. |
+| **4. Transport** | Segment / Datagram | TCP / UDP | End-to-end reliability & ports. |
+| **3. Network** | Packet | Router, IPv4/IPv6, ICMP | Logical addressing y enrutamiento (IP). |
+| **2. Data-Link** | Frame | Switch, MAC, ARP | Entrega física en el mismo segmento. |
+| **1. Physical** | Bits | Cables, Hubs | Transmisión eléctrica/óptica. |
+
+---
+
+## 3. 🛡️ Layer 2 & Layer 3 Attacks
+
+### ARP Spoofing (Cache Poisoning)
+* **Objetivo:** Secuestrar el enrutamiento (MitM) falsificando respuestas ARP gratuitas para suplantar al Default Gateway.
+* **Triage (Wireshark):** Busca múltiples respuestas ARP para la misma IP resolviendo a diferentes direcciones MAC.
+
+### VLAN Hopping
+* **DTP Exploitation:** Explotar el *Dynamic Trunking Protocol* (DTP) en puertos Cisco configurados en `Dynamic Auto/Desirable`. El atacante simula ser un switch para negociar un enlace troncal y ver el tráfico de todas las VLANs. (Herramienta: *Yersinia*).
+* **Double-Tagging:** Inyectar una trama 802.1Q con dos etiquetas. El primer switch elimina la etiqueta externa (Native VLAN) y reenvía el paquete con la etiqueta interna hacia la VLAN restringida objetivo. (Herramienta: *Scapy*).
+
+### Network Reconnaissance
+* **OS Fingerprinting via TTL:** Linux/macOS = $64$ | Windows = $128$ | Routers (Cisco) = $255$.
+* **IP ID Fingerprinting:** Identifica *multi-homed hosts* observando si el campo ID de IP se incrementa secuencialmente al recibir tráfico en diferentes subredes.
+
+---
+
+## 4. ⚙️ Cisco IOS Fundamentals & VLANs
+
+### Administración Básica
+* **User EXEC Mode (`>`):** Vista básica de comandos. (Protegido por `User Password`).
+* **Privileged EXEC Mode (`#`):** Vista administrativa total. (Protegido por `Enable Secret`, hasheado con MD5/SHA-256).
+
+### VLAN & Trunking (Linux CLI)
+Montar subinterfaces lógicas en Linux para auditar tráfico de VLANs específicas.
+```bash
+# Cargar módulo 802.1Q
+sudo modprobe 8021q
+
+# Crear subinterfaz para VLAN 20
+sudo ip link add link eth0 name eth0.20 type vlan id 20
+
+# Asignar IP y levantar interfaz
+sudo ip addr add 192.168.1.1/24 dev eth0.20
+sudo ip link set up eth0.20
+```
+
+### CDP (Cisco Discovery Protocol)
+* **Peligro:** Transmite en texto claro datos de hardware, IP, VLANs nativas y versión de IOS.
+* **Defensa:** Deshabilitar en puertos de acceso o interfaces expuestas al exterior.
+
+---
+
+## 5. 🔐 Cryptography, VPNs & Wireless
+
+### Algoritmos & Modos de Cifrado
+* **AES (Advanced Encryption Standard):** El estándar simétrico actual (128, 192 o 256 bits).
+* **GCM (Galois/Counter Mode):** *Gold Standard* para modos de cifrado. Garantiza confidencialidad e integridad a la vez. (Usado en TLS 1.3 y VPNs).
+* **DH / ECDH:** Diffie-Hellman (y su variante de curva elíptica). Para el intercambio seguro de claves sin transmisión previa.
+* **RSA / ECDSA:** Criptografía asimétrica para firmas digitales y autenticación.
+
+### IPsec (Network Layer VPNs)
+* **ESP (Encapsulating Security Payload):** Cifra el contenido (Confidencialidad).
+* **AH (Authentication Header):** Solo garantiza la integridad y origen, no cifra el *payload*.
+* **IKE (Internet Key Exchange):** Usa DH para negociar claves seguras. *Main Mode* es lento pero seguro (6 mensajes). *Aggressive Mode* es rápido pero expone la identidad (3 mensajes).
+
+### Wireless Security & Authentication
+* **WPA3 / EAP-TLS:** Estándares corporativos actuales (Autenticación mutua basada en certificados).
+* **PEAP:** Establece un túnel TLS antes de autenticar al cliente, protegiendo hashes como MSCHAPv2 de ataques de diccionario.
+* **LEAP:** Heredado y vulnerable. Usa RC4 y no cifra el hash. Rompible mediante *offline cracking*.
