@@ -506,3 +506,143 @@ Security solutions engineered to continuously monitor and respond to suspicious 
 | **Monitor and Log Events** | Centralize logs using a SIEM (Security Information and Event Management) solution for real-time threat hunting and forensic analysis. |
 | **Layered Security** | Employ a "Defense in Depth" strategy: combining firewalls, Endpoint Detection and Response (EDR), MFA, and network segmentation. |
 | **Periodic Penetration Testing** | Conduct routine vulnerability assessments and authorized Red Team exercises to validate security posture and identify misconfigurations. |
+
+# 🌐 Module 02: Network Foundations
+
+> **Operational Scope:** Fundamental concepts of network architectures, OSI/TCP/IP models, routing, switching, DNS, and baseline network security. This module establishes the core networking knowledge required for infrastructure enumeration, troubleshooting, and lateral movement.
+
+---
+
+## 1. 🏗️ Introduction to Networks
+
+A network is a collection of interconnected devices designed to communicate, exchange data, and share resources. 
+
+* **Nodes:** Individual devices connected to a network (e.g., workstations, servers, routers).
+* **Links:** Communication pathways that connect nodes (wired or wireless).
+* **Purpose:** Resource sharing (NAS/SAN, printers), rapid communication (VoIP), and centralized collaboration.
+
+### Network Types: LAN vs. WAN
+
+| Feature | Local Area Network (LAN) | Wide Area Network (WAN) |
+| :--- | :--- | :--- |
+| **Scope** | Limited geographical area (single building, residence, or campus). | Large geographical area (cities, countries, global reach like the Internet). |
+| **Ownership** | Private (Owned and managed by a single organization/individual). | Public or leased (Maintained by ISPs/Telecos). |
+| **Speed** | High speed (Typically 1 Gbps to 10/40/100 Gbps in enterprise). | Lower than LAN, with higher latency depending on the routing path. |
+| **Media** | Twisted pair (Cat5e/Cat6), Wi-Fi (WLAN). | Fiber optics, satellite, leased lines (MPLS). |
+| **Concept (ES)** | *Red de área local que conecta dispositivos en un área geográfica limitada.* | *Red de área amplia que cubre grandes distancias, conectando múltiples LANs.* |
+
+---
+
+## 2. 🧠 Network Concepts & Architecture
+
+### The OSI Model (Open Systems Interconnection)
+A 7-layer conceptual framework used to standardize telecommunication functions and troubleshoot network flows.
+
+1.  **Physical Layer:** Transmission of raw bit streams over a physical medium (Cables, Hubs).
+2.  **Data Link Layer:** Node-to-node data transfer using MAC addresses (Switches).
+3.  **Network Layer:** Data routing and logical addressing using IP addresses (Routers).
+4.  **Transport Layer:** End-to-end data transfer.
+    * **TCP:** Reliable, connection-oriented with error recovery.
+    * **UDP:** Faster, connectionless communication without guaranteed delivery.
+5.  **Session Layer:** Establishes and manages sessions between applications.
+6.  **Presentation Layer:** Formats, encrypts (TLS), and compresses data. *(Formatea, cifra y comprime los datos para la capa de aplicación).*
+7.  **Application Layer:** Provides network services directly to end-user applications (HTTP, FTP, DNS).
+
+### The TCP/IP Model
+The practical, condensed architecture that powers the modern Internet.
+
+* **Link Layer (OSI 1 & 2):** Handles MAC addressing and physical transmission.
+* **Internet Layer (OSI 3):** Handles routing and logical IP addressing.
+* **Transport Layer (OSI 4):** Manages host-to-host communication (TCP/UDP segments).
+* **Application Layer (OSI 5, 6 & 7):** Represents data to the user and handles dialog control.
+
+---
+
+## 3. 📖 Core Network Components Glossary
+
+| English Term | Término en Español | Quick Technical Definition |
+| :--- | :--- | :--- |
+| **End Device (Host)** | Dispositivo Final | Source or destination of network data (e.g., PC, smartphone). |
+| **Intermediary Device** | Dispositivo Intermediario | Connects networks and manages data flow (e.g., routers, switches). |
+| **NIC** | Tarjeta de Interfaz de Red | Hardware providing the physical connection; contains the hardcoded MAC address. |
+| **Router** | Enrutador | Layer 3 device. Forwards packets between networks using IPs and routing protocols (OSPF, BGP). |
+| **Switch** | Conmutador | Layer 2 device. Connects devices within a LAN, forwarding frames using MAC addresses. |
+| **Hub** | Concentrador | Antiquated Layer 1 device. Broadcasts data to all ports blindly, causing network collisions. |
+| **Software Firewall** | Cortafuegos de Software | Host-based security filtering incoming/outgoing traffic (e.g., Linux IPTables, UFW). |
+
+---
+
+## 4. 📡 Network Communication Foundations
+
+### MAC Addresses & IPs
+* **MAC Address (Layer 2):** A unique, hardcoded physical identifier assigned to the NIC. 
+    * *CLI:* `getmac` (Windows).
+* **IP Address (Layer 3):** A logical numerical label assigned to devices using the Internet Protocol.
+
+### Ports (Layer 4)
+Virtual endpoints where network connections start and end.
+* **Well-known (0 - 1023):** System ports assigned to core services (80/HTTP, 443/HTTPS, 22/SSH).
+* **Registered (1024 - 49151):** Assigned for specific vendor applications.
+* **Dynamic / Ephemeral (49152 - 65535):** Used temporarily by clients to initiate outbound connections.
+* *CLI:* `netstat -an` (Displays active connections and listening ports).
+
+### DHCP (Dynamic Host Configuration Protocol)
+Dynamically assigns IP addresses and core configurations (subnet mask, gateway).
+* **The D.O.R.A. Process:**
+    1.  **Discover:** Client broadcasts to find a server. *(El cliente busca un servidor DHCP).*
+    2.  **Offer:** Server offers an IP lease. *(El servidor propone una IP).*
+    3.  **Request:** Client formally requests the offered IP. *(El cliente solicita formalmente la IP).*
+    4.  **Acknowledge (ACK):** Server finalizes the lease. *(El servidor confirma la asignación).*
+* *CLI (Linux):* `sudo dhclient wlan0` (Forces a DHCP lease renewal).
+
+### NAT (Network Address Translation)
+Remaps a private IP address space into a public one by modifying IP headers in transit. *(Remapea IPs privadas a públicas en el router).*
+* **Static NAT:** 1-to-1 mapping (Private to Public). Used for externally facing internal servers.
+* **Dynamic NAT:** Maps an internal IP to an available public IP from a pool.
+* **PAT (NAT Overload):** Many-to-1 mapping using unique source ports. Standard for homelabs and corporate edge networks.
+
+---
+
+## 5. 🌍 DNS (Domain Name System) & Architectures
+
+DNS translates human-readable domain names into machine-readable IP addresses.
+* **Hierarchy:** Root Servers (`.`) -> TLDs (`.com`, `.org`) -> SLD (`example`) -> Subdomain (`www`).
+
+### Network Architectures Comparison
+
+| Architecture | Technical Description | Pros / Cons |
+| :--- | :--- | :--- |
+| **Peer-to-Peer (P2P)** | Decentralized model where nodes act as both clients and servers. *(Descentralizado, todos son clientes y servidores).* | **Pros:** Fault-tolerant, scalable.<br>**Cons:** Hard to secure and manage globally. |
+| **Client-Server** | Centralized servers process requests from end-user clients. Can be Single, Two, Three, or N-Tier. *(Servidores centrales atienden peticiones).* | **Pros:** Centralized management & security.<br>**Cons:** Single Point of Failure (SPoF), costly. |
+| **Cloud (NIST)** | Delivers scalable IT resources over the internet (SaaS, PaaS, IaaS). Features rapid elasticity and resource pooling. | **Pros:** CapEx to OpEx, high availability.<br>**Cons:** Vendor lock-in, relies on internet access. |
+| **SDN** | Software-Defined Networking. Decouples the control plane from the data plane for programmable management. | **Pros:** Automation, microsegmentation.<br>**Cons:** High cost, Controller is a massive SPoF. |
+
+---
+
+## 6. 📶 Wireless Networks
+
+Transmits data via electromagnetic signals instead of physical cabling.
+
+* **Wireless Router:** Combines Layer 3 routing (NAT) with a Layer 2 Wireless Access Point (WAP) and an integrated LAN switch.
+* **2.4 GHz Band:** High penetration, longer range, but lower speeds and highly congested.
+* **5 GHz Band:** High throughput, less congestion, but shorter range and poor wall penetration.
+* **Cellular:** Micro cells (dense urban) vs. Macro cells (wide rural). 5G introduces ultra-low latency mmWave technology requiring strict line-of-sight.
+
+---
+
+## 7. 🛡️ Network Security Fundamentals
+
+### Firewalls
+Enforce strict Access Control Lists (ACLs) to permit or deny traffic across network boundaries.
+1.  **Packet-Filtering (L3):** Inspects headers (IP/Port) without state awareness.
+2.  **Stateful Inspection (L4):** Tracks active connection states (e.g., TCP handshakes).
+3.  **Application Proxy (L7 / WAF):** Deep payload inspection to block application-specific attacks (SQLi, XSS).
+4.  **NGFW:** Combines stateful inspection with DPI, integrated IDS/IPS, and TLS decryption. *(pfSense is a staple open-source enterprise/homelab solution).*
+
+### IDS/IPS (Intrusion Detection/Prevention)
+* **IDS (Passive):** Alerts and logs suspicious traffic. *(Alerta sin bloquear).*
+* **IPS (Active):** Placed inline to actively drop malicious packets. *(Bloquea en tiempo real).*
+* **Methodologies:** Signature-based (known exploits) vs. Anomaly-based (behavioral baselining, catches zero-days but generates false positives).
+* **Deployment:** NIDS (Network-wide SPAN ports) vs. HIDS (Host-based agents monitoring local OS events).
+
+> **Defense in Depth Strategy:** Combine RBAC, network segmentation (VLANs), Next-Gen Firewalls, automated patch management, and EDR to limit lateral movement and mitigate compromised per
