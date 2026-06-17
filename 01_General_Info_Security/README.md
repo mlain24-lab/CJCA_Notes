@@ -467,3 +467,112 @@ In organized cybercrime or state-sponsored attacks, threat actors operate like a
 ### Bug Bounty Hunter
 * **EN:** Independent security researchers (often freelancers) who discover and report vulnerabilities to organizations through formal "Bug Bounty Programs" in exchange for financial rewards (bounties).
 * **ES:** Investigadores de seguridad independientes que descubren y reportan vulnerabilidades a las empresas a través de programas oficiales a cambio de recompensas económicas.
+
+# 🛡️ Module 01: Information Security Fundamentals
+
+> **Operational Scope:** Foundational concepts of Information Security (InfoSec), defining the core principles, operational processes, threat landscapes, and the defensive/offensive roles within a corporate infrastructure.
+
+---
+
+## 1. 🏗️ Infrastructure of Information Security
+
+In a standard corporate architecture, we distinguish between external assets and internal defense mechanisms. Clients connect via the Internet to company-hosted or cloud-based servers, creating a perimeter that must be actively defended and continuously tested.
+
+### The Security Teams
+* **Red Team:** Offensive security professionals who simulate real-world cyberattacks to test defenses. They are positioned between the client and the infrastructure to emulate external threats, identifying vulnerabilities and bypassing perimeter defenses.
+* **Blue Team:** Defensive security professionals responsible for maintaining internal security, actively monitoring the network, and executing incident response. They are the internal shield against both real attackers and Red Team simulations.
+* **Purple Team:** A collaborative methodology rather than a standalone team. It integrates the offensive tactics of the Red Team with the defensive strategies of the Blue Team to ensure continuous feedback and maximize the effectiveness of security testing.
+
+---
+
+## 2. ⚖️ The CIA Triad & Core Principles
+
+The core of Information Security is built upon the **CIA Triad**. Every security control deployed in an environment aims to enforce one or more of these principles.
+
+* **Confidentiality:** Ensuring data is accessible only to authorized users. 
+  * *Controls:* Encryption, Access Control Lists (ACLs).
+* **Integrity:** Guaranteeing that information is accurate and has not been tampered with over its lifecycle.
+  * *Controls:* Hashing (SHA-256), Digital Signatures.
+* **Availability:** Ensuring systems and data are accessible when needed by authorized users.
+  * *Controls:* Redundancy (RAID), Disaster Recovery (DR) planning.
+
+### Extended InfoSec Principles
+* **Non-repudiation:** Prevents an entity from denying an action or message (e.g., Audit Logs).
+* **Authentication:** Verification of identity for users, processes, or devices (e.g., MFA, Biometrics).
+* **Privacy:** Proper handling of sensitive personal information and compliance (e.g., Data minimization).
+
+---
+
+## 3. ⚠️ Threat Landscape & Core Concepts
+
+These concepts are intrinsically interconnected within any risk management framework:
+
+* **Vulnerability:** A weakness or flaw in software, hardware, or processes that could be exploited. *(Una debilidad o fallo en el sistema).*
+* **Threat:** Any potential occurrence that can cause undesirable outcomes for a system or organization. *(Cualquier evento potencial que puede causar daño).*
+* **Risk:** The potential for loss or damage when a threat exploits a vulnerability. 
+  > **Risk = Threat × Vulnerability** *(La probabilidad de que una amenaza explote una vulnerabilidad).*
+
+### Common Cyber Threats
+
+| Threat Vector | Technical Description |
+| :--- | :--- |
+| **DDoS (Distributed Denial of Service)** | Malicious attempt to disrupt normal traffic of a targeted server by overwhelming the infrastructure with a flood of traffic from a botnet. *(Ataque que inunda un servidor con tráfico masivo para dejarlo inoperativo).* |
+| **Ransomware** | Malware designed to deny access to a system or data via encryption until a ransom is paid. *(Malware que cifra archivos y pide un rescate económico, ej: WannaCry).* |
+| **APT (Advanced Persistent Threat)** | A stealthy, long-term attack orchestration, typically by state-sponsored groups. Attackers gain unauthorized access, establish a foothold, and move laterally to exfiltrate data while evading detection. *(Ataques prolongados y sofisticados realizados por grupos con grandes recursos).* |
+| **Insider Threat** | Security risks originating from within the organization (employees, contractors). They leverage authorized access to bypass perimeter defenses. *(Amenazas que provienen de personas con acceso legítimo a la empresa).* |
+| **Social Engineering** | Psychological manipulation deceiving individuals into revealing confidential info or bypassing protocols (e.g., Phishing, Tailgating, Baiting). |
+
+---
+
+## 4. 🧠 Operational Security (OpSec) & Frameworks
+
+**Operational Security (OpSec)** is the analytical process that classifies information assets and determines the controls required to protect them. It involves viewing your operations from the perspective of an adversary to identify "bread crumbs" (vulnerabilities).
+
+* **Asset Identification:** Determining the "crown jewels" (critical data).
+* **Threat & Vulnerability Identification:** Recognizing adversaries and detecting weaknesses.
+* **Risk Assessment & Countermeasures:** Analyzing impact and executing mitigation plans.
+
+### DR, BC & Cloud Security
+* **Disaster Recovery (DR):** Focuses on the technical recovery of specific IT systems after a catastrophic event to minimize downtime. Metrics include **RTO** (Recovery Time Objective) and **RPO** (Recovery Point Objective).
+* **Business Continuity (BC):** The broader strategic framework ensuring an organization can continue operating essential functions during/after a disaster. *(Continuidad de Negocio).*
+* **Shared Responsibility Model:** In Cloud Security, the Cloud Service Provider (CSP) manages the security *of* the cloud (infrastructure), while the customer manages security *in* the cloud (data, OS, IAM).
+
+---
+
+## 5. 🏢 Roles in Information Security
+
+Security is a collaborative effort requiring distinct skill sets and responsibilities across the enterprise.
+
+### Defensive Roles (Blue Team / Corporate)
+* **CISO (Chief Information Security Officer):** Senior-level executive responsible for aligning security initiatives with business objectives, risk management, and overall strategy. *(Director de Seguridad de la Información).*
+* **Security Architect:** Designs, builds, and oversees complex network and computer security infrastructure.
+* **Security Analyst (SOC):** Continuously monitors networks for security breaches, triages alerts (SIEM), and investigates violations.
+* **Incident Responder (IR):** The "firefighters" who react to, contain, and eradicate security breaches.
+* **Compliance Specialist:** Ensures adherence to external regulations (GDPR, ISO 27001) and internal policies. *(Especialista en cumplimiento normativo).*
+
+### Offensive Roles (Red Team / Attackers)
+* **Penetration Tester:** Professional hired to legally exploit vulnerabilities in specific systems/networks within a defined scope to find technical flaws. *(Hacker ético).*
+* **Bug Bounty Hunter:** Independent security researchers who report vulnerabilities through formal programs for financial rewards.
+* **Threat Actors:** The "Heist Team." Organized groups featuring Scouts (OSINT), Lockpickers (Initial Access), Getaway Drivers (Evasion/Persistence), and Exfiltration Specialists (C2 Channels).
+
+---
+
+## 6. 🛠️ InfoSec & Pentesting Toolset
+
+| Category | Common Tools | Objective |
+| :--- | :--- | :--- |
+| **Network Scanning** | Nmap | Network discovery, port scanning, and OS fingerprinting. |
+| **Traffic Analysis** | Wireshark | Deep packet inspection and network protocol analysis. |
+| **Exploitation** | Metasploit Framework | Modular exploitation and payload delivery. |
+| **Web Assessment** | Burp Suite | Web proxy, directory fuzzing, and vulnerability scanning. |
+| **Password Cracking** | John the Ripper, Hashcat | Offline brute-forcing of credential hashes. |
+| **Defense/Monitoring** | Firewalls, IDS/IPS, SIEM | Traffic filtering, intrusion detection/prevention, and centralized logging. |
+
+---
+
+## 7. 📖 Technical Glossary
+
+* **IDS/IPS (Intrusion Detection/Prevention System):** Systems monitoring network traffic for breaches. IDS alerts; IPS actively drops malicious packets. *(Sistemas de monitoreo; IDS alerta, IPS bloquea).*
+* **VPN (Virtual Private Network):** Creates a safe, encrypted tunnel over untrusted networks. *(Conexión segura y cifrada sobre Internet).*
+* **Attack Surface:** The total sum of all possible points where an unauthorized user can interact with the environment. *(Superficie de ataque: suma de todos los vectores de entrada posibles).*
+* **Physical Security:** Implementation of barriers (locks, CCTV, access cards) to protect hardware from unauthorized physical access. *(Seguridad física de la infraestructura).*
