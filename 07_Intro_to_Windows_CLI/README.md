@@ -1979,3 +1979,129 @@ Get-Help Get-Recon -Detailed
 # 4. Execute the payload
 Get-Recon
 ```
+# Windows Fundamentals & CLI Enumeration - Lab Walkthrough
+
+**Certification Path:** HTB Certified Junior Cybersecurity Associate (CJCA)
+**Module:** 07_Intro_to_Windows_CLI
+**Target Host IP:** 10.129.48.176 (ACADEMY-ICL11)
+**Domain Controller IP:** 172.16.5.155
+
+---
+
+## Phase 1: Initial Access & Basic Enumeration
+
+### Question 1: Banner Grabbing via SSH
+* **Access:** `ssh user0@10.129.48.176`
+* **Password:** `Start!`
+* **Methodology:** Establish the initial connection to capture the environment's welcome banner.
+```powershell
+ssh user0@10.129.48.176
+```
+* **Flag:** `D0wn_the_rabbit_H0l3`
+
+### Question 2: File System Navigation
+* **Access:** `ssh user1@10.129.48.176`
+* **Password:** `D0wn_the_rabbit_H0l3`
+* **Methodology:** Navigate to the user's Desktop directory and dump the flag file.
+```powershell
+Get-Content C:\Users\user1\Desktop\flag.txt
+```
+* **Flag:** `Nice and Easy!`
+
+### Question 3: Hostname Enumeration
+* **Access:** `ssh user2@10.129.48.176`
+* **Password:** `Nice and Easy!`
+* **Methodology:** Query the system hostname using administrative environment variables or basic network utilities.
+```powershell
+hostname
+# Alternative: $env:COMPUTERNAME
+```
+* **Flag:** `ACADEMY-ICL11`
+
+---
+
+## Phase 2: Advanced File & User Enumeration
+
+### Question 4: Hidden Files Discovery
+* **Access:** `ssh user3@10.129.48.176`
+* **Password:** `ACADEMY-ICL11`
+* **Methodology:** Enumerate the filesystem forcing the inclusion of hidden items and pipe to measure the object count.
+```powershell
+(Get-ChildItem -Path C:\Users\user3\Desktop -Force -Hidden).Count
+```
+* **Flag/Result:** `101`
+
+### Question 5: Recursive String Search (Decoy Bypass)
+* **Access:** `ssh user4@10.129.48.176`
+* **Password:** `101`
+* **Methodology:** Bypass empty nested folders and target actual file contents using recursive string patterns matching the target flag.
+```powershell
+Get-ChildItem -Path "C:\Users\user4\Documents" -Recurse -File | Select-String -Pattern "Digging"
+```
+* **Flag:** `Digging in The nest`
+
+### Question 6: Local User Enumeration
+* **Access:** `ssh user5@10.129.48.176`
+* **Password:** `Digging in The nest`
+* **Methodology:** Gather local accounts and filter out system defaults using regular expressions.
+```powershell
+(Get-LocalUser | Where-Object { $_.Name -notmatch "DefaultAccount|WDAGUtility" }).Count
+```
+* **Flag/Result:** `14`
+
+### Question 7: Registry Query for System Information
+* **Access:** `ssh user6@10.129.48.176`
+* **Password:** `14`
+* **Methodology:** Query the Windows Registry path for local software configurations to extract deployment ownership details.
+```powershell
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name "RegisteredOwner" | Select-Object -ExpandProperty RegisteredOwner
+```
+* **Flag:** `htb-student`
+
+---
+
+## Phase 3: Lateral Movement & Active Directory
+
+### Question 8: Pivoting & PowerShell Module Enumeration
+* **Access Target:** `ssh user7@10.129.48.176` | **Password:** `htb-student`
+* **Pivot to DC:** `ssh user7@172.16.5.155` | **Password:** `htb-student`
+* **Methodology:** Pivot via SSH from the initial compromised pivot host into the Active Directory Domain Controller, then list all available modules to find hidden indicators.
+```powershell
+Get-Module -ListAvailable
+```
+* **Flag:** `Modules_make_pwsh_run!`
+
+### Question 9: Active Directory User Queries
+* **Access DC:** `ssh user8@172.16.5.155`
+* **Password:** `Modules_make_pwsh_run!`
+* **Methodology:** Query the Active Directory database filtering domain accounts based on specific properties.
+```powershell
+Get-ADUser -Filter {Surname -eq "Flag"} -Properties GivenName | Select-Object GivenName
+```
+* **Flag:** `Rick`
+
+---
+
+## Phase 4: Process Management & Security Auditing
+
+### Question 10: Process Enumeration and Sorting
+* **Access DC:** `ssh user9@172.16.5.155`
+* **Password:** `Rick`
+* **Methodology:** Review running operational processes, enforcing reverse alphabetical order to target binary signatures.
+```cmd
+tasklist | sort /r
+```
+```powershell
+# PowerShell equivalent
+Get-Process | Sort-Object ProcessName -Descending | Where-Object { $_.ProcessName -match "^vm" }
+```
+* **Flag:** `vmtoolsd.exe`
+
+### Question 11: Event Log Analysis (Threat Hunting)
+* **Access DC:** `ssh user10@172.16.5.155`
+* **Password:** `vmtoolsd.exe`
+* **Methodology:** Inspect Security logs looking for Event ID 4625 (Logon Failure) to track active brute-force vectors and compromised accounts.
+```powershell
+Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 50 | Format-List
+```
+* **Flag:** `justalocaladmin`
