@@ -2911,3 +2911,93 @@ Mastering CLI shortcuts is essential for optimizing workflow efficiency, acceler
 ## UI & Environment
 * **`[ALT] + [TAB]`**: Switch active focus between opened GUI applications.
 * **`[CTRL] + [+] / [-]`**: Increase or decrease the terminal UI zoom level.
+
+# 🛠️ Module 04: Linux Fundamentals - Master Cheat Sheet
+
+> **Operational Scope:** Core operational reference for Linux environments. Covers file system navigation, stream parsing, privilege enumeration, service management, and firewall configuration. Optimized for rapid host triage and post-exploitation workflows.
+
+## 1. 🗂️ File System Navigation & Manipulation
+
+| Utility / Command | Operational Syntax & Pentester Use Case |
+| :--- | :--- |
+| **Directory Creation** | `mkdir -p /tmp/loot/scripts` (Creates nested parent directories instantly). |
+| **Silent Deletion** | `rm -rf /tmp/payload/` (Forcefully deletes recursively without interactive prompts). |
+| **Binary Location** | `which python3` (Validates if a binary exists in the current `$PATH`). |
+| **Broad Search** | `locate *.conf` (Extremely fast, relies on `updatedb` local database). |
+| **Granular Hunt (Files)** | `find / -type f -name "*.txt" 2>/dev/null` (Finds text files, discards permission errors). |
+| **Find & Execute** | `find . -name "*.log" -exec rm -f {} \;` (Finds and automatically deletes specific files). |
+
+## 2. 🚰 I/O Redirection, Pipes & Data Parsing
+
+Mastering stdout/stdin manipulation allows you to extract actionable intelligence without leaving the CLI.
+
+* **Null Routing Errors:** `2>/dev/null` (Sends STDERR to a black hole to keep terminal output clean).
+* **Append Data:** `echo "10.10.10.10 target.loc" >> /etc/hosts` (Never use `>` for this, or you'll overwrite the file).
+* **Filtering (grep):** `cat /etc/passwd | grep -E "(root|bash)"` (Extended regex to find specific accounts).
+* **Extraction (cut):** `cat /etc/passwd | cut -d":" -f1` (Extracts only the usernames, splitting by the `:` delimiter).
+* **Column Parsing (awk):** `ls -la | awk '{print $1, $9}'` (Prints only the permissions and file names).
+* **String Replacement (sed):** `sed 's/127.0.0.1/10.10.10.50/g' config.yml` (Find and replace globally).
+
+## 3. 🕵️ Host Enumeration & Privilege Checking
+
+* **System Identity:** `uname -a` (Kernel version) | `hostname` (Machine name).
+* **User Context:** `id` (Crucial for checking if you belong to `sudo`, `adm`, or `docker` groups).
+* **Active Connections:** `ss -tulwn` or `netstat -antp` (Identifies listening ports and internal services).
+* **Find SUID Binaries (PrivEsc Vector):** ```bash
+  find / -perm -4000 -type f -exec ls -al {} \; 2>/dev/null
+  ```
+* **Process Tracking:** `ps aux | grep root` (Identify processes running under high-privileged accounts).
+
+## 4. 🔐 Permissions & Ownership (Octal Logic)
+
+* `4` = Read (r) | `2` = Write (w) | `1` = Execute (x)
+* **Standard Assignment:** `chmod 755 script.sh` (`rwx` for owner, `r-x` for group and others).
+* **Total Lockdown:** `chmod 600 id_rsa` (Strictly read/write for the owner only. Mandatory for SSH private keys).
+* **Transfer Ownership:** `chown root:www-data payload.php` (Changes user to root, group to www-data).
+* **Immutability (Bonus):** `chattr +i file.txt` (Makes a file undeletable/unchangeable, even by root).
+
+## 5. ⚙️ Service, Package & Container Management
+
+### APT & Systemd (Debian/Ubuntu)
+* **Update & Install:** `sudo apt update && sudo apt install -y <package>`
+* **Service Status:** `systemctl status ssh`
+* **Service Persistence:** `systemctl enable apache2 --now` (Starts immediately and enables on boot).
+* **Log Triage:** `journalctl -u apache2.service -n 50 --no-pager` (Reads the last 50 log lines for a specific daemon).
+
+### Containerization (Docker)
+* **Build Image:** `docker build -t my_payload_image .` (Reads the local `Dockerfile`).
+* **Run Detached:** `docker run -d -p 8080:80 my_payload_image` (Binds host port 8080 to container port 80).
+* **Execute Shell in Container:** `docker exec -it <container_id> /bin/bash`.
+
+## 6. 🌐 Agile Network Services & Backups
+
+* **Spin up a Python Web Server (Agile Payload Hosting):**
+  ```bash
+  python3 -m http.server 8000
+  ```
+* **Mounting Remote NFS Shares:**
+  ```bash
+  sudo mount -t nfs 10.129.x.x:/remote/share /mnt/local_share
+  ```
+* **Secure Delta Backups (Rsync over SSH):**
+  ```bash
+  rsync -avz -e ssh /local/dir/ root@10.10.x.x:/remote/dir/
+  ```
+
+## 7. 🧱 Firewall Operations (iptables)
+
+* **List Rules with Line Numbers (SysAdmin Golden Rule):** `sudo iptables -L -v -n --line-numbers` (`-n` prevents slow DNS resolution).
+* **Block Malicious IP:** `sudo iptables -A INPUT -s 10.10.10.50 -j DROP` (Appends to the bottom).
+* **Whitelist Admin IP (Override):** `sudo iptables -I INPUT 1 -s 10.10.10.200 -j ACCEPT` (Inserts at rule #1 to bypass drops).
+* **Delete Rule by Line:** `sudo iptables -D INPUT 4`.
+
+## 8. ⌨️ CLI Agility & Shortcuts
+
+| Keystroke | Operational Action |
+| :--- | :--- |
+| **`Ctrl + R`** | **Reverse Search.** Hunt through your `.bash_history` dynamically. |
+| **`Ctrl + C`** | **SIGINT.** Instantly kills the running foreground process. |
+| **`Ctrl + Z`** | **SIGTSTP.** Suspends the foreground process to the background (bring back with `fg`). |
+| **`Ctrl + L`** | Clears the terminal screen (leaves buffer intact). |
+| **`Ctrl + A` / `Ctrl + E`** | Jump cursor to the **start** (`A`) or **end** (`E`) of the current line. |
+| **`Ctrl + U` / `Ctrl + K`** | Cut string from cursor to the **start** (`U`) or **end** (`K`) of the line. |
