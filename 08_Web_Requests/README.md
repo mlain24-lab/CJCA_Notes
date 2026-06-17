@@ -94,3 +94,56 @@ Use `curl -h` or `man curl` to access the manual. Here are the most relevant fla
 | `-u` | `--user <user:pass>` | Provides credentials for Server Authentication. |
 | `-A` | `--user-agent <name>` | Spoofs or modifies the User-Agent string sent to the server. |
 | `-v` | `--verbose` | Makes the operation talkative (useful for debugging connections and headers). |
+
+# Hypertext Transfer Protocol Secure (HTTPS)
+
+## 1. Introduction: The HTTP Clear-Text Vulnerability
+While HTTP facilitates basic web communication, its fundamental flaw is that it transmits data in clear-text. This exposes communications to **Man-in-the-Middle (MiTM)** attacks, where an adversary positioned between the source and destination can intercept and read the payload.
+
+To mitigate this vulnerability, **HTTPS (HTTP Secure)** was introduced. HTTPS encapsulates HTTP traffic within an encrypted tunnel (TLS/SSL). Even if traffic is intercepted, the attacker cannot decrypt the payload. Consequently, HTTPS is the modern standard, and clear-text HTTP is actively being deprecated by modern web browsers.
+
+## 2. Traffic Analysis: HTTP vs. HTTPS
+
+### The HTTP Exposure
+When analyzing HTTP traffic via packet sniffers (e.g., Wireshark), sensitive data such as POST request payloads (e.g., `username=admin` and `password=password` sent to `/login.php`) are completely visible. This allows attackers on the same network (like a public Wi-Fi hotspot) to harvest credentials effortlessly.
+
+### The HTTPS Protection
+In contrast, capturing HTTPS traffic reveals only encrypted application data (e.g., a TLSv1.2 stream communicating over port 443). The payload is transmitted as a single, unintelligible encrypted stream, safeguarding credentials and session tokens.
+
+> **Security Note (DNS Leaks):** While HTTPS encrypts the payload, the initial DNS resolution might still occur in clear-text, revealing the target domain to network observers. To ensure full confidentiality, implement **Encrypted DNS** (e.g., DNS over HTTPS via `8.8.8.8` or `1.1.1.1`) or route traffic through a secure VPN.
+
+## 3. The HTTPS Handshake Flow
+When a client attempts to connect to an HTTPS-enforced server using an unencrypted protocol, the following flow occurs:
+
+1. **Initial HTTP Request:** The client sends a clear-text request to port 80.
+2. **301 Redirect:** The server enforces SSL/TLS by replying with a `301 Moved Permanently` status code, redirecting the client to port 443 (HTTPS).
+3. **Client Hello:** The browser initiates the TLS handshake by sending supported cipher suites and SSL/TLS versions.
+4. **Server Hello & Certificate Exchange:** The server responds with its chosen cipher suite and its SSL certificate (containing its public key).
+5. **Key Verification:** The client verifies the certificate against its trusted Root Certificate Authorities (CAs).
+6. **Encrypted Handshake:** Session keys are securely exchanged, confirming that symmetric encryption is functioning correctly.
+7. **Secure Transmission:** Standard HTTP communication proceeds within the encrypted tunnel.
+
+> **Threat Intelligence (Downgrade Attacks):** Attackers may deploy MITM proxies to strip the SSL/TLS encryption, forcing the client to fall back to clear-text HTTP (HTTP Downgrade Attack). Modern infrastructure mitigates this via mechanisms like HSTS (HTTP Strict Transport Security).
+
+## 4. Handling HTTPS with cURL
+By default, `curl` handles the TLS handshake automatically. However, as a security measure, it validates the server's SSL certificate against local CA stores. If the target server uses a self-signed, invalid, or expired certificate (common in HTB practice labs or local dev environments), `curl` will abort the connection to prevent potential MITM attacks.
+
+**Error Example (Certificate Validation Failure):**
+```bash
+MikyRedHat@htb[/htb]$ curl https://inlanefreight.com
+
+curl: (60) SSL certificate problem: Invalid certificate chain
+More details here: https://curl.haxx.se/docs/sslcerts.html
+...SNIP...
+```
+
+**Bypassing Certificate Validation:**
+To bypass SSL verification during testing or local enumeration, append the `-k` (or `--insecure`) flag. This forces `curl` to proceed despite certificate errors.
+
+```bash
+MikyRedHat@htb[/htb]$ curl -k https://www.inlanefreight.com
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+...SNIP...
+```
