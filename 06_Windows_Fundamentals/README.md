@@ -1182,3 +1182,106 @@ Get-Service -Name <ServiceName> | Select-Object *
 # which is critical for identifying hijacked service binaries.
 Get-CimInstance -ClassName Win32_Service -Filter "Name='<ServiceName>'" | Format-List Name, StartMode, State, PathName
 ```
+
+# 🪟 HTB CJCA: Module 06 - Windows Fundamentals Master Cheat Sheet
+
+> **Operational Scope:** High-density reference guide for Windows OS architecture, Access Control (NTFS/SMB), Service/Process enumeration, and core security boundaries. Optimized for rapid endpoint triage, privilege escalation hunting, and system administration.
+
+## 1. 🔍 System Enumeration & Remote Access
+
+### OS Intelligence (WMI)
+Windows Management Instrumentation (WMI) is a critical subsystem for both administration and "Living off the Land" (LotL) evasion techniques.
+* **PowerShell (Modern):** `Get-WmiObject -Class win32_OperatingSystem | select Version,BuildNumber`
+* **WMIC (Legacy/LotL):** `wmic os list brief`
+
+### Remote Desktop Protocol (RDP)
+* **Linux Attack Host (xfreerdp):** `xfreerdp /v:<targetIp> /u:<user> /p:<Password>`
+  *(Pro-tip: Use drive redirection flags to map local attack-host folders directly into the RDP session for seamless payload transfer).*
+
+---
+
+## 2. 📂 Core File System & Registry Persistence
+
+### High-Value Directories
+* `C:\ProgramData`: Hidden machine-wide application data.
+* `C:\Users\<User>\AppData`: Hidden per-user configs (`Roaming`, `Local`, `LocalLow`).
+* `C:\Windows\System32`: Core OS executables and DLLs.
+* `C:\Windows\WinSxS`: Windows Component Store (updates/backups).
+
+### Registry Run Keys (Persistence Vectors)
+Threat actors routinely leverage these keys to execute payloads upon system boot or user logon.
+* **Query HKLM Run Key:**
+  `reg query HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run`
+
+---
+
+## 3. 🔐 Access Control: NTFS vs. Share Permissions
+
+**Critical Rule:** When accessing a network share, the *most restrictive* permission between the Share ACL and the NTFS ACL dictates the effective access.
+
+### NTFS Management (`icacls`)
+* **Enumerate ACLs:** `icacls C:\windows`
+* **Grant Explicit Modify Rights:** `icacls C:\users /grant joe:m`
+* **Isolate Folder (Break Inheritance):** `icacls "C:\Company Data" /inheritance:r`
+* **Apply Inheritance Flags:** `icacls "C:\Target" /grant "Group":(OI)(CI)(M)` 
+  *(OI = Object Inherit, CI = Container Inherit, M = Modify).*
+
+### SMB Enumeration & Mounting
+* **Enumerate Shares (From Linux):** `smbclient -L SERVER_IP -U username`
+* **Mount CIFS Share (From Linux):** `sudo mount -t cifs -o username=user,password=pass //SERVER_IP/"Share Name" /mnt/local`
+
+---
+
+## 4. ⚙️ Processes, Services & Account Tiers
+
+### High-Value Processes
+* `lsass.exe`: Local Security Authority Subsystem Service. Verifies logons and generates access tokens. *Primary target for dumping plaintext credentials and NTLM hashes in memory.*
+* `smss.exe` / `csrss.exe`: Core initialization and runtime processes.
+
+### Service Auditing
+Misconfigured services (weak DACLs, unquoted paths) are primary Local Privilege Escalation (LPE) vectors.
+* **CLI Service Query:** `sc qc <ServiceName>`
+* **Extract Security Descriptor (SDDL):** `sc sdshow <ServiceName>`
+* **PowerShell ACL Audit:** `Get-Acl -Path HKLM:\System\CurrentControlSet\Services\<ServiceName> | Format-List`
+
+### Non-Interactive Account Tiers
+1. **`NT AUTHORITY\SYSTEM`:** Highest local OS privilege. Surpasses standard local Administrators.
+2. **`NT AUTHORITY\NetworkService`:** Standard local privileges, but authenticates over the network using the machine's credentials.
+3. **`NT AUTHORITY\LocalService`:** Restricted, isolated execution context for safe service deployment.
+
+---
+
+## 5. 🛡️ Security Boundaries & Hardening
+
+* **User Account Control (UAC):** Prevents unauthorized software installation by halting execution and demanding explicit administrative consent/credentials.
+* **AppLocker:** Native application whitelisting. Restricts execution based on publisher signatures, file paths, or cryptographic hashes.
+* **Windows Defender Status:** `Get-MpComputerStatus | Select-Object -Property RealTimeProtectionEnabled, IsTamperProtected`
+
+---
+
+## 6. 🎯 Skills Assessment Playbook: Secure Share Deployment
+
+Copy-paste deployment for an isolated, RBAC-enforced network share.
+
+```powershell
+# 1. Provision Directory Structure
+New-Item -Path "C:\Company Data\HR" -ItemType Directory
+
+# 2. Provision User and Security Group
+net user Jim "P@ssw0rd123!" /add /passwordchg:no
+net localgroup HR /add
+net localgroup HR Jim /add
+
+# 3. Provision SMB Share & Enforce Share-Level Least Privilege
+New-SmbShare -Name "Company Data" -Path "C:\Company Data" -ChangeAccess "HR"
+Revoke-SmbShareAccess -Name "Company Data" -AccountName "Everyone" -Force
+
+# 4. Enforce NTFS Isolation (Break Inheritance & Apply Explicit Access)
+icacls "C:\Company Data" /inheritance:r
+icacls "C:\Company Data" /grant "HR":(OI)(CI)(M)
+icacls "C:\Company Data\HR" /inheritance:r
+icacls "C:\Company Data\HR" /grant "HR":(OI)(CI)(M)
+
+# 5. Service Tampering Audit
+Get-CimInstance -ClassName Win32_Service -Filter "Name='TargetService'" | Format-List Name, StartMode, State, PathName
+```
