@@ -1203,3 +1203,112 @@ Usage:
 ```
 
 > **Note:** Compared to standard debugging, this output displays the entire block of code currently being processed before logging the step-by-step execution variables.
+
+# 🧰 HTB CJCA: Module 05 - Bash Scripting Master Cheat Sheet
+
+> **Operational Scope:** Core reference guide for Bash scripting, covering syntax, variable management, execution flow, loops, and debugging. Optimized for automated enumeration, data parsing, and post-exploitation task automation.
+
+## 1. ⚙️ Execution & Core Syntax
+
+Unlike compiled languages, Bash is interpreted. The script is executed sequentially from top to bottom.
+
+* **Shebang:** `#!/bin/bash` (Must be the absolute first line to define the interpreter).
+* **Execution Methods:**
+  * Explicit: `bash script.sh` or `sh script.sh`
+  * Direct: `./script.sh` (Requires execution permissions: `chmod +x script.sh`)
+* **Variable Assignment:** `domain="inlanefreight.com"` (CRITICAL: No spaces around the `=` sign).
+* **Array Declaration:** `domains=(domain1.com domain2.com)` -> Access via `${domains[0]}`.
+
+## 2. 📥 Special Variables & I/O Control
+
+| Variable | Operational Description |
+| :--- | :--- |
+| `$0` | The name of the executing script. |
+| `$1 - $9` | Positional arguments provided by the user at runtime. |
+| `$#` | Total count of arguments passed. (Essential for input validation). |
+| `$@` | Retrieves all command-line arguments as a single array. |
+| `$?` | Exit status of the last executed command (`0` = Success, `>0` = Failure). |
+| `$$` | Process ID (PID) of the current executing shell. |
+
+* **Interactive Input:** `read -p "Select option: " opt` (Prompts user and stores input in `$opt`).
+* **Silent Output:** `ping -c 1 $ip > /dev/null 2>&1` (Redirects STDOUT and STDERR to the null device).
+* **Dual Output (Tee):** `whois $ip | tee -a results.txt` (Displays to terminal AND appends to file).
+
+## 3. ⚖️ Evaluation & Operators
+
+| Category | Operators | Use Case / Syntax |
+| :--- | :--- | :--- |
+| **String** | `==`, `!=`, `-z` (empty), `-n` (not empty) | `if [[ "$var" == "value" ]]; then` |
+| **Integer** | `-eq` (==), `-ne` (!=), `-gt` (>), `-lt` (<), `-ge` (>=), `-le` (<=) | `if [ $# -eq 0 ]; then` |
+| **File** | `-e` (exists), `-f` (file), `-d` (dir), `-r` (read), `-w` (write), `-x` (exec) | `if [ -e "$file" ]; then` |
+| **Logical** | `!` (NOT), `&&` (AND), `\|\|` (OR) | `if [[ -e "$1" && -r "$1" ]]; then` |
+
+## 4. 🔀 Control Flow (Branching)
+
+### Conditionals (If-Elif-Else)
+Used for evaluating arbitrary boolean expressions and validating states.
+```bash
+if [ $# -eq 0 ]; then
+    echo "Error: Target required."
+    exit 1
+elif [ $# -gt 1 ]; then
+    echo "Error: Too many arguments."
+    exit 1
+else
+    domain=$1
+fi
+```
+
+### Case Statements (Menu Routing)
+Highly efficient for strictly evaluating a variable against exact pattern matches.
+```bash
+case $opt in
+    "1") network_range ;;
+    "2") ping_host ;;
+    "3") network_range && ping_host ;;
+    *)   exit 0 ;; # Catch-all default
+esac
+```
+
+## 5. 🔄 Loops & Iteration
+
+* **For Loop:** Iterates over a defined list, array, or data stream.
+  ```bash
+  for ip in $cidr_ips; do
+      ping -c 1 $ip > /dev/null 2>&1
+  done
+  ```
+* **While Loop:** Executes continuously as long as the condition evaluates to **TRUE**.
+  ```bash
+  while [ $stat -eq 1 ]; do
+      # Execution logic here
+  done
+  ```
+* **Until Loop:** Executes continuously as long as the condition evaluates to **FALSE**.
+* **Loop Control:**
+  * `break`: Immediately terminates the entire loop.
+  * `continue`: Skips the remaining commands in the current iteration and jumps to the next.
+
+## 6. 🧮 Arithmetic Operations
+
+* **Math Evaluation:** `$((10 + 10))`, `$((10 / 2))`, `$((10 % 4))` (Modulus).
+* **String Length:** `${#variable}` (Calculates total character count).
+* **Increment/Decrement:** `((counter++))` or `((counter--))` (Essential for controlling `while` loops).
+
+## 7. 🛠️ Functions & Scope
+
+Modularize code for scalability. Must be defined *before* they are called.
+```bash
+function decrypt_payload {
+    local salt=$1 # 'local' restricts variable scope strictly to this function
+    # Decryption logic here
+    return 0 # Standard success exit code
+}
+```
+
+## 8. 🐛 Debugging Methodologies
+
+Utilize specific flags when invoking the script to trace execution and identify logic flaws.
+* **Execution Trace:** `bash -x script.sh` (Prints commands and evaluated arguments before execution).
+* **Verbose Trace:** `bash -v script.sh` (Prints raw source code lines as they are read).
+* **Combined Audit:** `bash -x -v script.sh` (Provides maximum visibility for exploit development or complex logic fixing).
