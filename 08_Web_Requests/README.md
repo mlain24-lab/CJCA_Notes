@@ -650,3 +650,139 @@ Verify successful deletion (the endpoint should return an empty array `[]` or a 
 ```bash
 curl -s http://<SERVER_IP>:<PORT>/api.php/city/New_HTB_City | jq
 ```
+
+# MODULE 08: Web Requests - Technical Cheat Sheet
+
+## 1. URL Anatomy (Uniform Resource Locator)
+Reference Structure: `http://admin:password@inlanefreight.com:80/dashboard.php?login=true#status`
+
+| Component | Example | Technical Context |
+| :--- | :--- | :--- |
+| **Scheme** | `http://` or `https://` | Protocol identifier. HTTPS implies TLS/SSL encapsulation. |
+| **User Info** | `admin:password@` | Optional credentials for host authentication (`user:password`). |
+| **Host** | `inlanefreight.com` | Destination FQDN, hostname, or IP address. |
+| **Port** | `:80` | Defaults: `80` (HTTP), `443` (HTTPS). |
+| **Path** | `/dashboard.php` | Target file or directory. Defaults to root index if omitted. |
+| **Query String** | `?login=true` | Server parameters. Chained using `&` (e.g., `?id=1&login=true`). |
+| **Fragment** | `#status` | Client-side anchor for internal page navigation. |
+
+---
+
+## 2. The HTTP Protocol & Flow
+HTTP is a clear-text, application-layer protocol based on a Client-Server architecture.
+
+* **Resolution & Connection Flow:** Local `/etc/hosts` check -> DNS Resolution -> TCP Handshake -> HTTP GET Request -> Server Processing -> HTTP Response -> Client Rendering.
+* **HTTPS (HTTP Secure):** Encapsulates traffic within a TLS/SSL encrypted tunnel via port 443 to prevent Man-in-the-Middle (MITM) and clear-text credential harvesting. Handshake process: 301 Redirect -> Client Hello -> Server Hello & Certificate -> Key Verification -> Encrypted Tunnel.
+
+---
+
+## 3. Essential cURL Commands for Pentesting
+`curl` is the standard CLI tool for raw HTTP transaction analysis, API enumeration, and payload delivery.
+
+### Global Flags
+| Flag | Name | Function |
+| :--- | :--- | :--- |
+| `-i` | `--include` | Prints HTTP response headers alongside the payload body. |
+| `-I` | `--head` | Fetches headers only (sends an HTTP `HEAD` request). |
+| `-v` | `--verbose` | Exposes the complete HTTP transaction (useful for debugging). |
+| `-s` | `--silent` | Suppresses progress meters and error messages (ideal for Bash scripting). |
+| `-k` | `--insecure` | Bypasses SSL/TLS certificate validation (crucial for self-signed lab targets). |
+| `-L` | `--location` | Automatically follows HTTP redirects (e.g., `301`, `302`). |
+
+### Data & Output Control
+| Flag | Name | Function |
+| :--- | :--- | :--- |
+| `-O` | `--remote-name` | Downloads and saves the file using its original remote name. |
+| `-o <file>`| `--output` | Downloads and saves the file under a custom local name. |
+| `-X <METHOD>`| `--request` | Specifies the HTTP method (e.g., `-X POST`, `-X PUT`). |
+| `-d <data>`| `--data` | Transmits data in a `POST` request body. |
+
+### Header & Authentication Manipulation
+| Flag | Name | Function |
+| :--- | :--- | :--- |
+| `-H` | `--header` | Injects custom headers (e.g., `-H 'Content-Type: application/json'`). |
+| `-A` | `--user-agent` | Spoofs the User-Agent string. |
+| `-u` | `--user` | Passes basic authentication credentials (`-u admin:password`). |
+| `-b` | `--cookie` | Transmits a session cookie to bypass login (e.g., `-b 'PHPSESSID=1234'`). |
+
+---
+
+## 4. HTTP Methods & Status Codes
+
+### Core HTTP Verbs
+* **GET:** Retrieves resources. Parameters are exposed in the URL (not OPSEC safe for sensitive data).
+* **POST:** Submits data. Encapsulates parameters in the request body (avoids server logging, bypasses URL length limits).
+* **HEAD:** Retrieves HTTP response headers only.
+* **PUT / PATCH:** Updates existing resources (PUT replaces completely; PATCH modifies partially).
+* **DELETE:** Removes target resources.
+* **OPTIONS:** Enumerates allowed HTTP methods on a target endpoint.
+
+### Standard Status Codes
+* **1xx (Informational):** Request received, processing continues.
+* **2xx (Success):** `200 OK` (Standard success).
+* **3xx (Redirection):** `301 Moved Permanently`, `302 Found` (Temporary redirect, common post-authentication).
+* **4xx (Client Error):** `400 Bad Request`, `401 Unauthorized` (Basic Auth required), `403 Forbidden` (Access denied/WAF), `404 Not Found`.
+* **5xx (Server Error):** `500 Internal Server Error` (Unexpected backend failure).
+
+---
+
+## 5. Critical HTTP Headers
+Headers provide transactional context via `Key: Value` pairs.
+
+* **Host:** Essential for Virtual Host routing.
+* **User-Agent:** Identifies the client software. Highly spoofable.
+* **Cookie / Set-Cookie:** Manages session state (e.g., `PHPSESSID`).
+* **Authorization:** Handles HTTP Basic Auth (e.g., `Authorization: Basic YWRtaW46YWRtaW4=`).
+* **Content-Type:** Defines payload format (e.g., `application/x-www-form-urlencoded`, `application/json`).
+* **Security Headers:** `Content-Security-Policy` (CSP) against XSS, `Strict-Transport-Security` (HSTS) forcing HTTPS.
+
+---
+
+## 6. Authentication & Session Hijacking Examples
+
+**Bypassing Basic Auth (401 Unauthorized):**
+```bash
+# Method 1: Using the -u flag
+curl -u admin:admin http://target.htb/
+
+# Method 2: Manual header injection (Base64 encoded payload)
+curl -H 'Authorization: Basic YWRtaW46YWRtaW4=' http://target.htb/
+```
+
+**Authenticating via POST & Session Injection:**
+```bash
+# 1. Send credentials and extract the session cookie (-i)
+curl -X POST -d 'username=admin&password=admin' http://target.htb/login.php -i
+
+# 2. Replay the session cookie to access authenticated endpoints
+curl -b 'PHPSESSID=c1nsa6op7vtk7kdis7bcnbadf1' http://target.htb/dashboard.php
+```
+
+---
+
+## 7. Interacting with REST APIs (CRUD Operations)
+Modern endpoints heavily utilize JSON. Always specify the `Content-Type`. Use `jq` to parse the output.
+
+**Read (GET) - Fetch all records or a specific entity:**
+```bash
+curl -s http://target.htb/api.php/city/london | jq
+```
+
+**Create (POST) - Inject new records:**
+```bash
+curl -X POST http://target.htb/api.php/city/ \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"HTB_City", "country_name":"HTB"}'
+```
+
+**Update (PUT/PATCH) - Modify existing records:**
+```bash
+curl -X PUT http://target.htb/api.php/city/london \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"New_London", "country_name":"UK"}'
+```
+
+**Delete (DELETE) - Drop records:**
+```bash
+curl -X DELETE http://target.htb/api.php/city/New_London
+```
