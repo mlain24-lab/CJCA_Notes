@@ -470,3 +470,183 @@ curl 'http://<SERVER_IP>:<PORT>/search.php?search=le' -H 'Authorization: Basic Y
 
 **Copy as Fetch (JavaScript Console):**
 Alternatively, right-click the request -> `Copy` -> `Copy as Fetch`. Navigate to the browser's Console tab (`CTRL+SHIFT+K`), paste the fetch command, and execute it to replay the request natively within the browser's context.
+
+# HTTP POST Requests: Methodology & Data Transmission
+
+## 1. POST vs. GET: Core Characteristics
+While `GET` requests are typically utilized for data retrieval (search queries, page rendering), web applications rely on `POST` requests for state-changing operations, file transfers, and secure parameter submission. 
+
+Unlike HTTP `GET`, which appends user parameters directly into the URL, HTTP `POST` encapsulates user parameters within the HTTP Request body. This architectural difference provides three key operational advantages:
+
+* **Lack of Logging (OPSEC):** `GET` parameters are permanently recorded in server access logs (e.g., Apache, Nginx) as part of the requested URL. `POST` request bodies are not logged by default, making it the standard for handling sensitive payloads (e.g., credentials) and large file uploads.
+* **Encoding Efficiency:** URLs strictly require URL-encoding to conform to valid character sets. `POST` requests transmit data within the body, which natively accepts binary data, minimizing encoding requirements to just parameter delimiters.
+* **Data Capacity:** `GET` requests are restricted by URL length limits imposed by browsers, web servers, and CDNs (typically constrained to < 2,000 characters). `POST` requests bypass these URL limitations, allowing for massive data payloads.
+
+---
+
+## 2. Authentication Testing & Payload Delivery
+During web application assessments, capturing and manipulating `POST` requests is critical for bypassing authentication forms. Using browser Developer Tools (Network Tab), we can intercept the authentication request and extract the payload.
+
+**Captured Login Payload:**
+```text
+username=admin&password=admin
+```
+
+We can replicate this authentication request via the CLI using `cURL`. The `-X POST` flag specifies the method, while the `-d` (data) flag injects our payload.
+
+**cURL Authentication Request:**
+```bash
+MikyRedHat@htb[/htb]$ curl -X POST -d 'username=admin&password=admin' http://<SERVER_IP>:<PORT>/
+```
+*Note: If the application triggers a post-login redirect (e.g., `302 Found` to `/dashboard.php`), append the `-L` flag in cURL to automatically follow the redirection.*
+
+---
+
+## 3. Session Management & Cookie Hijacking
+Upon successful authentication, the server provisions a session cookie (e.g., `PHPSESSID`) via the `Set-Cookie` HTTP response header. This token persists the authenticated state.
+
+**Extracting the Session Cookie:**
+To view the response headers and capture the cookie, execute the request with the `-i` (include headers) or `-v` (verbose) flags:
+```bash
+MikyRedHat@htb[/htb]$ curl -X POST -d 'username=admin&password=admin' http://<SERVER_IP>:<PORT>/ -i
+
+HTTP/1.1 200 OK
+Server: Apache/2.4.41 (Ubuntu)
+Set-Cookie: PHPSESSID=c1nsa6op7vtk7kdis7bcnbadf1; path=/
+```
+
+**Authenticating via Cookie Injection:**
+Once the valid session token is acquired, we can bypass the login form entirely. We can inject this cookie into subsequent requests using the `-b` flag, or manually pass it as a standard header (`-H`).
+```bash
+# Method 1: Using the -b (cookie) flag
+MikyRedHat@htb[/htb]$ curl -b 'PHPSESSID=c1nsa6op7vtk7kdis7bcnbadf1' http://<SERVER_IP>:<PORT>/
+
+# Method 2: Injecting the Cookie header directly
+MikyRedHat@htb[/htb]$ curl -H 'Cookie: PHPSESSID=c1nsa6op7vtk7kdis7bcnbadf1' http://<SERVER_IP>:<PORT>/
+```
+*GUI Methodology:* In browser DevTools (SHIFT+F9 for Storage/Application tab), we can manually modify or create the `PHPSESSID` cookie value and refresh the page to forcefully assume the authenticated session. This technique is fundamental when chaining vulnerabilities like Cross-Site Scripting (XSS) for session hijacking.
+
+---
+
+## 4. Interacting with JSON APIs
+Modern web applications frequently process `POST` requests using structured data formats like JSON instead of standard form data.
+
+**Captured JSON Payload:**
+```json
+{"search":"london"}
+```
+
+When interacting with endpoints expecting JSON, it is mandatory to explicitly declare the payload format using the `Content-Type: application/json` header. Failure to do so usually results in a `400 Bad Request` or silent failure.
+
+**Crafting the JSON cURL Request:**
+To query the endpoint directly without relying on the web front-end, we combine our session cookie, the specific headers, and the JSON payload:
+```bash
+MikyRedHat@htb[/htb]$ curl -X POST \
+  -d '{"search":"london"}' \
+  -b 'PHPSESSID=c1nsa6op7vtk7kdis7bcnbadf1' \
+  -H 'Content-Type: application/json' \
+  http://<SERVER_IP>:<PORT>/search.php
+```
+
+*Efficiency Tip:* For rapid testing in the browser, you can right-click the intercepted request in the Network tab, select **Copy > Copy as Fetch**, and execute it directly in the DevTools Console to replay or manipulate the request on the fly.
+
+# Interacting with CRUD APIs via cURL
+
+## 1. API and CRUD Fundamentals
+Application Programming Interfaces (APIs) are widely utilized to interact with backend databases, allowing clients to query, insert, modify, or drop specific tables and rows via structured HTTP requests. Standard API database operations map directly to the **CRUD** (Create, Read, Update, Delete) model, implemented via standard HTTP request methods.
+
+| Operation | HTTP Method | Target URI Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Create** | `POST` | `/api.php/table/` | Inserts a new record/entity into the specified database table. |
+| **Read** | `GET` | `/api.php/table/identifier` | Retrieves records from the specified database entity. |
+| **Update** | `PUT` / `PATCH` | `/api.php/table/identifier` | Modifies an existing database record. |
+| **Delete** | `DELETE` | `/api.php/table/identifier` | Permanently drops/removes the specified row from the table. |
+
+---
+
+## 2. Read Operations (GET)
+To retrieve data from an API endpoint, standard `GET` requests are issued. Appending specific search parameters or resource identifiers filters the returned dataset.
+
+### Retrieve a Specific Entry
+By appending the search term to the endpoint, the API filters records. Pipe the output to the `jq` utility for structured JSON parsing and pretty-printing, and utilize the `-s` (silent) flag to suppress cURL status metrics.
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/london | jq
+```
+
+**Output:**
+```json
+[
+  {
+    "city_name": "London",
+    "country_name": "(UK)"
+  }
+]
+```
+
+### Partial Search / Pattern Matching
+Providing a partial string returns all entries matching the specified pattern.
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/le | jq
+```
+
+### Retrieve All Dataset Entries
+Passing an empty parameter or a trailing slash requests the entire table dataset.
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/ | jq
+```
+
+---
+
+## 3. Create Operations (POST)
+To inject a new record into the database, issue an HTTP `POST` request. Since modern APIs process data payloads natively in JSON format, the `Content-Type: application/json` header must be explicitly defined using the `-H` flag, while the JSON payload is passed via the `-d` data flag.
+
+```bash
+curl -X POST http://<SERVER_IP>:<PORT>/api.php/city/ \
+     -H 'Content-Type: application/json' \
+     -d '{"city_name":"HTB_City", "country_name":"HTB"}'
+```
+
+Verify successful insertion by querying the newly created resource endpoint:
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/HTB_City | jq
+```
+
+---
+
+## 4. Update Operations (PUT / PATCH)
+Modifying data requires targeting a specific resource identifier directly within the URI path to ensure the backend identifies the precise row to alter.
+
+> [!NOTE]
+> **PUT vs PATCH:** `PUT` replaces the entire target resource with the uploaded payload; missing fields might be overwritten or nullified depending on backend logic. Conversely, `PATCH` applies partial modifications to the resource, updating only the supplied fields. The `OPTIONS` method can be used to query which verbs are supported by the endpoint.
+
+```bash
+curl -X PUT http://<SERVER_IP>:<PORT>/api.php/city/london \
+     -H 'Content-Type: application/json' \
+     -d '{"city_name":"New_HTB_City", "country_name":"HTB"}'
+```
+
+Verify resource replacement (`london` should return empty, while `New_HTB_City` should exist):
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/london | jq
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/New_HTB_City | jq
+```
+
+---
+
+## 5. Delete Operations (DELETE)
+Removing database rows involves sending a `DELETE` request directly to the target resource's specific URI identifier.
+
+```bash
+curl -X DELETE http://<SERVER_IP>:<PORT>/api.php/city/New_HTB_City
+```
+
+Verify successful deletion (the endpoint should return an empty array `[]` or a `404 Not Found` status code):
+
+```bash
+curl -s http://<SERVER_IP>:<PORT>/api.php/city/New_HTB_City | jq
+```
