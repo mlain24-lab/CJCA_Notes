@@ -786,3 +786,221 @@ curl -X PUT http://target.htb/api.php/city/london \
 ```bash
 curl -X DELETE http://target.htb/api.php/city/New_London
 ```
+# Web Applications: HTML & The DOM
+
+## 1. HTML (HyperText Markup Language) Overview
+HTML serves as the foundational skeleton of web applications. It constructs the basic elements of a web page—such as forms, images, titles, and structural containers—which the browser parses and renders to the end-user.
+
+### Basic HTML Structure
+Elements are strictly organized in a hierarchical, tree-like structure, heavily resembling XML. The root `<html>` tag encapsulates the entire document.
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Page Title</title>
+    </head>
+    <body>
+        <h1 id="main-heading">A Heading</h1>
+        <p class="content-text">A Paragraph</p>
+    </body>
+</html>
+```
+
+**Key Tag Mechanics:**
+* Elements rely on opening `<tag>` and closing `</tag>` syntax.
+* Attributes like `id` (unique identifier) or `class` (group identifier) are embedded within the opening tag. These attributes are critical injection points when crafting CSS or DOM-based exploits.
+
+## 2. Document Object Model (DOM) Tree
+The browser constructs a DOM representation of the HTML document. The W3C defines the DOM as a platform- and language-neutral interface allowing scripts (e.g., JavaScript) to dynamically access and update document content, structure, and style.
+
+```text
+document
+ └── html
+     ├── head
+     │   └── title
+     └── body
+         ├── h1
+         └── p
+```
+
+**DOM Standards Breakdown:**
+* **Core DOM:** Standard model for all document types.
+* **XML DOM:** Standard model for XML.
+* **HTML DOM:** Standard model specifically for HTML documents.
+
+> **Security Implication:** Understanding the HTML DOM hierarchy (e.g., referencing `document.head` or targeting elements via `getElementById()`) is paramount for identifying injection vectors. Manipulating existing DOM elements or forging new ones is the core methodology behind Cross-Site Scripting (XSS) attacks.
+
+## 3. URL Encoding (Percent-Encoding)
+Browsers transmit URLs using the standard ASCII character set. Because HTTP requests cannot process raw special characters or spaces within URLs, unsafe characters must be URL-encoded. This process replaces non-ASCII or unsafe characters with a `%` followed by their two-digit Hexadecimal equivalent.
+
+**Common Encoding Reference:**
+
+| Character | URL Encoded | Description |
+| :---: | :---: | :--- |
+| `[space]` | `%20` or `+` | Space character |
+| `!` | `%21` | Exclamation mark |
+| `"` | `%22` | Double quote |
+| `#` | `%23` | Hash / Fragment identifier |
+| `$` | `%24` | Dollar sign |
+| `%` | `%25` | Percent (used for encoding) |
+| `&` | `%26` | Ampersand (parameter separator) |
+| `'` | `%27` | Single quote |
+
+> **Operational Note:** Proficiency in URL encoding/decoding is a fundamental requirement for IT Security and SysAdmins. It is routinely used to obfuscate payloads, troubleshoot HTTP routing issues, or ensure crafted web requests traverse proxies and WAFs (Web Application Firewalls) cleanly. Burp Suite's native Decoder tab is the industry-standard tool for rapid string conversions during web pentesting.
+
+## 4. Operational Usage & Element Context
+Understanding the structural separation within an HTML document is crucial for mapping an application's attack surface:
+* `<head>`: Contains metadata not directly rendered on the main canvas (e.g., page title, charset, external dependencies).
+* `<body>`: Contains the rendered layout payload (text, media, inputs, forms).
+* `<style>`: Embeds internal CSS for styling. 
+* `<script>`: Embeds JavaScript logic. *High-value target for code injection and execution.*
+
+# Cascading Style Sheets (CSS)
+
+## Overview
+CSS (Cascading Style Sheets) is the foundational stylesheet language used in conjunction with HTML to control the presentation, formatting, and overall visual structure of web pages. As web standards evolve, subsequent iterations of CSS introduce advanced rendering capabilities natively supported by modern browsers.
+
+## Fundamental Mechanics
+At its core, CSS targets specific HTML elements (such as tags, classes, or IDs) and defines their styling rules. This architecture allows for centralized design management across an entire web application. 
+
+Common target properties include `font-family`, `background-color`, `text-align`, and spatial dimensions like `margin`, `padding`, and `border`.
+
+### Syntax Structure
+CSS rulesets consist of a **selector** followed by a declaration block enclosed in curly braces `{}`. Each declaration pairs a property with a specific value, terminated by a semicolon `;`.
+
+```css
+/* Target by HTML Tag */
+body {
+  background-color: #000000;
+}
+
+h1 {
+  color: #FFFFFF;
+  text-align: center;
+}
+
+/* Target by specific ID or Class (crucial for JS DOM manipulation) */
+.custom-paragraph {
+  font-family: 'Helvetica', sans-serif;
+  font-size: 14px;
+}
+```
+
+## Advanced Capabilities
+Beyond static formatting, modern CSS handles complex animations and dynamic spatial rendering (e.g., 3D transformations) without relying heavily on client-side scripting.
+
+* **Animations:** Properties like `@keyframes`, `animation-duration`, and `animation-direction` allow elements to transition smoothly between different states, timelines, and coordinates.
+* **Extensibility:** CSS syntax and styling principles are frequently adapted for XML formatting, SVG styling, and designing entire User Interfaces (UI) within modern mobile app development platforms.
+
+## Interoperability with JavaScript
+In modern web development, CSS works in tandem with JavaScript. While CSS defines the static and animated visual states, JavaScript is leveraged to execute logic and dynamically manipulate CSS classes or properties in real-time. This synergy is used to react to keystrokes and mouse events, or to generate advanced UI behaviors like Parallax depth effects.
+
+## CSS Frameworks & Preprocessors
+Manually writing vanilla CSS for enterprise-scale web applications can be inefficient and difficult to scale. To optimize workflows, ensure cross-browser compatibility, and enforce responsive design standards, developers utilize CSS frameworks and preprocessors. These toolkits provide pre-built, reusable stylesheets and components.
+
+Some of the most widely adopted frameworks in modern environments include:
+
+* **Bootstrap:** The industry-standard UI framework for responsive, mobile-first front-end web development.
+* **Sass (Syntactically Awesome Style Sheets):** A powerful CSS extension language (preprocessor) that introduces programming concepts like variables, nested rules, and mixins into CSS.
+* **Foundation:** A highly customizable, responsive front-end framework heavily used in enterprise-level applications.
+* **Bulma:** A modern, lightweight CSS framework based entirely on Flexbox.
+* **Pure:** A minimalist, responsive CSS module suite developed by Yahoo, ideal for lightweight footprint requirements.
+
+
+# Web Architecture: JavaScript Fundamentals
+
+## Overview
+JavaScript (JS) is a core programming language of the web, functioning primarily as a client-side scripting language executed directly within the browser. While HTML structures the content and CSS handles the presentation, JavaScript dictates the behavior, logic, and interactivity of a webpage. 
+
+Although traditionally restricted to the front end, modern implementations like **Node.js** allow JavaScript to function as a robust back-end language, enabling full-stack web application development. Without JS, web pages would remain completely static, lacking interactive elements or real-time state changes.
+
+## Implementation Methods
+JavaScript interacts with the web page's source code via the `<script>` tag. There are two primary ways to load JS into the Document Object Model (DOM):
+
+### 1. Inline Execution
+Code is embedded directly within the HTML document. While useful for quick scripts, it is generally avoided in production environments in favor of modularity.
+```html
+<script type="text/javascript">
+    // JavaScript logic goes here
+</script>
+```
+
+### 2. External Sourcing
+Code is loaded from an external file. This is the industry standard practice as it improves code maintainability and allows the browser to cache the script.
+```html
+<script src="./script.js"></script>
+```
+
+## DOM Manipulation & Core Functionality
+A fundamental use case for JavaScript is interacting with and dynamically modifying HTML elements. 
+
+```javascript
+// Targeting an HTML element by its ID and altering its inner text
+document.getElementById("button1").innerHTML = "Changed Text!";
+```
+In a functional web application, this type of execution is typically bound to an event listener, meaning the script triggers only when a specific action occurs (e.g., an end-user clicking the "button1" element).
+
+## Advanced Usage & Asynchronous Operations
+Modern web browsers are equipped with highly optimized JavaScript engines that execute code locally on the client-side. This drastically reduces server overhead and allows for rapid processing. Key functionalities include:
+
+* **Dynamic DOM Updates:** Altering the webpage view and content in real-time without requiring a full page reload.
+* **Asynchronous Requests (AJAX):** Performing HTTP requests in the background to interact with back-end APIs, sending and retrieving data seamlessly.
+* **User Input Processing:** Validating and sanitizing data entered by the user before transmission.
+* **Advanced Animations:** Driving complex, interactive visual sequences that surpass the limitations of pure CSS.
+
+## Front-End Frameworks
+As enterprise web applications scale in complexity, developing entirely in "vanilla" (pure) JavaScript becomes inefficient. To streamline the development pipeline, the industry relies on JavaScript frameworks and libraries. 
+
+These platforms abstract complex backend-like functionalities (such as routing, state management, and user authentication) into modular components, often dynamically generating HTML rather than relying on static files.
+
+Some of the most prominent front-end frameworks and libraries encountered in modern infrastructure include:
+* **React**
+* **Angular**
+* **Vue**
+* **jQuery** *(Considered legacy, but still widely deployed in older environments)*
+
+# Front-End Vulnerabilities: Sensitive Data Exposure
+
+## 1. Overview
+While the majority of web application penetration testing targets back-end infrastructure, front-end components present a critical attack surface. Although client-side execution isolates the core back-end from direct exploitation, vulnerabilities here can severely compromise end-users. If an attacker leverages a front-end flaw against an administrative user, it can rapidly escalate to unauthorized backend access, sensitive data leaks, and widespread service disruption.
+
+## 2. Information Gathering & Attack Vectors
+**Sensitive Data Exposure** occurs when sensitive information is inadvertently transmitted in clear-text to the client-side environment. This data typically resides in the HTML source code, embedded JavaScript, or external asset links.
+
+### Reconnaissance Techniques
+* **Page Source Inspection:** Bypassing UI restrictions (like disabled right-clicks) using `Ctrl + U` or intercepting traffic via web proxies such as **Burp Suite**.
+* **Targeting 'Low-Hanging Fruit':**
+    * Hardcoded login credentials or cryptographic hashes.
+    * Leftover developer comments (e.g., ``).
+    * Exposed API endpoints, hidden directories, or debugging parameters.
+    * Unintended user data leakage.
+
+## 3. Proof of Concept (PoC)
+During an assessment, an apparently secure authentication form might conceal critical flaws within its source code. 
+
+**Target:** Standard Login Form
+**Finding:** Hardcoded credentials exposed within HTML comments.
+
+```html
+<form action="action_page.php" method="post">
+    <div class="container">
+        <label for="uname"><b>Username</b></label>
+        <input type="text" required>
+
+        <label for="psw"><b>Password</b></label>
+        <input type="password" required>
+
+        <button type="submit">Login</button>
+    </div>
+</form>
+```
+
+**Impact:** The failure to sanitize developer comments provides immediate, unauthorized access using the `test:test` credentials. Automated source code analyzers can easily scrape this type of leakage to map hidden functionality or escalate privileges across the web application.
+
+## 4. Remediation & DevSecOps Strategies
+To mitigate Sensitive Data Exposure on the client-side, the following practices should be implemented:
+* **Code Sanitization:** Ensure production front-end code is rigorously stripped of debugging parameters, test directories, and developer comments.
+* **Data Classification:** Strictly classify data types and enforce access controls to determine what is permissible for client-side exposure.
+* **Obfuscation & Packing:** Utilize JavaScript minification, packing, and obfuscation techniques to complicate reverse-engineering and deter automated scraping tools.
+* **Code Review Pipeline:** Integrate mandatory peer reviews and automated SAST (Static Application Security Testing) tools into the CI/CD pipeline prior to deployment to catch exposed information.
