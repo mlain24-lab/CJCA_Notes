@@ -593,3 +593,265 @@ The underlying hardware specifications (CPU, RAM, I/O throughput) directly dicta
 
 * **Load Distribution:** Enterprise web applications distribute incoming traffic across a cluster of back-end servers (using Load Balancers) to optimize resource utilization and prevent bottlenecks.
 * **Virtualization & Cloud:** Applications increasingly run on abstracted hardware, utilizing virtual hosts provisioned through data centers or Cloud Service Providers (IaaS/PaaS) rather than relying exclusively on bare-metal servers.
+
+# Web Servers & HTTP Protocol Fundamentals
+
+## 1. Architecture Overview
+A web server is a backend application responsible for handling HTTP/HTTPS traffic from client browsers. Operating primarily over **TCP port 80 (HTTP)** and **TCP port 443 (HTTPS)**, the server processes incoming requests, routes them to the requested web application core files, and delivers the appropriate HTTP responses (text, JSON, or binary data) back to the end-user.
+
+## 2. HTTP Status Codes
+Web servers acknowledge client requests through standardized 3-digit HTTP response codes.
+
+| Code | Status | Description |
+| :--- | :--- | :--- |
+| **200** | `OK` | Successful request. The payload was delivered. |
+| **301** | `Moved Permanently` | Resource URL has permanently changed. |
+| **302** | `Found` | Resource URL has temporarily changed (redirection). |
+| **400** | `Bad Request` | Invalid syntax; the server could not understand the request. |
+| **401** | `Unauthorized` | Unauthenticated attempt to access a protected resource. |
+| **403** | `Forbidden` | Authenticated but insufficient access rights to the content. |
+| **404** | `Not Found` | The requested resource does not exist on the server. |
+| **405** | `Method Not Allowed` | HTTP method (e.g., POST, PUT) is disabled for the requested endpoint. |
+| **408** | `Request Timeout` | Sent on an idle connection, occasionally without a prior client request. |
+| **500** | `Internal Server Error` | Unhandled server-side exception or misconfiguration. |
+| **502** | `Bad Gateway` | Invalid response received from an upstream server (acting as a proxy). |
+| **504** | `Gateway Timeout` | Upstream server failed to respond within the designated time frame. |
+
+## 3. Command Line Enumeration (cURL)
+The `curl` utility is essential for web server interaction and initial reconnaissance (Banner Grabbing).
+
+**Extracting HTTP Headers (`-I` flag):**
+Useful for identifying server software, versions, and active technologies without downloading the entire payload.
+```bash
+MikyRedHat@htb[/htb]$ curl -I https://academy.hackthebox.com
+
+HTTP/2 200
+date: Tue, 15 Dec 2020 19:54:29 GMT
+content-type: text/html; charset=UTF-8
+...SNIP...
+```
+
+**Retrieving Source Code:**
+```bash
+MikyRedHat@htb[/htb]$ curl https://academy.hackthebox.com
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cyber Security Training : HTB Academy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
+
+## 4. Common Web Server Engines
+While custom web servers can be built using Python, Node.js, or PHP, enterprise environments typically deploy optimized, production-ready engines to handle high traffic volume and complex routing.
+
+### 4.1. Apache (httpd)
+* **Market Share:** ~40% of internet websites.
+* **Overview:** Open-source, heavily documented, and natively included in most Linux distributions. 
+* **Key Features:** Highly modular architecture. Supports multiple languages (PHP, Python, Perl) and CGI. Functionality is extended via modules (e.g., `mod_php`).
+* **Enterprise Footprint:** Apple, Adobe, Baidu.
+
+### 4.2. NGINX
+* **Market Share:** ~30% globally, but dominates the top 100,000 high-traffic websites (~60%).
+* **Overview:** Open-source web server renowned for its asynchronous, event-driven architecture.
+* **Key Features:** Optimized for high concurrency with minimal CPU and memory overhead. Widely deployed as a robust reverse proxy and load balancer.
+* **Enterprise Footprint:** Google, Meta, Twitter, Cisco, Netflix, HackTheBox.
+
+### 4.3. Microsoft IIS (Internet Information Services)
+* **Market Share:** ~15% of internet websites.
+* **Overview:** Proprietary web server developed by Microsoft, running exclusively on Windows Server environments.
+* **Key Features:** Built to host .NET framework applications. Features deep integration with Active Directory (AD), allowing seamless Windows Authentication for internal enterprise tools.
+* **Enterprise Footprint:** Microsoft, Office365, Skype, Stack Overflow.
+
+> **Note:** Other notable application-specific servers include **Apache Tomcat** (Java environments) and **Node.js** (JavaScript backend execution).
+
+# Web Application Databases: Core Fundamentals
+
+## 1. Overview
+Modern web applications rely on backend databases to persistently store, retrieve, and manage dynamic data (e.g., user credentials, application assets, user-generated content). The choice of database depends on critical operational factors such as **I/O speed**, **scalability**, **storage capacity**, and **cost**. 
+
+## 2. Relational Databases (SQL)
+Relational databases enforce a structured layout, storing data strictly in **tables**, **rows**, and **columns**. 
+
+* **Primary/Foreign Keys:** Unique identifiers used to link tables and establish relationships. For example, linking a `users` table (`id` as primary key) to a `posts` table (`user_id` as foreign key) prevents redundant data storage and optimizes retrieval.
+* **Schema:** The formal architecture defining the relationships and rules between tables.
+* **Use Case:** Highly efficient and reliable for massive, cleanly structured datasets that require complex querying.
+
+### Common SQL Databases
+| Database | Description |
+| :--- | :--- |
+| **MySQL** | Open-source, widely adopted standard for web applications. |
+| **MSSQL** | Microsoft's enterprise solution, heavily integrated with Windows Server and IIS environments. |
+| **Oracle** | Enterprise-grade, highly reliable, and optimized for large-scale corporate deployments (typically high cost). |
+| **PostgreSQL** | Open-source and highly extensible, allowing the integration of advanced features without altering the core database design. |
+*(Other notable SQL databases: SQLite, MariaDB, Amazon Aurora, Azure SQL)*
+
+## 3. Non-Relational Databases (NoSQL)
+NoSQL databases operate without rigid tables, columns, or schemas. They adapt their storage models based on the specific data type, offering unparalleled **flexibility** and **horizontal scalability** for unstructured or semi-structured datasets.
+
+### NoSQL Storage Models
+1. **Key-Value:** Data is stored as a collection of key-value pairs (often JSON/XML formats). 
+2. **Document-Based:** Data is stored in complex, hierarchical JSON objects containing metadata.
+3. **Wide-Column:** Optimized for querying over massive datasets distributed across multiple nodes.
+4. **Graph:** Designed to explicitly map and query complex relationships between data points.
+
+**Key-Value JSON Representation Example:**
+```json
+{
+  "100001": {
+    "date": "01-01-2021",
+    "content": "Welcome to this web application."
+  },
+  "100002": {
+    "date": "02-01-2021",
+    "content": "This is the first post on this web app."
+  }
+}
+```
+*(Note: Conceptually similar to dictionaries or hash maps in Python/PHP).*
+
+### Common NoSQL Databases
+| Database | Description |
+| :--- | :--- |
+| **MongoDB** | Open-source, Document-Based model storing data as JSON objects. The current industry standard for NoSQL. |
+| **ElasticSearch** | Open-source, engineered for lightning-fast data retrieval and massive dataset analysis. |
+| **Apache Cassandra** | Open-source, highly scalable, and optimized for high availability and graceful fault tolerance. |
+*(Other notable NoSQL databases: Redis, Neo4j, CouchDB, Amazon DynamoDB)*
+
+## 4. Web Application Integration & Security Context
+Backend languages (such as PHP, Python, or Node.js) natively interface with databases to execute queries based on application logic or user input. First, the database engine must be deployed and configured on the backend server.
+
+**PHP/MySQL Integration Example:**
+```php
+// 1. Establish connection to the database
+$conn = new mysqli("localhost", "user", "pass", "database1");
+
+// 2. Capture user input via HTTP POST (SECURITY RISK: Direct input mapping)
+$searchInput = $_POST['findUser'];
+
+// 3. Execute query
+$query = "SELECT * FROM users WHERE name LIKE '%$searchInput%'";
+$result = $conn->query($query);
+
+// 4. Parse and return results to the user
+while($row = $result->fetch_assoc() ){
+    echo $row["name"]."<br>";
+}
+```
+
+### Security Implication (Pentester Note)
+The integration example above is intentionally basic and highlights a critical vulnerability. Passing unsanitized user input (`$_POST['findUser']`) directly into a SQL statement creates a severe **SQL Injection (SQLi)** vector. In a production environment, inputs must be strictly sanitized and queries must rely on **Parameterized Queries (Prepared Statements)** to prevent threat actors from manipulating the database backend.
+
+# Web Development Frameworks & APIs
+
+## 1. Web Development Frameworks
+Modern web applications rely on frameworks to streamline the development of core functionalities (e.g., user authentication, session management, and routing) rather than building from scratch. These frameworks bridge backend processing logic with frontend components to deploy fully functional applications rapidly.
+
+**Prominent Frameworks:**
+* **Laravel (PHP):** Highly agile and developer-friendly; predominantly used by startups and SMEs.
+* **Express (Node.js):** Lightweight and highly scalable; deployed by enterprise entities like PayPal, Uber, and IBM.
+* **Django (Python):** Robust and comprehensive; utilized by Google, Instagram, and Mozilla.
+* **Ruby on Rails (Ruby):** Focuses on convention over configuration; powers platforms like GitHub and Airbnb.
+
+*Note: Enterprise-grade infrastructure rarely relies on a single technology, opting instead for a hybrid stack of various frameworks and web servers to handle distinct microservices.*
+
+---
+
+## 2. Inter-Component Communication
+Seamless data exchange between the client (frontend) and the server (backend) is critical for dynamic web applications. This is typically achieved using standard HTTP Request parameters or Web APIs.
+
+### 2.1 Query Parameters
+The standard mechanism for passing specific arguments to backend scripts to dictate how a request is processed.
+* **GET Requests:** Arguments are appended directly to the URI string, making them visible in the URL (e.g., `GET /search.php?item=apples HTTP/1.1`).
+* **POST Requests:** Arguments are encapsulated within the body of the HTTP request, keeping the URL clean and allowing for larger payloads.
+
+  ```http
+  POST /search.php HTTP/1.1
+  Host: example.com
+  ...SNIP...
+
+  item=apples
+  ```
+
+---
+
+## 3. Web APIs (Application Programming Interfaces)
+APIs are standardized interfaces that expose backend application logic to remote clients over HTTP. They facilitate modular interactions, such as querying databases or triggering specific server-side actions, returning machine-readable payloads (like JSON or XML) instead of rendered HTML.
+
+### 3.1 SOAP (Simple Object Access Protocol)
+A highly structured, protocol-based approach for API communication.
+* **Data Format:** Strictly XML for both requests and responses.
+* **Use Case:** Ideal for transferring serialized objects, complex structured data, or stateful information. Common in legacy enterprise systems due to strict standards.
+* **Drawback:** High bandwidth overhead and complex syntax, making it cumbersome and rigid for simple queries.
+
+  ```xml
+  <?xml version="1.0"?>
+  <soap:Envelope xmlns:soap="http://www.example.com/soap/soap/">
+    <soap:Header></soap:Header>
+    <soap:Body>
+      <soap:Fault></soap:Fault>
+    </soap:Body>
+  </soap:Envelope>
+  ```
+
+### 3.2 REST (Representational State Transfer)
+An architectural style that relies on stateless communication and standardized URI structures (e.g., `/api/users/1`).
+* **Data Format:** Primarily JSON, though it supports XML, raw data, and `x-www-form-urlencoded`.
+* **Architecture:** Breaks down application logic into modular, scalable endpoints. It expects specific input types directly through the URL path, making the web app highly scalable.
+* **Standard HTTP Methods Used:**
+  * `GET`: Retrieve existing data.
+  * `POST`: Create new data (non-idempotent).
+  * `PUT`: Update or replace existing data (idempotent).
+  * `DELETE`: Remove data.
+
+  ```json
+  {
+    "100001": {
+      "date": "01-01-2021",
+      "content": "Welcome to this web application."
+    }
+  }
+  ```
+# Web Application Vulnerabilities: Identification & Exploitation
+
+## Overview
+During web application penetration testing, vulnerabilities are typically identified through manual enumeration when automated public exploits are unavailable. Critical flaws frequently stem from developer misconfigurations rather than inherent vulnerabilities within the application's base code. The following section details the most prevalent attack vectors, mapping directly to the OWASP Top 10 framework.
+
+## 1. Broken Authentication & Access Control
+These represent two of the most critical and common vectors for unauthorized access.
+
+* **Broken Authentication:** Vulnerabilities that allow attackers to bypass authentication mechanisms entirely.
+    * *Impact:* Gaining unauthorized access without valid credentials or escalating privileges (e.g., a standard user assuming administrator rights).
+    * *Exploit Example (College Management System 1.2):* Authentication bypass via SQLi in the email field using the payload `' or 0=0 #` combined with an arbitrary password.
+* **Broken Access Control:** Flaws that permit users to access restricted endpoints and features outside their permission scope.
+    * *Impact:* Unauthorized data access and arbitrary function execution (e.g., a standard user browsing directly to the `/admin` dashboard).
+
+## 2. Malicious File Upload
+Exploitation occurs when an application accepts file uploads without implementing strict validation and sanitization checks on the backend.
+
+* **Mechanism:** Attackers upload malicious executable scripts (e.g., PHP web shells) to establish persistent remote code execution (RCE) on the hosting server.
+* **Bypass Techniques:** Developers often implement weak validation filtering that can be bypassed using techniques such as double extensions or null byte injections.
+* **Exploit Example (WordPress Responsive Thumbnail Slider 1.0):** Uploading a shell using a double extension format (e.g., `shell.php.jpg`) to achieve RCE. This specific vulnerability is also easily weaponized via available Metasploit modules.
+
+## 3. Command Injection
+Occurs when an application passes unsafe user-supplied data directly to the host operating system shell.
+
+* **Mechanism:** Applications that execute backend OS commands (e.g., utilizing an OS command to download a specific plugin) without proper input sanitization allow attackers to append arbitrary system commands.
+* **Impact:** Direct Remote Code Execution (RCE) and full backend server compromise.
+* **Exploit Example (WordPress Plainview Activity Monitor):** Appending a pipe operator followed by a system command directly into the vulnerable `ip` parameter (e.g., `| <COMMAND>`).
+
+## 4. SQL Injection (SQLi)
+Arises when untrusted user input is improperly concatenated into backend database SQL queries without parameterized statements.
+
+* **Mechanism:** Allows attackers to manipulate SQL statements to dump database contents, bypass authentication mechanisms, or execute administrative operations.
+* **Code Context:**
+    ```php
+    // Vulnerable Implementation Example
+    $query = "SELECT * FROM users WHERE name LIKE '%$searchInput%'";
+    ```
+* **Impact:** Complete database compromise, potential underlying host takeover, and data exfiltration.
+* **Exploit Example (College Management System 1.2):** Injecting a boolean-based tautology (a SQL query crafted to always return `TRUE`) to successfully bypass the login form and authenticate as a legitimate user.
+
+---
+**Security Note:** A deep foundational understanding of these core vulnerabilities is critical for real-world assessments and the HTB CJCA path. Subsequent modules will cover advanced, in-depth exploitation methodologies for each vector.
