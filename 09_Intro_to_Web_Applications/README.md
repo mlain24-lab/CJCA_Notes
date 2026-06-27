@@ -855,3 +855,54 @@ Arises when untrusted user input is improperly concatenated into backend databas
 
 ---
 **Security Note:** A deep foundational understanding of these core vulnerabilities is critical for real-world assessments and the HTB CJCA path. Subsequent modules will cover advanced, in-depth exploitation methodologies for each vector.
+
+# Public Vulnerabilities & Exploit Research
+
+## 1. Back-End Component Vulnerabilities
+The most critical vulnerabilities in back-end components are those that can be exploited externally. These flaws allow attackers to compromise and take control of the back-end server without requiring local access, a common vector in external penetration testing. 
+* **Root Cause:** They typically stem from insecure coding practices during the development of a web application's back-end components.
+* **Scope:** The vulnerability landscape ranges from low-hanging fruit (easily exploitable) to highly complex flaws requiring an in-depth understanding of the application's entire architecture.
+
+## 2. Public CVEs (Common Vulnerabilities and Exposures)
+The widespread deployment of both open-source and proprietary web applications leads to continuous security auditing by global experts and organizations. 
+* **Lifecycle:** Discovered vulnerabilities are patched, publicly disclosed, and assigned a unique **CVE** record and severity score.
+* **Proof of Concept (PoC):** Penetration testers frequently develop and publish PoC exploits for educational and testing purposes. Searching for these public exploits is the mandatory first step in any web application assessment.
+
+### 2.1. Exploit Research Workflow
+1. **Version Fingerprinting:** Identify the exact version of the target web application.
+   * *Methodology:* Inspect the page source code. For open-source apps, search their public repository for version disclosure files (e.g., `version.php`), then verify its existence on the target server.
+2. **Database Querying:** Search for public exploits targeting the specific version using specialized vulnerability databases:
+   * [Exploit-DB](https://www.exploit-db.com/)
+   * [Rapid7 Vulnerability & Exploit Database](https://www.rapid7.com/db/)
+   * Vulnerability Lab
+3. **Target Prioritization:** Prioritize exploits with a **CVE score of 8-10** or those granting **Remote Code Execution (RCE)**. If none exist, evaluate alternative exploit vectors.
+4. **Component Auditing:** Extend the vulnerability research to all external components and third-party plugins utilized by the web application.
+
+## 3. Common Vulnerability Scoring System (CVSS)
+The **CVSS** is an open-source industry standard for assessing the severity of security vulnerabilities. It provides accurate, consistent severity metrics to help organizations prioritize threat response and resource allocation.
+
+### 3.1. CVSS Metrics
+CVSS scores are calculated using a formula based on three metric groups:
+* **Base Metrics (0-10):** Represents the inherent, static qualities of a vulnerability. The National Vulnerability Database (NVD) currently provides Base scores for almost all disclosed CVEs.
+* **Temporal Metrics:** Adjusts the Base score based on factors that change over time (e.g., exploit availability or patch status).
+* **Environmental Metrics:** Customizes the score based on the potential impact within a specific organizational environment.
+* *Note:* Organizations must utilize interactive CVSS calculators (v2 or v3) to factor their unique Temporal and Environmental data into the final risk assessment.
+
+### 3.2. Version Differences (CVSS v2.0 vs. CVSS v3.0)
+CVSS v3 introduced changes to the Base and Environmental metric groups to account for additional impact variables. The severity ratings differ slightly between versions:
+
+| Severity | CVSS v2.0 Base Score | CVSS v3.0 Base Score |
+| :--- | :--- | :--- |
+| **None** | N/A | 0.0 |
+| **Low** | 0.0 - 3.9 | 0.1 - 3.9 |
+| **Medium** | 4.0 - 6.9 | 4.0 - 6.9 |
+| **High** | 7.0 - 10.0 | 7.0 - 8.9 |
+| **Critical** | N/A | 9.0 - 10.0 |
+
+## 4. Back-End Server & Web Server Vulnerabilities
+Beyond the web application itself, vulnerabilities in the underlying back-end infrastructure (web servers, databases) must be thoroughly audited.
+
+* **Web Servers:** Vulnerabilities in web servers are highly critical due to their public exposure over TCP. 
+  * *Example:* **Shellshock** (2014) affected Apache servers, allowing attackers to gain remote control over the back-end server via crafted HTTP requests.
+* **Databases & Internal Servers:** Flaws in these components are typically exploited post-breach (after gaining local/internal network access via external vectors or during internal pentesting). They are leveraged for privilege escalation or lateral movement across the network.
+* **Remediation:** Even if not directly exploitable from the outside, patching internal infrastructure is a critical requirement to protect the entire environment from total compromise.
