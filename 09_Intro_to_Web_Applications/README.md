@@ -874,7 +874,6 @@ The widespread deployment of both open-source and proprietary web applications l
 2. **Database Querying:** Search for public exploits targeting the specific version using specialized vulnerability databases:
    * [Exploit-DB](https://www.exploit-db.com/)
    * [Rapid7 Vulnerability & Exploit Database](https://www.rapid7.com/db/)
-   * Vulnerability Lab
 3. **Target Prioritization:** Prioritize exploits with a **CVE score of 8-10** or those granting **Remote Code Execution (RCE)**. If none exist, evaluate alternative exploit vectors.
 4. **Component Auditing:** Extend the vulnerability research to all external components and third-party plugins utilized by the web application.
 
