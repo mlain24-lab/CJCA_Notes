@@ -905,3 +905,77 @@ Beyond the web application itself, vulnerabilities in the underlying back-end in
   * *Example:* **Shellshock** (2014) affected Apache servers, allowing attackers to gain remote control over the back-end server via crafted HTTP requests.
 * **Databases & Internal Servers:** Flaws in these components are typically exploited post-breach (after gaining local/internal network access via external vectors or during internal pentesting). They are leveraged for privilege escalation or lateral movement across the network.
 * **Remediation:** Even if not directly exploitable from the outside, patching internal infrastructure is a critical requirement to protect the entire environment from total compromise.
+
+# CHEAT SHEET: 09 - INTRO TO WEB APPLICATIONS (HTB CJCA)
+
+## 1. ARCHITECTURE & INFRASTRUCTURE
+* **Web Apps vs. Native:** Platform-independent, centralized patching, zero local storage. Slower than native apps.
+* **Infrastructure Models:**
+    * **Single Server:** Easy deployment, but introduces a Single Point of Failure (SPOF).
+    * **Many Servers - One DB:** Introduces Asset Segmentation (limits blast radius of SQLi/compromise).
+    * **Many Servers - Many DBs:** High Availability (HA) and strict data isolation.
+* **Three-Tier Architecture:**
+    1.  **Presentation Layer:** UI (HTML/CSS/JS). Executed client-side.
+    2.  **Application Layer:** Backend logic, routing, auth (PHP, Node.js, Python).
+    3.  **Data Layer:** Persistent storage (SQL/NoSQL).
+* **Modern Deployments:**
+    * **Microservices (SOA):** Decoupled, single-purpose, stateless components.
+    * **Serverless:** Cloud-native, event-triggered containers (AWS Lambda). No host OS maintenance.
+
+## 2. FRONT-END (CLIENT-SIDE)
+* **Core:** HTML (Structure), CSS (Presentation), JavaScript (Logic/Behavior).
+* **Security Posture:** Inherently untrusted. Code is fully visible and manipulable by the end-user.
+* **The DOM (Document Object Model):** Tree-like representation of the HTML. Key target for JS manipulation and DOM-based attacks.
+* **URL Encoding Essentials:**
+    * `Space` = `%20` or `+`
+    * `!` = `%21` | `"` = `%22` | `#` = `%23` | `'` = `%27`
+
+## 3. BACK-END (SERVER-SIDE)
+* **Common Stacks:** LAMP (Linux, Apache, MySQL, PHP), WAMP (Windows), WINS (Windows, IIS, .NET, SQL Server).
+* **Web Servers:**
+    * **Apache:** Highly modular, relies on `.htaccess` and modules (e.g., `mod_php`).
+    * **NGINX:** Asynchronous, event-driven. Excellent reverse proxy/load balancer.
+    * **IIS:** Microsoft native, integrates deeply with Active Directory (AD).
+* **Databases:**
+    * **SQL (Relational):** Structured tables/rows (MySQL, MSSQL, PostgreSQL).
+    * **NoSQL (Non-Relational):** Document/Key-Value based (MongoDB, ElasticSearch). Highly scalable.
+* **Web APIs:**
+    * **REST:** Stateless, primarily JSON, uses standard HTTP methods (GET, POST, PUT, DELETE).
+    * **SOAP:** Protocol-based, strictly XML, stateful, heavy overhead.
+
+## 4. ESSENTIAL HTTP STATUS CODES
+| Code | Status | Description |
+| :--- | :--- | :--- |
+| **200** | OK | Request successful. |
+| **301/302** | Redirect | Resource moved permanently (301) or temporarily (302). |
+| **400** | Bad Request | Invalid syntax sent by client. |
+| **401** | Unauthorized | Unauthenticated access attempt. |
+| **403** | Forbidden | Authenticated, but insufficient privileges. |
+| **404** | Not Found | Resource does not exist. |
+| **500** | Internal Error | Server-side crash or misconfiguration. |
+
+## 5. RECONNAISSANCE & ENUMERATION
+* **Banner Grabbing (Headers only):** `curl -I <URL>`
+* **Source Code Retrieval:** `curl <URL>`
+* **Version Fingerprinting:** Check source code, `/version.php`, or headers. Cross-reference with Exploit-DB or Rapid7.
+* **CVSS v3.0 Base Scores:** Low (0.1-3.9) | Medium (4.0-6.9) | High (7.0-8.9) | Critical (9.0-10.0).
+
+## 6. VULNERABILITIES & EXPLOITATION
+### Front-End Vectors
+* **Sensitive Data Exposure:** Hardcoded credentials, API keys, or developer comments in HTML/JS. (Bypass UI limits via `Ctrl + U` or Burp Suite).
+* **HTML Injection:** Unsanitized input rendered in the DOM. Can be Reflected or Stored. Often leads to spoofed forms/defacement.
+    * *PoC (DOM overwrite):* `<style> body { background-image: url('malicious.svg'); } </style>`
+* **Cross-Site Scripting (XSS):** Injecting malicious JS to execute on the victim's browser.
+    * *PoC (Cookie Stealer):* `"><img src=/ onerror=alert(document.cookie)>`
+* **Cross-Site Request Forgery (CSRF):** Forcing an authenticated user to execute unwanted actions (e.g., password reset, privilege escalation).
+    * *Mitigation:* Anti-CSRF Tokens, `SameSite` cookie attributes, Re-authentication prompts.
+
+### Back-End Vectors
+* **Broken Authentication/Access Control:** Bypassing login or accessing endpoints outside the user's role (IDOR/PrivEsc).
+* **SQL Injection (SQLi):** Unsanitized input altering DB queries.
+    * *PoC (Auth Bypass):* `' or 0=0 #`
+* **Command Injection:** Appending OS commands to vulnerable inputs.
+    * *PoC:* `| whoami` or `; id`
+* **Unrestricted File Upload:** Bypassing client-side filters to upload web shells and gain RCE.
+    * *Bypass Technique:* Double extensions (e.g., `shell.php.jpg`) or Null Bytes.
+* **Local/Remote File Inclusion (LFI/RFI):** Reading backend files to expose source code or administrative paths.
