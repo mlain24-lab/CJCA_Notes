@@ -5,7 +5,7 @@ This master reference document outlines essential Linux command-line operations 
 ## 1. Core System & File Operations
 * `ls` - List directory contents.
 * `ls -al` - Detailed list including hidden files, sizes, and permissions.
-* `cd [dir]` - Navigate to directory (e.g., `cd ..` for parent, `cd ~` for home).
+* `cd [dir]` - Navigate to directory (e.g., cd .. for parent, cd ~ for home).
 * `cat > [file]` - Create and write standard input to a file.
 * `mv [src] [dst]` - Move or rename a file/directory.
 * `rm [file]` - Remove a file.
@@ -80,21 +80,16 @@ This master reference document outlines essential Linux command-line operations 
 ## 9. Process Management
 * `top` / `htop` - Real-time process monitoring.
 * `ps aux` - Snapshot of all active processes.
-* `kill [PID]` - Terminate process by PID.
-* `kill -9 [PID]` - Forcefully terminate a process (SIGKILL).
-* `killall [name]` - Terminate all processes by name.
 * `nice` / `renice` - Set process execution priority.
 * `free -h` - RAM/Swap usage stats.
 
 ## 10. Systemd & Service Management
-Standard for modern Linux distributions. Use `systemctl` for service orchestration.
-
 * `systemctl status [service]` - Check service health and status.
 * `systemctl start/stop [service]` - Immediate state change.
-* `systemctl restart [service]` - Restart service (e.g., after config change).
+* `systemctl restart [service]` - Restart service.
 * `systemctl enable [service]` - Enable service to start on boot (persistence).
 * `systemctl disable [service]` - Disable automatic start.
-* `systemctl daemon-reload` - Reload systemd configuration after editing unit files.
+* `systemctl daemon-reload` - Reload systemd configuration.
 
 ## 11. Log Management (Incident Handling)
 * `journalctl -u [service]` - View logs for a specific service.
@@ -136,6 +131,15 @@ Standard for modern Linux distributions. Use `systemctl` for service orchestrati
 * `!!` - Execute last command.
 * `Ctrl + W` - Cut word.
 * `Ctrl + L` - Clear terminal screen.
+
+## 17. Process & Identity Auditing (Incident Response)
+* `ps -ef | grep [user]` - View all processes owned by a specific user.
+* `ps -u [user] -o pid,user,group,cmd` - Display PID, User, Group, and Command for a specific user.
+* `id [user]` - Verify UID, GID, and secondary groups for a user.
+* `pgrep -u [user]` - List only PIDs owned by a specific user.
+* `kill [PID]` - Send SIGTERM (graceful shutdown).
+* `kill -9 [PID]` - Send SIGKILL (forceful termination).
+* `pkill -u [user]` - Kill all processes belonging to a specific user.
 
 ## Appendix: Interactive VM Verification (Ubuntu 26.04)
 ```text
