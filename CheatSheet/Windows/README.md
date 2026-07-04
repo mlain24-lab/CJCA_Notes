@@ -1,85 +1,180 @@
 # PowerShell & CMD: Technical Reference for SysAdmin and Pentesting
 
-This reference guide centralizes critical command-line operations for system administration and security assessment, emphasizing "Security by Design" and operational safety.
+This repository serves as the master reference for PowerShell administration and security assessment. All procedures adhere to "Security by Design" principles and emphasize operational safety in production environments.
 
 ## 1. Legacy CMD Bridge (Enumeration & Troubleshooting)
-
-Legacy commands are essential during the initial phase of enumeration. They serve as a reliable fallback when modern PowerShell logging mechanisms—such as ScriptBlock Logging or Constrained Language Mode—are active, as these commands are less likely to trigger high-fidelity security alerts in monitored or legacy environments.
+Legacy commands are essential during initial enumeration to avoid triggering PowerShell logging/alerting in monitored environments.
 
 ### Networking Enumeration
 * `ipconfig /all` - Display comprehensive IP configuration.
-* `netstat -ano` - List active TCP/UDP connections and associated Process IDs (PIDs).
-* `arp -a` - Display the ARP table entries for network resolution.
-* `route print` - View the routing table.
-* `nbtstat -c` - View the NetBIOS name cache.
+* `netstat -ano` - List active TCP/UDP connections and associated PIDs.
+* `arp -a` - Display ARP table entries.
+* `route print` - View routing tables.
+* `nbtstat -c` - View NetBIOS name cache.
 
 ### System & Authentication
 * `tasklist /v` - List running processes with verbose details.
-* `systeminfo` - Query detailed system configuration and patch status.
-* `whoami /all` - Retrieve the current security context, including User SID and effective privileges.
-* `net localgroup administrators` - Verify members of the local Administrators group.
+* `systeminfo` - Query system configuration and patch status.
+* `whoami /all` - Retrieve current security context.
+* `net localgroup administrators` - Verify local administrative members.
 * `net user` - Query detailed user account information.
 
 ---
 
-## 2. PowerShell Core Operations
+## 2. File System Operations
+### Navigation and Listing
+* `Set-Location C:\Logs` - Change working directory (cd).
+* `Get-Location` - Print current path (pwd).
+* `Get-ChildItem -Path C:\Logs -Filter *.log -Recurse` - Recursive directory listing with filters.
 
-PowerShell cmdlets represent the industry standard for modern automation, infrastructure management, and the orchestration of complex administrative tasks.
+### Create, Copy, Move, Delete
+* `New-Item -Path C:\Logs\app -ItemType Directory -Force` - Provision directory structures.
+* `Copy-Item C:\Source\file.txt C:\Dest\ -Force` - Copy assets.
+* `Move-Item C:\Old\file.txt C:\New\file.txt` - Move assets.
+* `Remove-Item C:\Temp\* -Recurse -Force` - Delete files.
 
-### File System Operations
-* `Set-Location -Path C:\Logs` - Change current working directory.
-* `Get-Location` - Print the current working path.
-* `Get-ChildItem -Path C:\Logs -Recurse` - List files and directories recursively.
-* `New-Item -Path C:\Logs\app -ItemType Directory -Force` - Create a new directory.
-* `Remove-Item -Path C:\Temp\* -Recurse -Force -Confirm` - **Destructive:** Permanently delete files (requires confirmation).
+### Read and Write Files
+* `Get-Content C:\Logs\app.log` - Read all lines.
+* `Get-Content C:\Logs\app.log -Tail 50` - Read last 50 lines.
+* `Set-Content C:\Config\settings.txt 'value'` - Overwrite file.
+* `Add-Content C:\Logs\script.log 'entry'` - Append to file.
+* `Out-File C:\Reports\out.txt` - Write pipeline output.
 
-### Process & Service Management
-* `Get-Service | Where-Object Status -ne 'Running'` - Identify all non-running services.
-* `Start-Service -Name W3SVC` - Initiate a specific service.
-* `Stop-Process -Id 1234 -Force` - Terminate a process by PID.
-* `Get-Process | Sort-Object CPU -Descending | Select-Object -First 10` - Monitor resource-heavy processes.
-
-### Network Diagnostics
-* `Test-Connection -ComputerName server01 -Count 1` - ICMP Echo Request (Ping).
-* `Test-NetConnection -ComputerName server01 -Port 443` - Validate TCP connectivity on a specific port.
-* `Resolve-DnsName -Name server01.contoso.com` - Perform DNS lookup.
+### Test, Measure, and Archive
+* `Test-Path C:\Logs\app.log` - Boolean check for existence.
+* `(Get-Item C:\Logs\app.log).Length` - File size in bytes.
+* `Get-Content C:\Data\file.csv | Measure-Object -Line` - Count lines.
+* `Get-FileHash C:\Installer.exe -Algorithm SHA256` - Calculate cryptographic checksum.
+* `Compress-Archive -Path C:\Logs\* -DestinationPath C:\Archive\logs.zip -Force` - Archive files.
+* `Expand-Archive -Path C:\Archive\logs.zip -DestinationPath C:\Logs\Expanded` - Extract archive.
 
 ---
 
-## 3. Data Manipulation & Scripting Logic
+## 3. Process & Service Management
+### Services
+* `Get-Service` - List all services.
+* `Get-Service -Name W3SVC` - Access specific service.
+* `Start-Service W3SVC` - Start service.
+* `Stop-Service W3SVC -Force` - Stop service.
+* `Restart-Service W3SVC` - Restart service.
+* `Set-Service W3SVC -StartupType Automatic` - Configure persistent startup.
+* `Get-Service | Where-Object Status -ne Running` - Identify stopped services.
 
+### Processes
+* `Get-Process` - List all processes.
+* `Get-Process -Name chrome` - Access specific process.
+* `Stop-Process -Name notepad -Force` - Kill process by name.
+* `Stop-Process -Id 1234 -Force` - Kill process by PID.
+* `Get-Process | Sort-Object CPU -Descending | Select-Object -First 10` - Monitor top 10 CPU consumers.
+* `Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 10` - Monitor top 10 RAM consumers.
+
+### Scheduled Tasks
+* `Get-ScheduledTask | Where-Object State -eq 'Running'` - List running tasks.
+* `Start-ScheduledTask -TaskName 'MyTask'` - Start task.
+* `Stop-ScheduledTask -TaskName 'MyTask'` - Stop task.
+
+---
+
+## 4. Networking and Remote Commands
+### Network Info
+* `Get-NetIPAddress -AddressFamily IPv4` - IP configurations.
+* `Get-NetAdapter | Where-Object Status -eq Up` - Active adapters.
+* `Get-NetTCPConnection | Where-Object State -eq Listen` - Listening ports.
+* `Test-Connection -ComputerName server01 -Count 1` - Ping.
+* `Test-NetConnection -ComputerName server01 -Port 443` - TCP port test.
+* `Resolve-DnsName server01.contoso.com` - DNS Lookup.
+
+### HTTP Requests
+* `Invoke-WebRequest -Uri '[https://api.example.com](https://api.example.com)' -Method GET` - Web request.
+* `Invoke-RestMethod -Uri '[https://api.example.com/data](https://api.example.com/data)' -Method POST -Body ($body | ConvertTo-Json) -ContentType 'application/json'` - REST API interaction.
+
+### Remoting
+* `Invoke-Command -ComputerName server01 -ScriptBlock { Get-Service }` - Execute remote commands.
+* `Enter-PSSession -ComputerName server01` - Interactive session.
+* `$session = New-PSSession -ComputerName server01` - Create persistent session.
+* `Invoke-Command -Session $session -ScriptBlock { hostname }` - Use persistent session.
+* `Remove-PSSession $session` - Close session.
+
+---
+
+## 5. Data Manipulation & Scripting Logic
 ### String Operations
-* `'hello world'.ToUpper()` - Convert string to uppercase.
-* `'hello world' -split ' '` - Split string by delimiter.
-* `'a','b','c' -join ';'` - Concatenate array elements.
+* `'hello world'.ToUpper()` - To uppercase.
+* `'hello world'.Replace('hello','hi')` - String replacement.
+* `'hello world' -split ' '` - Delimiter separation.
+* `'a','b','c' -join ', '` - Array concatenation.
+* `'hello world' -match 'w(\w+)'` - Regex matching.
+* `' hello '.Trim()` - Trim whitespace.
 
-### Serialization
-* `$data | ConvertTo-Json -Depth 5` - Serialize object to JSON format.
-* `Import-Csv -Path C:\data.csv | Select-Object Name` - Parse CSV data.
+### Formatting and Math
+* `Get-Date -Format 'yyyy-MM-dd HH:mm:ss'` - Date formatting.
+* `'{0:N2}' -f 1234567.89` - Number formatting.
+* `[math]::Round(3.14159, 2)` - Rounding.
 
-### Error Handling (Robustness)
+### JSON / CSV
+* `$obj | ConvertTo-Json -Depth 5` - Object to JSON.
+* `$json | ConvertFrom-Json` - JSON to Object.
+* `Import-Csv C:\data.csv` - Parse CSV.
+* `Export-Csv C:\out.csv -NoTypeInformation` - Export CSV.
+* `$str | ConvertFrom-Csv -Header Name,Dept` - String to CSV object.
+
+### Variables and Types
+* `$psvt = $PSVersionTable.PSVersion` - PS Version check.
+* `[int]'42'` - Cast to integer.
+* `[string]42` - Cast to string.
+* `$null -eq $var` - Null check.
+* `@($result).Count` - Safe count.
+
+---
+
+## 6. Error Handling and Logging
+### Error Handling
 ```powershell
 $ErrorActionPreference = 'Stop'
 try {
-    Get-Content -Path C:\Logs\missing.txt -ErrorAction Stop
+    Get-Content C:\Logs\missing.txt -ErrorAction Stop
+} catch [System.IO.FileNotFoundException] {
+    Write-Warning "File not found: $($_.Exception.Message)"
 } catch {
-    Write-Warning "Operation failed: $($_.Exception.Message)"
+    Write-Error "Unexpected error: $($_.Exception.Message)"
 } finally {
-    Write-Host 'Audit operation completed.'
+    Write-Host 'Cleanup done'
 }
 ```
 
+### Output Streams
+* `Write-Host 'Normal output'` - Console output.
+* `Write-Verbose 'Diagnostic info'` - Verbose output.
+* `Write-Warning 'Caution message'` - Warning.
+* `Write-Error 'Error message'` - Error.
+* `Add-Content C:\Logs\script.log "$(Get-Date) - Entry"` - Log to file.
+* `$value = $maybeNull ?? 'default'` - Null coalescing (PS 7+).
+* `$obj?.Property` - Safe navigation.
+
 ---
 
-## 4. Advanced Security & Pentesting
+## 7. Active Directory (AD) Operations
+### Users
+* `Get-ADUser -Identity 'jsmith' -Properties *` - Retrieve all user attributes.
+* `Get-ADUser -Filter "Department -eq 'IT'"` - Filter users.
+* `New-ADUser -Name 'Jane Doe' -SamAccountName 'jdoe' -AccountPassword (Read-Host -AsSecureString) -Enabled $true` - Provision user.
+* `Set-ADUser -Identity 'jsmith' -Title 'Senior Engineer'` - Update attribute.
+* `Disable-ADAccount 'jsmith'` / `Enable-ADAccount 'jsmith'` - Status toggle.
+* `Unlock-ADAccount 'jsmith'` - Unlock user.
+* `Set-ADAccountPassword -Identity 'jsmith' -Reset -NewPassword (ConvertTo-SecureString 'NewP@ss!' -AsPlainText -Force)` - Password reset.
 
-Maintaining granular control over the execution environment is a fundamental requirement for privilege escalation, persistent access, and payload staging during security assessments.
+### Groups
+* `Get-ADGroup -Identity 'Domain Admins' -Properties Members` - Group details.
+* `Get-ADGroupMember -Identity 'IT-Admins'` - List group members.
+* `Add-ADGroupMember -Identity 'IT-Admins' -Members 'jsmith'` - Add user to group.
+* `Remove-ADGroupMember -Identity 'IT-Admins' -Members 'jsmith' -Confirm:$false` - Remove user from group.
 
-* **Execution Policy**: A Windows security configuration that dictates the constraints under which PowerShell scripts and configuration files can be executed. // Una configuración de seguridad de Windows que dicta las restricciones bajo las cuales se pueden ejecutar scripts y archivos de configuración de PowerShell.
-    * `Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force`
+---
 
-* **ACL (Access Control List)**: A discrete list of permissions associated with an object (e.g., file, directory) that defines which users or system processes are granted specific access rights. // Una lista discreta de permisos asociada a un objeto (p. ej., archivo, directorio) que define qué usuarios o procesos del sistema tienen derechos de acceso específicos.
-    * `Get-Acl -Path 'C:\SensitiveData' | Select-Object -ExpandProperty Access`
+## 8. Advanced Security & Pentesting
+### Execution Policy & Access Control
+* `Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force` - Manage execution constraints.
+* `Get-Acl -Path 'C:\SensitiveData' | Select-Object -ExpandProperty Access` - Audit object permissions.
 
 ### Base64 Payload Handling
 ```powershell
@@ -90,37 +185,19 @@ $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64St
 
 ---
 
-## 5. Active Directory (AD) Operations
-* `Get-ADUser -Identity 'jsmith' -Properties MemberOf` - Retrieve AD user attributes.
-* `Get-ADGroupMember -Identity 'IT-Admins'` - List members of a specific group.
-* `Add-ADGroupMember -Identity 'IT-Admins' -Members 'jsmith'` - Add a user to a group.
+## 9. Operational One-Liners (Auditing)
+* **Find large files**: `Get-ChildItem C:\ -Recurse -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 20 | Select-Object FullName, @{N='MB';E={[math]::Round($_.Length/1MB,2)}}`
+* **Get local admins**: `Get-LocalGroupMember -Group 'Administrators'`
+* **Find open firewall ports**: `Get-NetFirewallRule -Enabled True -Direction Inbound | Get-NetFirewallPortFilter | Select-Object Protocol, LocalPort`
+* **Export services to CSV**: `Get-Service | Where-Object Status -eq Running | Export-Csv C:\Reports\running_services.csv -NoTypeInformation`
+* **Kill processes by name**: `Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force`
+* **Get Windows version**: `$PSVersionTable.PSVersion` ; `(Get-CimInstance Win32_OperatingSystem).Caption`
+* **Recently modified files**: `Get-ChildItem C:\Logs -Recurse -File | Where-Object LastWriteTime -gt (Get-Date).AddHours(-24) | Select-Object Name, LastWriteTime`
 
 ---
 
-## 6. Production-Ready Guardrails (Safety First)
-
-Operational integrity is non-negotiable. Before executing destructive operations in a production environment, rigorous validation and safety checks must be implemented to prevent accidental data loss or service disruption.
-
-* **-WhatIf**: A built-in parameter that performs a "dry run" of a command, allowing the operator to preview the impact of an action without making permanent changes. // Un parámetro integrado que realiza una "simulación" de un comando, permitiendo al operador obtener una vista previa del impacto de una acción sin realizar cambios permanentes.
-    * `Remove-Item -Path 'C:\Logs\*' -Recurse -WhatIf`
-
-### Pipeline Integrity Check
-```powershell
-$files = Get-ChildItem -Path 'C:\Logs' -Filter *.log
-if ($files.Count -gt 0) {
-    $files | Remove-Item -Confirm
-}
-```
-
----
-
-## 7. Operational One-Liners (Auditing)
-
-* **Audit Local Admin Permissions**:
-    `Get-LocalGroupMember -Group 'Administrators' | Select-Object Name, PrincipalSource`
-
-* **Audit Inbound Firewall**:
-    `Get-NetFirewallRule -Enabled True -Direction Inbound | Where-Object Action -eq 'Allow' | Select-Object DisplayName, LocalPort`
-
-* **Get System Patch Level**:
-    `Get-HotFix | Sort-Object InstalledOn -Descending`
+## 10. Operational Guardrails & Compatibility
+* **-WhatIf**: Simulates commands to preview impact (e.g., `Remove-Item ... -WhatIf`).
+* **Version Compatibility**: Always validate using `$PSVersionTable.PSVersion`.
+* **Pipeline Integrity**: Use `Get-CimInstance` (modern) instead of `Get-WmiObject` (deprecated).
+* **Alias Usage**: Use full cmdlet names in scripts. Interactive aliases (e.g., `ls`, `curl`) should be reserved for interactive shell use to prevent unpredictable behavior.
