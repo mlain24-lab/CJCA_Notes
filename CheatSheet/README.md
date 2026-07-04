@@ -1,75 +1,53 @@
-# Quick Reference Cheatsheet: Network & System Troubleshooting
+# SysAdmin & Pentesting: Core Troubleshooting Cheatsheet
+Author: Miguel Ángel Laín Pinto
+Scope: Modules 1-10 (Foundation, Network, OS, and Web)
 
-This cheatsheet provides immediate, actionable command-line solutions for common system administration and initial incident response scenarios.
+## 1. Network Connectivity & Troubleshooting
+When diagnosing network reachability, follow the OSI layers. Verify Layer 2 (ARP) before assuming Layer 3 (Routing) issues.
 
-## 1. Network Connectivity & Routing (Linux)
-When diagnosing network reachability issues, always follow the OSI model from bottom to top (Layer 1 to Layer 7).
+*   **Layer 2 (ARP Table):** `arp -a` or `ip neigh`
+*   **Layer 3 (ICMP):** `ping -c 4 <Target_IP>`
+*   **Layer 4 (Port Status):** `nc -zv <Target_IP> <Port>`
+*   **Windows Network Audit:** `ipconfig /all`
 
-*   **Layer 2 (Data Link) - Check ARP Table:**
-    ```bash
-    arp -a
-    # Or alternatively:
-    ip neigh
-    ```
-*   **Layer 3 (Network) - Check ICMP Connectivity:**
-    ```bash
-    ping -c 4 <Target_IP>
-    ```
-*   **Layer 4/7 (Transport/Application) - Check Port Status:**
-    ```bash
-    # Test if a specific TCP port is open and listening
-    nc -zv <Target_IP> <Port>
-    ```
+?? nc -zv
+- English: Netcat utility used for scanning. `-z` sets zero-I/O mode (scanning only), and `-v` provides verbose feedback to confirm the connection status.
+- Español: Utilidad Netcat para escaneo. `-z` establece el modo sin I/O (solo escaneo), y `-v` ofrece feedback detallado para confirmar el estado de la conexión.
 
-**?? nc -zv**:
-*   *English:* Netcat command used for port scanning. `-z` sets zero-I/O mode (used for scanning), and `-v` enables verbose output to confirm the connection status.
-*   *Español:* Comando Netcat utilizado para escaneo de puertos. `-z` establece el modo sin entrada/salida (solo escaneo), y `-v` activa el modo "verbose" para confirmar si la conexión ha sido exitosa.
+## 2. Windows System Auditing (CLI)
+Essential commands for auditing local accounts and connectivity on Windows Server Core environments.
 
-## 2. Windows Local User Auditing (PowerShell & CMD)
-Rapid commands to audit local users and group memberships in a Windows Server Core environment.
+*   **List all local users:** `Get-LocalUser`
+*   **Audit specific user details:** `net user <username>`
+*   **List Admin members:** `Get-LocalGroupMember -Name "Administrators"`
+*   **Purge local DNS cache:** `Clear-DnsClientCache` (PowerShell) or `ipconfig /flushdns` (CMD)
 
-*   **List all local users (PowerShell):**
-    ```powershell
-    Get-LocalUser
-    ```
-*   **Check specific user details and group memberships (CMD):**
-    ```cmd
-    net user <username>
-    ```
-*   **List members of the local Administrators group (PowerShell):**
-    ```powershell
-    Get-LocalGroupMember -Name "Administrators"
-    ```
-    *Note: Use `;` as a command separator in older PowerShell versions instead of `&&`.*
+?? Clear-DnsClientCache
+- English: A PowerShell cmdlet that purges the local DNS client resolver cache. Essential when a host fails to resolve a domain due to stale records.
+- Español: Cmdlet de PowerShell que purga la caché local del resolver DNS. Esencial cuando un host no resuelve un dominio debido a registros obsoletos.
 
-## 3. Web Requests & Header Inspection (Bash)
-Methods to retrieve HTTP response headers without downloading the full page body, ideal for scripting and automation.
+## 3. Web Technologies & API Interaction
+Standard tools for testing web application endpoints and inspecting server responses.
 
-*   **Standard Method (Sends HTTP HEAD request):**
-    ```bash
-    curl -I http://<Target_IP>/admin.php
-    ```
-*   **Alternative Method (Forces HTTP GET request, discards body):**
-    ```bash
-    curl -i -s -o /dev/null http://<Target_IP>/admin.php
-    ```
+*   **Inspect Headers only:** `curl -I http://<Target_IP>/<path>`
+*   **POST JSON Payload:** `curl -X POST <URL> -H "Content-Type: application/json" -d '{"key":"value"}'`
+*   **Quiet HTTP check:** `curl -i -s -o /dev/null http://<Target_IP>/<path>`
 
-**?? /dev/null**:
-*   *English:* A special file in Unix-like systems that discards all data written to it. Used here to silently drop the HTML body of the web response.
-*   *Español:* Un archivo especial en sistemas Unix que descarta todos los datos que se escriben en él. Se usa aquí para eliminar silenciosamente el cuerpo HTML de la respuesta web (la papelera del sistema).
+?? -d (data)
+- English: A flag used in curl to send specified data in a POST request. JSON payloads must be wrapped in single quotes to maintain object integrity.
+- Español: Flag utilizada en curl para enviar datos en una petición POST. Los payloads JSON deben ir entre comillas simples para mantener la integridad del objeto.
 
-## 4. Active Threat Containment (Linux)
-Immediate steps to identify and terminate an unauthorized user session.
+## 4. Incident Handling & Linux Administration
+Commands for securing environments, managing permissions, and ejecting unauthorized sessions.
 
-*   **Identify active users, IPs, and their shell PIDs:**
-    ```bash
-    who -u
-    ```
-*   **Terminate the malicious session forcefully:**
-    ```bash
-    kill -9 <PID>
-    ```
+*   **File Permissions (Strict):** `chmod 700 <filename>`
+*   **Identify Active Sessions:** `who -u`
+*   **Force Terminate Session:** `kill -9 <PID>`
 
-**?? kill -9**:
-*   *English:* Sends the SIGKILL signal to a specific Process ID (PID), terminating it instantly at the kernel level without graceful shutdown.
-*   *Español:* Envía la señal SIGKILL a un ID de proceso (PID) específico, finalizándolo instantáneamente a nivel de kernel sin permitir un cierre ordenado.
+?? kill -9
+- English: Sends the SIGKILL signal to a process, terminating it immediately at the kernel level without allowing for clean-up operations or graceful exit.
+- Español: Envía la señal SIGKILL a un proceso, finalizándolo inmediatamente a nivel de kernel sin permitir operaciones de limpieza ni salida controlada.
+
+?? chmod 700
+- English: Sets read/write/execute permissions (4+2+1=7) only for the file owner, completely restricting access for group and others.
+- Español: Establece permisos de lectura/escritura/ejecución (4+2+1=7) solo para el propietario, restringiendo completamente el acceso a grupos y otros usuarios.
