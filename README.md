@@ -1,27 +1,28 @@
 ---
-### ⚠️ Disclaimer
-This repository contains personal study notes, technical summaries, and documentation created during my learning path toward the **HTB Certified Junior Cybersecurity Associate (CJCA)**. 
+### ⚠️ Legal Disclaimer & Ethical Hacking Notice
+This repository contains my personal study notes, technical summaries, lab write-ups, and custom scripts created during my learning path toward the **HTB Certified Junior Cybersecurity Associate (CJCA)**. 
 
-* **No Copyright Infringement:** These notes are my own interpretations and summaries. No literal content from HTB Academy modules is reproduced here.
-* **Ethical Hacking:** All techniques and tools documented are for educational purposes within controlled environments (HTB Labs). I do not support or encourage unauthorized access to any systems.
+* **No Copyright Infringement:** These notes are my own interpretations and summaries. No verbatim proprietary content, platform answers, or active flags from HTB Academy modules are reproduced here. The foundational concepts and curriculum structures referenced are the intellectual property of [Hack The Box](https://www.hackthebox.com/).
+* **Ethical Hacking:** All techniques, commands, and tools documented are strictly for educational purposes and executed within controlled, authorized environments (HTB Labs / Homelab). I do not support or encourage unauthorized access to any systems.
+* **No Commercial Use:** The contents of this repository are licensed under CC BY-NC 4.0 and are not intended for commercial distribution.
 ---
 
 # 🛡️ HTB Certified Junior Cybersecurity Associate (CJCA) | Notes & Labs
 
-Este repositorio contiene mi documentación técnica y laboratorios del path de certificación **CJCA** en HTB Academy. Como **Técnico Superior ASIR**, mi objetivo es centralizar aquí el conocimiento adquirido en administración segura de sistemas y pentesting.
+This repository contains my technical documentation and lab deployments for the **CJCA** certification path on HTB Academy. As an **ASIR** (Systems and Network Administration) technician, my objective is to centralize the knowledge acquired in secure systems administration, infrastructure hardening, and penetration testing.
 
 ---
 
 ## 🔧 Environment Setup & Troubleshooting
-Durante el despliegue de este laboratorio documental, se resolvieron los siguientes retos técnicos:
+During the deployment of this documentation lab, the following technical challenges were resolved:
 
-* **Interoperabilidad de CLI:** Migración de flujos de PowerShell a **Git Bash** para estandarizar la automatización de directorios bajo sintaxis Unix.
-* **Gestión de Credenciales:** Implementación de **Git Credential Manager** para resolver conflictos de autenticación OAuth y asegurar el flujo de despliegue hacia GitHub.
-* **Automatización de Infraestructura:** Creación programática de la jerarquía de 20 módulos mediante scripting para asegurar la escalabilidad del proyecto.
+* **CLI Interoperability:** Migrated PowerShell workflows to **Git Bash** to standardize directory automation using Unix syntax.
+* **Credential Management:** Implemented **Git Credential Manager** to resolve OAuth authentication conflicts and secure the deployment pipeline to GitHub.
+* **Infrastructure Automation:** Programmatically generated the 20-module directory hierarchy via Bash scripting to ensure project scalability.
 
 ---
 
-## 📚 Módulos del Path
+## 📚 Certification Path Modules
 
 - [ ] 01. Introduction to Information Security
 - [ ] 02. Network Foundations
@@ -46,10 +47,10 @@ Durante el despliegue de este laboratorio documental, se resolvieron los siguien
 
 ---
 
-## 🛠️ Stack Tecnológico
-* **Sistemas:** Kali Linux (Rolling), Windows Server 2022.
-* **Hardware:** ROG Ally (Mobile Lab Station).
-* **Core Tools:** Nmap, Wireshark, PowerShell, Bash, Metasploit.
+## 🛠️ Tech Stack & Hardware
+* **Operating Systems:** Kali Linux (Rolling), Windows Server 2022.
+* **Hardware:** ROG Ally (Mobile Homelab Station).
+* **Core Tools:** Nmap, Wireshark, PowerShell, Bash, Metasploit Framework.
 
 ---
-*Contacto: [mlain24@gmail.com](mailto:Mlain24@gmail.com) | Portafolio: [mlain24-lab](https://github.com/mlain24-lab)*
+*Contact: [Mlain24@gmail.com](mailto:Mlain24@gmail.com) | Technical Portfolio: [mlain24-lab](https://github.com/mlain24-lab)*
