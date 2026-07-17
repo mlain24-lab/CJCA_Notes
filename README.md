@@ -52,4 +52,4 @@ Durante el despliegue de este laboratorio documental, se resolvieron los siguien
 * **Core Tools:** Nmap, Wireshark, PowerShell, Bash, Metasploit.
 
 ---
-*Contacto: [Mlain24@gmail.com](mailto:Mlain24@gmail.com) | Portafolio: [mlain24-lab](https://github.com/mlain24-lab)*
+*Contacto: [mlain24@gmail.com](mailto:Mlain24@gmail.com) | Portafolio: [mlain24-lab](https://github.com/mlain24-lab)*
