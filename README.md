@@ -53,4 +53,4 @@ During the deployment of this documentation lab, the following technical challen
 * **Core Tools:** Nmap, Wireshark, PowerShell, Bash, Metasploit Framework.
 
 ---
-*Contact: [Mlain24@gmail.com](mailto:Mlain24@gmail.com) | Technical Portfolio: [mlain24-lab](https://github.com/mlain24-lab)*
+*Contact: [mlain24@gmail.com](mailto:mlain24@gmail.com) | Technical Portfolio: [mlain24-lab](https://github.com/mlain24-lab)*
