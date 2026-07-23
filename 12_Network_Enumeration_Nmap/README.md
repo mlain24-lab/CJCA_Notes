@@ -245,8 +245,8 @@ Nmap classifies scanned ports into six distinct states:
 | **closed** | The TCP protocol indicates an `RST` flag in the returned packet, showing the port is accessible but no service is listening. This method can also determine if a target is alive. |
 | **filtered** | Nmap cannot definitively identify whether the port is open or closed because no response is returned (dropped) or an error code is received from the target (rejected). |
 | **unfiltered** | Occurs exclusively during TCP-ACK scans, indicating the port is accessible but its open/closed status cannot be determined. |
-| **open|filtered** | Assigned when no response is received for a specific port, indicating a firewall or packet filter may be protecting it. |
-| **closed|filtered** | Occurs exclusively in IP ID idle scans, indicating it is impossible to determine whether the port is closed or filtered. |
+| **open/filtered** | Assigned when no response is received for a specific port, indicating a firewall or packet filter may be protecting it. |
+| **closed/filtered** | Occurs exclusively in IP ID idle scans, indicating it is impossible to determine whether the port is closed or filtered. |
 
 ## Discovering Open TCP Ports
 
