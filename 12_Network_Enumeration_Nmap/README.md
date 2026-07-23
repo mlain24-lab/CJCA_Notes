@@ -137,3 +137,90 @@ To actively discover systems across a subnet, we can scan an entire Classless In
 ```bash
 sudo nmap 10.129.2.0/24 -sn -oA tnet | grep for | cut -d" " -f5
 ```
+
+| Flag / Option | Description |
+| :--- | :--- |
+| `10.129.2.0/24` | Target network range (CIDR notation). |
+| `-sn` | Disables port scanning (Host discovery only). |
+| `-oA tnet` | Outputs the scan results in all three major formats (Normal, XML, Grepable) starting with the filename 'tnet'. |
+
+*Note: This scanning method relies on firewalls permitting ICMP traffic. If hosts silently drop ICMP packets, alternative host discovery techniques (like TCP SYN/ACK pinging) are required to bypass IDS/Firewalls.*
+
+---
+
+## 3. Scanning from Target Lists
+In enterprise environments or specific pentest engagements, scope limitations often require testing a predefined list of IPs. Nmap seamlessly handles bulk target ingestion from local files.
+
+**Target File (`hosts.lst`):**
+```text
+10.129.2.4
+10.129.2.10
+10.129.2.11
+```
+
+**Execution:**
+```bash
+sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d" " -f5
+```
+
+| Flag / Option | Description |
+| :--- | :--- |
+| `-iL hosts.lst` | Instructs Nmap to read target specifications from the provided input list (`hosts.lst`). |
+
+If Nmap returns fewer active hosts than the list contains, the "missing" hosts might be offline or configured to drop default ICMP Echo Requests.
+
+---
+
+## 4. Scanning Multiple Specific IPs
+For localized scanning where a full CIDR or external list is unnecessary, multiple IP addresses can be defined inline.
+
+**Space-separated IPs:**
+```bash
+sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d" " -f5
+```
+
+**Octet ranges:**
+```bash
+sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d" " -f5
+```
+
+---
+
+## 5. Single Host Scanning & Traffic Analysis
+To understand Nmap's underlying mechanisms, we can analyze the packet-level behavior during a single IP scan. By default, if we disable port scanning (`-sn`) on a local network target, Nmap attempts an **ARP Ping** before sending an ICMP Echo Request.
+
+```bash
+sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace
+```
+
+| Flag / Option | Description |
+| :--- | :--- |
+| `-PE` | Forces Nmap to perform host discovery using standard ICMP Echo Requests. |
+| `--packet-trace` | Displays all network packets sent and received during the scan for deep troubleshooting. |
+
+**Packet Trace Output Analysis:**
+Even with `-PE` specified, Nmap prioritizes ARP resolution on local ethernet networks:
+1. `SENT: ARP who-has 10.129.2.18 tell 10.10.14.2`
+2. `RCVD: ARP reply 10.129.2.18 is-at DE:AD:00:00:BE:EF`
+
+To confirm *why* Nmap marked the host as alive, append the `--reason` flag:
+```bash
+sudo nmap 10.129.2.18 -sn -oA host -PE --reason
+```
+*Result:* `Host is up, received arp-response...`
+
+### Bypassing ARP Ping for ICMP Validation
+To strictly test ICMP responses and disable Nmap's default ARP behavior, use the `--disable-arp-ping` flag. This forces Nmap to rely purely on Layer 3 routing for discovery.
+
+```bash
+sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace --disable-arp-ping
+```
+
+**Packet Trace Output Analysis (Post-ARP Disable):**
+1. `SENT: ICMP Echo request (type=8/code=0)`
+2. `RCVD: ICMP Echo reply (type=0/code=0)`
+
+### 💡 Key Takeaway
+Attention to packet-level details is crucial for a Cybersecurity Analyst or SysAdmin. Understanding whether a host responds to ARP (Layer 2) or ICMP (Layer 3) dictates our enumeration strategy and helps accurately footprint the network topology.
+
+> **Further Reading:** [Nmap Official Documentation: Host Discovery Strategies](https://nmap.org/book/host-discovery-strategies.html)
