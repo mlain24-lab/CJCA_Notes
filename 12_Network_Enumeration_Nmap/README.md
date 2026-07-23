@@ -224,3 +224,366 @@ sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace --disable-arp-ping
 Attention to packet-level details is crucial for a Cybersecurity Analyst or SysAdmin. Understanding whether a host responds to ARP (Layer 2) or ICMP (Layer 3) dictates our enumeration strategy and helps accurately footprint the network topology.
 
 > **Further Reading:** [Nmap Official Documentation: Host Discovery Strategies](https://nmap.org/book/host-discovery-strategies.html)
+
+# Host and Port Scanning
+
+Understanding how scanning tools operate, perform, and process different functions is essential for accurate result interpretation. Analyzing specific scanning methods allows us to build a precise system profile once a target is confirmed alive. 
+
+The primary information required includes:
+* Open ports and their associated services
+* Service versions
+* Service-provided information
+* Operating system details
+
+## Port States Overview
+
+Nmap classifies scanned ports into six distinct states:
+
+| State | Description |
+| :--- | :--- |
+| **open** | The connection to the scanned port has been successfully established (TCP connections, UDP datagrams, or SCTP associations). |
+| **closed** | The TCP protocol indicates an `RST` flag in the returned packet, showing the port is accessible but no service is listening. This method can also determine if a target is alive. |
+| **filtered** | Nmap cannot definitively identify whether the port is open or closed because no response is returned (dropped) or an error code is received from the target (rejected). |
+| **unfiltered** | Occurs exclusively during TCP-ACK scans, indicating the port is accessible but its open/closed status cannot be determined. |
+| **open|filtered** | Assigned when no response is received for a specific port, indicating a firewall or packet filter may be protecting it. |
+| **closed|filtered** | Occurs exclusively in IP ID idle scans, indicating it is impossible to determine whether the port is closed or filtered. |
+
+## Discovering Open TCP Ports
+
+By default, Nmap scans the top 1000 TCP ports using a SYN scan (`-sS`). This scan defaults to SYN only when executed with root privileges due to the socket permissions required for raw TCP packet creation; otherwise, a TCP connect scan (`-sT`) is performed. 
+
+Ports can be defined individually (`-p 22,25,80,139,445`), by range (`-p 22-445`), via top frequent ports from the Nmap database (`--top-ports=10`), through a full port scan (`-p-`), or via a fast port scan containing the top 100 ports (`-F`).
+
+### Scanning Top 10 TCP Ports
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 --top-ports=10 
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 15:36 CEST
+Nmap scan report for 10.129.2.28
+Host is up (0.021s latency).
+
+PORT     STATE    SERVICE
+21/tcp   closed   ftp
+22/tcp   open     ssh
+23/tcp   closed   telnet
+25/tcp   open     smtp
+80/tcp   open     http
+110/tcp  open     pop3
+139/tcp  filtered netbios-ssn
+443/tcp  closed   https
+445/tcp  filtered microsoft-ds
+3389/tcp closed   ms-wbt-server
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+
+Nmap done: 1 IP address (1 host up) scanned in 1.44 seconds
+```
+
+To analyze the SYN scan clearly, network noise can be isolated by disabling ICMP echo requests (`-Pn`), DNS resolution (`-n`), and ARP ping scans (`--disable-arp-ping`).
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 21 --packet-trace -Pn -n --disable-arp-ping
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 15:39 CEST
+SENT (0.0429s) TCP 10.10.14.2:63090 > 10.129.2.28:21 S ttl=56 id=57322 iplen=44  seq=1699105818 win=1024 <mss 1460>
+RCVD (0.0573s) TCP 10.129.2.28:21 > 10.10.14.2:63090 RA ttl=64 id=0 iplen=40  seq=0 win=0
+Nmap scan report for 10.129.2.28
+Host is up (0.014s latency).
+
+PORT   STATE  SERVICE
+21/tcp closed ftp
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.07 seconds
+```
+
+### Packet Trace Analysis
+
+* **SENT Line:** Indicates Nmap sent a TCP packet with the SYN flag (`S`) from the source IPv4 and port to the target IPv4 and port, along with TCP header parameters (`ttl`, `id`, `iplen`, `seq`, `win`, `mss`).
+* **RCVD Line:** Indicates the target responded with a TCP packet containing RST and ACK flags (`RA`) to acknowledge receipt (`ACK`) and terminate the TCP session (`RST`).
+
+## Connect Scan
+
+The Nmap TCP Connect Scan (`-sT`) leverages the standard TCP three-way handshake to determine port states. An SYN packet is sent, expecting an SYN-ACK response for an open port or an RST response for a closed port.
+
+While highly accurate and stable because it completes the full handshake without causing service instability, it is one of the least stealthy techniques. It fully establishes connections, generating logs on most systems and triggering modern IDS/IPS solutions. Conversely, SYN scans (half-open scans) leave the connection incomplete, minimizing log generation footprint.
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 443 --packet-trace --disable-arp-ping -Pn -n --reason -sT 
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 16:26 CET
+CONN (0.0385s) TCP localhost > 10.129.2.28:443 => Operation now in progress
+CONN (0.0396s) TCP localhost > 10.129.2.28:443 => Connected
+Nmap scan report for 10.129.2.28
+Host is up, received user-set (0.013s latency).
+
+PORT    STATE SERVICE REASON
+443/tcp open  https   syn-ack
+
+Nmap done: 1 IP address (1 host up) scanned in 0.04 seconds
+```
+
+## Filtered Ports & Firewall Behavior
+
+Filtered states typically result from firewall rules handling connections via dropped or rejected packets:
+* **Dropped Packets:** Nmap receives no response and resends the request based on the retry rate (`--max-retries`, default is 10).
+* **Rejected Packets:** Firewalls return an ICMP reply (Type 3, Code 3) indicating the port is unreachable.
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 445 --packet-trace -n --disable-arp-ping -Pn
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 15:55 CEST
+SENT (0.0388s) TCP 10.129.2.28:52472 > 10.129.2.28:445 S ttl=49 id=21763 iplen=44  seq=1418633433 win=1024 <mss 1460>
+RCVD (0.0487s) ICMP [10.129.2.28 > 10.129.2.28 Port 445 unreachable (type=3/code=3) ] IP [ttl=64 id=20998 iplen=72 ]
+Nmap scan report for 10.129.2.28
+Host is up (0.0099s latency).
+
+PORT    STATE    SERVICE
+445/tcp filtered microsoft-ds
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.05 seconds
+```
+
+## Discovering Open UDP Ports
+
+Because UDP is a stateless protocol requiring no three-way handshake, scans (`-sU`) do not receive acknowledgment packets, resulting in longer timeouts and slower scan speeds. Nmap sends empty datagrams; open ports only respond if the target application is configured to do so.
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -F -sU
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 16:01 CEST
+Nmap scan report for 10.129.2.28
+Host is up (0.059s latency).
+Not shown: 95 closed ports
+PORT     STATE         SERVICE
+68/udp   open|filtered dhcpc
+137/udp  open          netbios-ns
+138/udp  open|filtered netbios-dgm
+631/udp  open|filtered ipp
+5353/udp open          zeroconf
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+
+Nmap done: 1 IP address (1 host up) scanned in 98.07 seconds
+```
+
+* An ICMP response with error code 3 (port unreachable) indicates a closed UDP port.
+* Other ICMP responses mark ports as `open|filtered`.
+
+## Version Scan
+
+The version scan option (`-sV`) extracts additional technical details from open ports, identifying specific service names, product versions, and system details through targeted probe responses.
+
+```shellsession
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -Pn -n --disable-arp-ping --packet-trace -p 445 --reason  -sV
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2022-11-04 11:10 GMT
+SENT (0.3426s) TCP 10.10.14.2:44641 > 10.129.2.28:445 S ttl=55 id=43401 iplen=44  seq=3589068008 win=1024 <mss 1460>
+RCVD (0.3556s) TCP 10.129.2.28:445 > 10.10.14.2:44641 SA ttl=63 id=0 iplen=44  seq=2881527699 win=29200 <mss 1337>
+NSOCK INFO [0.4980s] nsock_iod_new2(): nsock_iod_new (IOD #1)
+NSOCK INFO [0.4980s] nsock_connect_tcp(): TCP connection requested to 10.129.2.28:445 (IOD #1) EID 8
+NSOCK INFO [0.5130s] nsock_trace_handler_callback(): Callback: CONNECT SUCCESS for EID 8 [10.129.2.28:445]
+Service scan sending probe NULL to 10.129.2.28:445 (tcp)
+NSOCK INFO [0.5130s] nsock_read(): Read request from IOD #1 [10.129.2.28:445] (timeout: 6000ms) EID 18
+NSOCK INFO [6.5190s] nsock_trace_handler_callback(): Callback: READ TIMEOUT for EID 18 [10.129.2.28:445]
+Service scan sending probe SMBProgNeg to 10.129.2.28:445 (tcp)
+NSOCK INFO [6.5190s] nsock_write(): Write request for 168 bytes to IOD #1 EID 27 [10.129.2.28:445]
+NSOCK INFO [6.5190s] nsock_read(): Read request from IOD #1 [10.129.2.28:445] (timeout: 5000ms) EID 34
+NSOCK INFO [6.5190s] nsock_trace_handler_callback(): Callback: WRITE SUCCESS for EID 27 [10.129.2.28:445]
+NSOCK INFO [6.5320s] nsock_trace_handler_callback(): Callback: READ SUCCESS for EID 34 [10.129.2.28:445] (135 bytes)
+Service scan match (Probe SMBProgNeg matched with SMBProgNeg line 13836): 10.129.2.28:445 is netbios-ssn.  Version: |Samba smbd|3.X - 4.X|workgroup: WORKGROUP|
+NSOCK INFO [6.5320s] nsock_iod_delete(): nsock_iod_delete (IOD #1)
+Nmap scan report for 10.129.2.28
+Host is up, received user-set (0.013s latency).
+
+PORT    STATE SERVICE      REASON         VERSION
+445/tcp open  netbios-ssn  syn-ack ttl 63 Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+Service Info: Host: Ubuntu
+
+Service detection performed. Please report any incorrect results at [https://nmap.org/submit/](https://nmap.org/submit/) .
+Nmap done: 1 IP address (1 host up) scanned in 6.55 seconds
+```
+
+# Nmap Scan Output Management & Reporting Formats
+
+Maintaining comprehensive records of network scans is a critical operational procedure during any enumeration phase. Persistent scan data enables differential analysis, baseline comparisons, and the parsing of results using various text-processing utilities. Nmap inherently supports multiple output formats to accommodate both programmatic data ingestion and human readability.
+
+## Supported Export Formats
+
+Nmap can generate output in three primary formats, which can be executed individually or simultaneously:
+
+*   **Normal Output (`-oN`):** Generates a `.nmap` file. It mirrors the standard interactive terminal output.
+*   **Grepable Output (`-oG`):** Generates a `.gnmap` file. Highly optimized for data extraction and text processing using command-line utilities (e.g., `grep`, `awk`, `sed`).
+*   **XML Output (`-oX`):** Generates a `.xml` file. This is the industry standard for programmatic parsing, automation pipelines, and importing scan data into external frameworks like Metasploit.
+*   **Output All (`-oA`):** Generates all three aforementioned formats simultaneously, providing full coverage for any subsequent analysis.
+
+### Execution Example
+
+To execute a comprehensive scan across all TCP ports and save the output in all formats, append the `-oA` flag followed by the base filename (e.g., `target`). If no absolute path is specified, the output files will be stored in the current working directory.
+
+```shell
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p- -oA target
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-16 12:14 CEST
+Nmap scan report for 10.129.2.28
+Host is up (0.0091s latency).
+Not shown: 65525 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+25/tcp open  smtp
+80/tcp open  http
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+
+Nmap done: 1 IP address (1 host up) scanned in 10.22 seconds
+```
+
+**Command Breakdown:**
+*   `10.129.2.28`: The designated target IP address.
+*   `-p-`: Instructs Nmap to aggressively scan all 65,535 TCP ports.
+*   `-oA target`: Directs the tool to output the results in all three core formats, prepending the 'target' prefix to each file extension.
+
+Verifying the generated output files:
+
+```shell
+MikyRedHat@htb[/htb]$ ls
+target.gnmap target.xml  target.nmap
+```
+
+## File Format Analysis & Data Parsing
+
+### 1. Normal Output (`.nmap`)
+Retains the human-readable structure exactly as it was presented during the live terminal execution.
+
+```shell
+MikyRedHat@htb[/htb]$ cat target.nmap
+# Nmap 7.80 scan initiated Tue Jun 16 12:14:53 2020 as: nmap -p- -oA target 10.129.2.28
+Nmap scan report for 10.129.2.28
+Host is up (0.053s latency).
+Not shown: 4 closed ports
+...
+```
+
+### 2. Grepable Output (`.gnmap`)
+Condenses the scan results into single-line entries per host. This formatting streamlines data extraction, allowing SysAdmins and Pentesters to pipe the output directly into Bash scripts.
+
+```shell
+MikyRedHat@htb[/htb]$ cat target.gnmap
+# Nmap 7.80 scan initiated Tue Jun 16 12:14:53 2020 as: nmap -p- -oA target 10.129.2.28
+Host: 10.129.2.28 ()    Status: Up
+Host: 10.129.2.28 ()    Ports: 22/open/tcp//ssh///, 25/open/tcp//smtp///, 80/open/tcp//http///  Ignored State: closed (4)
+```
+
+### 3. XML Output (`.xml`) & HTML Rendering
+The XML structure allows for seamless integration into HTML reports using XSL stylesheets (`.xsl`). This conversion is highly beneficial for generating structured, easily digestible documentation for non-technical stakeholders, management, or auditing purposes.
+
+To convert the raw XML output into a formatted HTML report, utilize the `xsltproc` utility:
+
+```shell
+MikyRedHat@htb[/htb]$ xsltproc target.xml -o target.html
+```
+
+Once processed, the `.html` file can be rendered in any standard web browser, providing a clear and visually structured presentation of the target's open ports and services.
+
+> **Reference:** For further technical documentation on Nmap output parameters, visit the [official Nmap Output guide](https://nmap.org/book/output.html).
+
+# Service Enumeration & Version Detection
+
+Accurately determining the application and its exact version is a critical phase in network enumeration. We leverage this data to cross-reference known vulnerabilities, analyze specific source code, and pinpoint the exact exploits that match both the service and the target's underlying operating system.
+
+## Service Version Detection with Nmap
+
+Best practices dictate initiating enumeration with a quick port scan to establish a baseline of available ports. This approach generates significantly less network traffic, reducing the likelihood of triggering security mechanisms (such as IDS/IPS) that could block our IP. Once the initial reconnaissance is complete, we can run a comprehensive full port scan (`-p-`) alongside service version detection (`-sV`) in the background.
+
+Given that a full scan on 65,535 ports is time-consuming, you can press the `[Space Bar]` during execution to prompt Nmap to output the current scan status and Estimated Time of Completion (ETC).
+
+    MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p- -sV
+
+    Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 19:44 CEST
+    [Space Bar]
+    Stats: 0:00:03 elapsed; 0 hosts completed (1 up), 1 undergoing SYN Stealth Scan
+    SYN Stealth Scan Timing: About 3.64% done; ETC: 19:45 (0:00:53 remaining)
+
+To automate this status check, use the `--stats-every` flag, specifying the desired interval in seconds (`s`) or minutes (`m`):
+
+    MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p- -sV --stats-every=5s
+
+    Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 19:46 CEST
+    Stats: 0:00:05 elapsed; 0 hosts completed (1 up), 1 undergoing SYN Stealth Scan
+    SYN Stealth Scan Timing: About 13.91% done; ETC: 19:49 (0:00:31 remaining)
+
+Increasing the verbosity level (`-v` or `-vv`) instructs Nmap to display open ports in real-time as soon as they are discovered, rather than waiting for the entire scan to finish.
+
+    MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p- -sV -v 
+
+    Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-15 20:03 CEST
+    # <SNIP>
+    Discovered open port 995/tcp on 10.129.2.28
+    Discovered open port 80/tcp on 10.129.2.28
+    # <SNIP>
+
+### Nmap Scanning Options Breakdown
+| Flag | Description |
+| :--- | :--- |
+| **`10.129.2.28`** | Target IP address to scan. |
+| **`-p-`** | Scans all 65,535 TCP ports. |
+| **`-sV`** | Performs service version detection on open ports. |
+| **`--stats-every=5s`** | Automates progress output at 5-second intervals. |
+| **`-v`** | Increases verbosity to display detailed, real-time information. |
+
+## Banner Grabbing & Automated Tool Limitations
+
+Once the scan concludes, Nmap lists all active TCP ports, their associated services, and detected versions. Primarily, Nmap parses the banners transmitted by the scanned ports. If a banner is missing or inconclusive, Nmap falls back on a signature-based matching engine, which significantly increases the scan duration.
+
+However, automated scanning has limitations. Security configurations can strip or obfuscate service banners, or Nmap simply might not parse specific strings correctly. We can observe this behavior by enabling packet tracing:
+
+    MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p- -sV -Pn -n --disable-arp-ping --packet-trace
+
+    Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-16 20:10 CEST
+    # <SNIP>
+    NSOCK INFO [0.4200s] nsock_trace_handler_callback(): Callback: READ SUCCESS for EID 18 [10.129.2.28:25] (35 bytes): 220 inlane ESMTP Postfix (Ubuntu)..
+    Service scan match (Probe NULL matched with NULL line 3104): 10.129.2.28:25 is smtp.  Version: |Postfix smtpd|||
+    # <SNIP>
+    PORT   STATE SERVICE VERSION
+    25/tcp open  smtp    Postfix smtpd
+
+*Note on bypass flags:*
+* `-Pn`: Disables ICMP Echo requests (treats host as online).
+* `-n`: Disables DNS resolution.
+* `--disable-arp-ping`: Disables ARP ping.
+* `--packet-trace`: Displays all sent and received network packets.
+
+In the output above, the raw `NSOCK INFO` trace reveals that the SMTP server is running on **Ubuntu**, but Nmap's final summarized output omits the OS detail. 
+
+This occurs because, after a successful TCP 3-way handshake, the server pushes an identification banner. At the network level, this is triggered by the `PSH` (Push) flag in the TCP header. If an automated tool fails to parse this properly, manual enumeration is required.
+
+## Manual Traffic Interception & Packet Analysis
+
+To retrieve the full, unedited banner that Nmap missed, we can establish a manual connection using `nc` (Netcat) while concurrently capturing the network traffic with `tcpdump`.
+
+**1. Start packet capture with Tcpdump:**
+    MikyRedHat@htb[/htb]$ sudo tcpdump -i eth0 host 10.10.14.2 and 10.129.2.28
+
+    tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+    listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+
+**2. Execute manual banner grab with Netcat:**
+    MikyRedHat@htb[/htb]$ nc -nv 10.129.2.28 25
+
+    Connection to 10.129.2.28 port 25 [tcp/*] succeeded!
+    220 inlane ESMTP Postfix (Ubuntu)
+
+**3. Analyze the intercepted TCP traffic:**
+The captured packets from `tcpdump` clearly illustrate the connection lifecycle:
+
+    18:28:07.128564 IP 10.10.14.2.59618 > 10.129.2.28.smtp: Flags [S]...
+    18:28:07.255151 IP 10.129.2.28.smtp > 10.10.14.2.59618: Flags [S.]...
+    18:28:07.255281 IP 10.10.14.2.59618 > 10.129.2.28.smtp: Flags [.]...
+    18:28:07.319306 IP 10.129.2.28.smtp > 10.10.14.2.59618: Flags [P.]... SMTP: 220 inlane ESMTP Postfix (Ubuntu)
+    18:28:07.319426 IP 10.10.14.2.59618 > 10.129.2.28.smtp: Flags [.]...
+
+**Traffic Breakdown:**
+1. **`[SYN]`** (`Flags [S]`): The client requests a connection.
+2. **`[SYN-ACK]`** (`Flags [S.]`): The target server acknowledges the request and synchronizes.
+3. **`[ACK]`** (`Flags [.]`): The client acknowledges the server, successfully completing the 3-way handshake.
+4. **`[PSH-ACK]`** (`Flags [P.]`): The target server immediately pushes the data payload containing the banner (`220 inlane ESMTP Postfix (Ubuntu)`) and simultaneously uses the ACK flag to notify that all required data has been transmitted.
+5. **`[ACK]`** (`Flags [.]`): The client confirms receipt of the data.
