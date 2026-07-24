@@ -561,12 +561,14 @@ This occurs because, after a successful TCP 3-way handshake, the server pushes a
 To retrieve the full, unedited banner that Nmap missed, we can establish a manual connection using `nc` (Netcat) while concurrently capturing the network traffic with `tcpdump`.
 
 **1. Start packet capture with Tcpdump:**
+    
     MikyRedHat@htb[/htb]$ sudo tcpdump -i eth0 host 10.10.14.2 and 10.129.2.28
 
     tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
     listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
 
 **2. Execute manual banner grab with Netcat:**
+    
     MikyRedHat@htb[/htb]$ nc -nv 10.129.2.28 25
 
     Connection to 10.129.2.28 port 25 [tcp/*] succeeded!
