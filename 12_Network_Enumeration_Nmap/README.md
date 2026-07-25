@@ -935,4 +935,4 @@ Exploits poorly configured firewall rules that explicitly allow inbound traffic 
 ## Practical Execution: Stealth SYN Scan
 Combining techniques to perform a comprehensive port discovery while keeping a low profile. Raw packet crafting (required for SYN scans and fragmentation) demands root privileges.
 
-    sudo nmap -sS -p- -T2 -f -D RND:5 <target_IP>
+sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP>
