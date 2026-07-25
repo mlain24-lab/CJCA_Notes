@@ -589,3 +589,350 @@ The captured packets from `tcpdump` clearly illustrate the connection lifecycle:
 3. **`[ACK]`** (`Flags [.]`): The client acknowledges the server, successfully completing the 3-way handshake.
 4. **`[PSH-ACK]`** (`Flags [P.]`): The target server immediately pushes the data payload containing the banner (`220 inlane ESMTP Postfix (Ubuntu)`) and simultaneously uses the ACK flag to notify that all required data has been transmitted.
 5. **`[ACK]`** (`Flags [.]`): The client confirms receipt of the data.
+
+# Nmap Scripting Engine (NSE)
+
+The **Nmap Scripting Engine (NSE)** is one of Nmap's most powerful and flexible features. It allows users to write and share simple scripts (using the Lua programming language) to automate a wide variety of networking tasks. 
+
+These scripts can seamlessly interact with specific services, making NSE invaluable for network discovery, sophisticated version detection, vulnerability identification, and even exploitation.
+
+## 1. NSE Script Categories
+
+Nmap categorizes its scripts into 14 distinct groups based on their functionality and invasiveness:
+
+| Category | Description |
+| :--- | :--- |
+| **auth** | Identifies authentication credentials on target systems. |
+| **broadcast** | Discovers hosts by broadcasting on the local network; discovered hosts can be automatically added to the scan queue. |
+| **brute** | Executes brute-force attacks against specific services to guess authentication credentials. |
+| **default** | The baseline scripts executed when using the `-sC` flag. Balances speed, usefulness, and reliability. |
+| **discovery** | Actively queries target services to evaluate and discover accessible information (e.g., DNS servers, SNMP). |
+| **dos** | Tests services for Denial of Service (DoS) vulnerabilities. *Note: Can disrupt services, use with caution.* |
+| **exploit** | Attempts to actively exploit known vulnerabilities identified on the scanned ports. |
+| **external** | Leverages third-party external services or databases (e.g., WHOIS) for further information processing. |
+| **fuzzer** | Sends unexpected or randomized fields/packets to identify vulnerabilities or unexpected handling. Time-consuming. |
+| **intrusive** | Highly aggressive scripts that pose a significant risk of crashing the target system or generating excessive noise. |
+| **malware** | Checks the target system for active malware infections or backdoors. |
+| **safe** | Defensive, non-intrusive scripts designed not to crash services, consume large amounts of bandwidth, or exploit holes. |
+| **version** | Advanced scripts used by the `-sV` (Version Detection) feature to probe for specific service details. |
+| **vuln** | Scans for specific, widely known vulnerabilities (often linking them to CVEs). |
+
+---
+
+## 2. Executing NSE Scripts
+
+Nmap provides multiple flags to define which scripts should be loaded during a scan.
+
+### Default Scripts
+Executes the standard set of safe, useful scripts (equivalent to `--script=default`).
+```bash
+sudo nmap <target> -sC
+```
+
+### Specific Script Category
+Runs all scripts belonging to a specific category (e.g., `vuln`, `exploit`).
+```bash
+sudo nmap <target> --script <category>
+```
+
+### Multiple Defined Scripts
+Executes a comma-separated list of specific scripts.
+```bash
+sudo nmap <target> -p 25 --script banner,smtp-commands
+```
+
+**Output Example (SMTP Enumeration):**
+```text
+PORT   STATE SERVICE
+25/tcp open  smtp
+|_banner: 220 inlane ESMTP Postfix (Ubuntu)
+|_smtp-commands: inlane, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8,
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+```
+*Insight: The `banner` script identifies the OS (Ubuntu), while `smtp-commands` enumerates available SMTP verbs, which is critical for finding out if we can perform user enumeration (e.g., via `VRFY`).*
+
+---
+
+## 3. Aggressive Scanning (-A)
+
+The Aggressive scan option (`-A`) bundles multiple Nmap features into a single command. It performs:
+1. **OS detection** (`-O`)
+2. **Service version detection** (`-sV`)
+3. **Script scanning** (`-sC`)
+4. **Traceroute** (`--traceroute`)
+
+```bash
+sudo nmap <target> -p 80 -A
+```
+
+**Output Example:**
+```text
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-generator: WordPress 5.3.4
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: blog.inlanefreight.com
+MAC Address: DE:AD:00:00:BE:EF (Intel Corporate)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 2.6.32 (96%), Linux 3.2 - 4.9 (96%) [...]
+Network Distance: 1 hop
+```
+*Insight: This scan immediately gives us the web server version (Apache 2.4.29), the CMS running on it (WordPress 5.3.4), and a high-probability OS guess (Linux 96%).*
+
+---
+
+## 4. Vulnerability Assessment (`vuln`)
+
+Moving beyond standard enumeration, we can use the `vuln` category to check services against known vulnerability databases (like Vulners) and common misconfigurations.
+
+```bash
+sudo nmap <target> -p 80 -sV --script vuln 
+```
+
+**Output Example:**
+```text
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+| http-enum:
+|   /wp-login.php: Possible admin folder
+|   /: WordPress version: 5.3.4
+|   /wp-login.php: Wordpress login page.
+|_  /readme.html: Interesting, a readme.
+| http-wordpress-users:
+| Username found: admin
+| vulners:
+|   cpe:/a:apache:http_server:2.4.29:
+|       CVE-2019-0211   7.2 [https://vulners.com/cve/CVE-2019-0211](https://vulners.com/cve/CVE-2019-0211)
+|       CVE-2018-1312   6.8 [https://vulners.com/cve/CVE-2018-1312](https://vulners.com/cve/CVE-2018-1312)
+```
+*Insight: By chaining `-sV` (to accurately identify the service) with `--script vuln`, Nmap queries CVE databases based on the specific version found, while also enumerating CMS-specific data like valid usernames (`admin`) and interesting directories.*
+
+> **Reference:** For exhaustive documentation on all NSE scripts and their arguments, visit the [Nmap Scripting Engine Documentaion](https://nmap.org/nsedoc/index.html).
+
+# Nmap Performance & Optimization Tuning
+
+Scanning performance is a critical factor during network enumeration, especially when dealing with extensive network scopes or low-bandwidth environments. Nmap provides robust options to balance **speed, accuracy, and stealth** by fine-tuning packet rates, timeouts, and retries.
+
+## 1. Timeouts (Round-Trip-Time / RTT)
+When Nmap sends a packet, it waits for a response (Round-Trip-Time). By default, Nmap starts with a high RTT timeout (100ms). Lowering these values accelerates the scan but introduces the risk of overlooking active hosts due to network latency.
+
+```bash
+# Optimized RTT Scan
+sudo nmap 10.129.2.0/24 -F --initial-rtt-timeout 50ms --max-rtt-timeout 100ms
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `-F` | Fast scan (Scans the top 100 most common ports instead of 1000). |
+| `--initial-rtt-timeout` | Sets the initial timeout value for packet responses. |
+| `--max-rtt-timeout` | Sets the absolute maximum time Nmap will wait for a response. |
+
+## 2. Max Retries
+If Nmap does not receive a response from a port, it retries sending the probe (default is 10 times). Dropping the retry rate to `0` forces Nmap to skip the port immediately upon no response, massively speeding up the scan at the cost of potential false negatives.
+
+```bash
+# Zero-Retry Scan (Aggressive Speed)
+sudo nmap 10.129.2.0/24 -F --max-retries 0
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--max-retries <number>` | Caps the number of times Nmap will resend a probe to a slow or unresponsive port. |
+
+## 3. Packet Rates
+In white-box penetration tests where bandwidth limits are known and stealth is not a primary concern, enforcing a minimum packet rate drastically reduces scan times. Nmap will attempt to maintain the specified volume of packets sent per second.
+
+```bash
+# High-Speed Rate Scan
+sudo nmap 10.129.2.0/24 -F -oN tnet.minrate300 --min-rate 300
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--min-rate <number>` | Sets the minimum number of packets Nmap must send simultaneously per second. |
+| `-oN <file>` | Outputs the scan results in standard format to the specified file. |
+
+## 4. Timing Templates
+For black-box environments where manual optimization is complex, Nmap offers six built-in timing templates (`-T <0-5>`). These templates automatically adjust timeouts, retries, and rates to match the desired aggressiveness.
+
+*   **-T 0 (Paranoid) / -T 1 (Sneaky):** Extremely slow, utilized primarily for IDS evasion.
+*   **-T 2 (Polite):** Slows down the scan to consume less bandwidth and target machine resources.
+*   **-T 3 (Normal):** The default behavior if no `-T` flag is specified.
+*   **-T 4 (Aggressive):** Assumes a fast, reliable network. Speeds up scans significantly.
+*   **-T 5 (Insane):** Assumes an extraordinarily fast network. Very noisy; prone to packet loss and likely to trigger security appliances.
+
+```bash
+# Insane Timing Scan
+sudo nmap 10.129.2.0/24 -F -oN tnet.T5 -T 5
+```
+
+> **Technical Insight:** Pushing Nmap to its maximum speed (e.g., `-T 5`, `--max-retries 0`, or high `--min-rate`) inevitably degrades accuracy. Security appliances (Firewalls, IDS/IPS) are highly likely to drop excessive traffic, causing Nmap to report open ports as `filtered` or miss hosts entirely. Always tailor performance flags to the specific engagement scope (White-box vs. Black-box) and the target's network stability.
+
+# Nmap: Firewall and IDS/IPS Evasion
+
+Nmap provides advanced capabilities to bypass firewall rules and evade Intrusion Detection/Prevention Systems (IDS/IPS). These methodologies—ranging from packet fragmentation and decoy usage to source port manipulation—are critical for accurately mapping out heavily defended target networks.
+
+## 1. Core Security Mechanisms
+
+*   **Firewalls:** Security appliances (hardware or software) that monitor and control incoming and outgoing network traffic based on predetermined security rules. They evaluate packets and typically either pass, drop, or reject connections to prevent unauthorized access.
+*   **Intrusion Detection Systems (IDS):** Passive monitoring solutions that scan network traffic for known attack signatures or anomalous patterns. Upon detection, they alert administrators but do not block traffic on their own.
+*   **Intrusion Prevention Systems (IPS):** Active monitoring solutions that complement the IDS. If a malicious pattern is detected, the IPS automatically takes defensive actions, such as dropping the connection or blocking the source IP address.
+
+---
+
+## 2. Determining Firewalls and Their Rules
+
+When an Nmap scan reports a port as `filtered`, it usually implies a firewall is actively dropping or rejecting the packets. 
+*   **Dropped Packets:** The firewall silently discards the packet. Nmap receives no response.
+*   **Rejected Packets:** The firewall explicitly refuses the connection. TCP requests typically receive an `RST` flag in response, while ICMP requests return specific error codes (e.g., *Net Unreachable*, *Port Unreachable*, *Host Prohibited*).
+
+### SYN Scan (`-sS`) vs. ACK Scan (`-sA`)
+
+Standard `SYN` scans (`-sS`) initiate a connection attempt, which external-facing firewalls are explicitly configured to block. However, an `ACK` scan (`-sA`) sends a TCP packet with only the `ACK` flag set. 
+
+Because `ACK` packets simulate an already established TCP connection, stateless firewalls often allow them to pass through, unable to determine if the connection originated internally or externally. If the port is open or closed (but unfiltered), the target host must respond with an `RST` flag. This technique is invaluable for mapping firewall rule sets.
+
+#### Example: SYN Scan (Filtered by Firewall)
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 21,22,25 -sS -Pn -n --disable-arp-ping --packet-trace
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-21 14:56 CEST
+SENT (0.0278s) TCP 10.10.14.2:57347 > 10.129.2.28:22 S ttl=53 id=22412 iplen=44  seq=4092255222 win=1024 <mss 1460>
+SENT (0.0278s) TCP 10.10.14.2:57347 > 10.129.2.28:25 S ttl=50 id=62291 iplen=44  seq=4092255222 win=1024 <mss 1460>
+SENT (0.0278s) TCP 10.10.14.2:57347 > 10.129.2.28:21 S ttl=58 id=38696 iplen=44  seq=4092255222 win=1024 <mss 1460>
+RCVD (0.0329s) ICMP [10.129.2.28 > 10.10.14.2 Port 21 unreachable (type=3/code=3) ] IP [ttl=64 id=40884 iplen=72 ]
+RCVD (0.0341s) TCP 10.129.2.28:22 > 10.10.14.2:57347 SA ttl=64 id=0 iplen=44  seq=1153454414 win=64240 <mss 1460>
+[...]
+PORT   STATE    SERVICE
+21/tcp filtered ftp
+22/tcp open     ssh
+25/tcp filtered smtp
+```
+*Note the `SA` (SYN-ACK) response for port 22, indicating an open port, and the ICMP unreachable error for port 21.*
+
+#### Example: ACK Scan (Bypassing Stateless Rules)
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 21,22,25 -sA -Pn -n --disable-arp-ping --packet-trace
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2020-06-21 14:57 CEST
+SENT (0.0422s) TCP 10.10.14.2:49343 > 10.129.2.28:21 A ttl=49 id=12381 iplen=40  seq=0 win=1024
+[...]
+RCVD (0.1268s) TCP 10.129.2.28:22 > 10.10.14.2:49343 R ttl=64 id=0 iplen=40  seq=1660784500 win=0
+[...]
+PORT   STATE      SERVICE
+21/tcp filtered   ftp
+22/tcp unfiltered ssh
+25/tcp filtered   smtp
+```
+*Here, we receive an `R` (RST) flag from port 22, proving the port is unfiltered.*
+
+| Target & Flag | Description |
+| :--- | :--- |
+| `10.129.2.28` | Specifies the target IP. |
+| `-p 21,22,25` | Limits the scan to the specified ports. |
+| `-sS` | Executes a TCP SYN (Stealth) scan. |
+| `-sA` | Executes a TCP ACK scan. |
+| `-Pn` | Disables ICMP Echo requests (skips host discovery). |
+| `-n` | Disables DNS resolution to minimize noise. |
+| `--disable-arp-ping` | Prevents ARP ping discovery. |
+| `--packet-trace` | Traces and displays all packets sent and received. |
+
+---
+
+## 3. IDS/IPS Detection Strategy
+
+Detecting an active IDS/IPS is fundamentally more challenging than identifying firewall rules because these systems monitor traffic passively. 
+
+During a penetration test, using multiple Virtual Private Servers (VPS) with different IP addresses is considered best practice. If a target administrator or IPS detects aggressive scanning patterns from a single host, the source IP will likely be blocked. If the host loses all access to the target network abruptly, it confirms the presence of active defensive measures (IPS). Consequently, the pentester must switch to a new VPS and drastically reduce the scan's noise level by disguising interactions and pacing the traffic.
+
+---
+
+## 4. Evasion Techniques
+
+### Decoys (`-D`)
+To prevent an IPS from accurately pinpointing the source of an attack, or to bypass geolocation-based subnet blocking, we can use Decoys. Nmap generates spoofed packets from random IP addresses and interleaves them with our actual IP address. The target's logs are consequently flooded with multiple source IPs.
+
+*Requirement: The decoy IPs must be online (alive). If they are offline, the target's SYN-ACK responses will go unanswered, potentially triggering SYN-flood protection mechanisms and rendering the service temporarily unreachable.*
+
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p 80 -sS -Pn -n --disable-arp-ping --packet-trace -D RND:5
+
+# Output shows multiple SYN packets originating from random IPs, masking our real IP (10.10.14.2)
+SENT (0.0378s) TCP 102.52.161.59:59289 > 10.129.2.28:80 S ttl=42 id=29822 iplen=44  seq=3687542010 win=1024 <mss 1460>
+SENT (0.0378s) TCP 10.10.14.2:59289 > 10.129.2.28:80 S ttl=59 id=29822 iplen=44  seq=3687542010 win=1024 <mss 1460>
+[...]
+```
+
+### Source IP Spoofing (`-S`)
+In scenarios where ISPs or edge routers filter entirely random decoy IPs, we can manually specify the IP addresses of other VPS machines we control, or spoof an internal IP address to bypass access controls.
+
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -n -Pn -p 445 -O -S 10.129.2.200 -e tun0
+```
+
+| Evasion Flag | Description |
+| :--- | :--- |
+| `-D RND:5` | Generates 5 random decoy IP addresses to mask the actual source IP. |
+| `-S 10.129.2.200` | Manually spoofs the source IP address (useful if internal subnets are trusted). |
+| `-e tun0` | Forces Nmap to route all traffic through the specified network interface. |
+
+### DNS Proxying & Source Port Manipulation (`--source-port`)
+
+Firewalls are frequently misconfigured to blindly trust incoming traffic originating from specific ports, such as UDP/TCP port 53 (DNS). By forcing our Nmap scan to originate from port 53, we can often bypass overly permissive ingress rules.
+
+**Standard SYN-Scan (Blocked):**
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p50000 -sS -Pn -n --disable-arp-ping --packet-trace
+# Port 50000 shows as 'filtered'
+```
+
+**SYN-Scan Forcing Source Port 53 (Allowed):**
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.2.28 -p50000 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53
+
+SENT (0.0482s) TCP 10.10.14.2:53 > 10.129.2.28:50000 S ttl=58 id=27470 iplen=44  seq=4003923435 win=1024 <mss 1460>
+RCVD (0.0608s) TCP 10.129.2.28:50000 > 10.10.14.2:53 SA ttl=64 id=0 iplen=44  seq=540635485 win=64240 <mss 1460>
+
+PORT      STATE SERVICE
+50000/tcp open  ibm-db2
+```
+
+Once a bypass port is identified, we can leverage tools like Netcat to explicitly connect to the target port by mimicking the trusted source port:
+
+```bash
+MikyRedHat@htb[/htb]$ ncat -nv --source-port 53 10.129.2.28 50000
+Ncat: Version 7.80 ( [https://nmap.org/ncat](https://nmap.org/ncat) )
+Ncat: Connected to 10.129.2.28:50000.
+220 ProFTPd
+```
+
+# Firewall and IDS/IPS Evasion
+
+## Overview
+When auditing infrastructure protected by IDS (e.g., Snort, Suricata) or IPS, stealth is mandatory to avoid threshold-based bans. In lab environments where monitoring is available (such as a `status.php` feedback loop), the primary objective is to fine-tune Nmap parameters to maintain the alert count strictly below the lockout threshold.
+
+## Evasion Techniques (Nmap)
+
+### 1. Timing & Rate Limiting
+Rapid scans generate massive traffic spikes, immediately triggering IPS rate-limit rules.
+* **`-T2` (Polite):** Slows down the execution, adding deliberate delays between packet transmissions.
+* **`--max-rate <number>`:** Hard limits the maximum packets sent per second (e.g., `--max-rate 10`).
+
+### 2. Packet Fragmentation
+Evades IDS engines that either fail to properly reassemble fragmented packets or skip deep packet inspection on fragments to conserve CPU cycles.
+* **`-f`:** Splits IP packets into 8-byte fragments.
+* **`-ff`:** Splits IP packets into 16-byte fragments.
+* **`--mtu <size>`:** Sets a custom Maximum Transmission Unit (must be a multiple of 8, e.g., `--mtu 24`).
+
+### 3. Decoys (Source Spoofing)
+Masks the real source IP by generating concurrent scans from spoofed addresses. The IDS logs a distributed attack, preventing it from isolating and dropping the true attacker's IP.
+* **`-D RND:<number>`:** Generates random decoy IP addresses alongside the real one (e.g., `-D RND:10`).
+
+### 4. Source Port Manipulation
+Exploits poorly configured firewall rules that explicitly allow inbound traffic originating from "trusted" external ports (stateless filtering).
+* **`-g <port>` / `--source-port <port>`:** Spoofs the source port (e.g., forcing DNS port 53 or HTTP port 80).
+
+## Practical Execution: Stealth SYN Scan
+Combining techniques to perform a comprehensive port discovery while keeping a low profile. Raw packet crafting (required for SYN scans and fragmentation) demands root privileges.
+
+    sudo nmap -sS -p- -T2 -f -D RND:5 <target_IP>
