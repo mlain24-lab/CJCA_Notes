@@ -936,3 +936,190 @@ Exploits poorly configured firewall rules that explicitly allow inbound traffic 
 Combining techniques to perform a comprehensive port discovery while keeping a low profile. Raw packet crafting (required for SYN scans and fragmentation) demands root privileges.
 
 sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP>
+
+# Hack The Box - CJCA Path
+## 12_Network_Enumeration_Nmap
+
+### DNS Enumeration & Banner Grabbing (Port 53 UDP)
+When performing a UDP port scan and service detection (`-sU -sV`) against port 53 (DNS), Nmap triggers a specific reconnaissance technique. It sends a CHAOS class TXT query for `version.bind` to map the exact software release running on the target.
+
+In CTF environments or hardened corporate infrastructures (applying *Security Through Obscurity*), SysAdmins can spoof this response modifying the `named.conf` file. Instead of leaking the real **BIND** daemon version, they can output custom strings to mislead attackers or, in this case, inject a flag.
+
+#### Execution & Output Analysis
+```bash
+sudo nmap --max-rate 30 -f -D RND:5 -sV -sU -p 53 10.129.105.110
+```
+*   `-sU`: UDP Scan (Standard protocol for DNS queries).
+*   `-sV`: Service Version detection (Triggers the `version.bind` query).
+*   `-f`: Packet fragmentation (IDS/Firewall evasion technique).
+*   `-D RND:5`: Generates 5 random decoys to mask the real attacker IP.
+
+**Nmap Results:**
+```text
+PORT   STATE SERVICE VERSION
+53/udp open  domain  (unknown banner: HTB{GoTtgUnyze9Psw4vGjcuMpHRp})
+```
+By analyzing the raw Service Fingerprint dumped by Nmap, we can spot the exact payload and response:
+`%r(DNSVersionBindReq,57,"\0\x06\x85\0\0\x01\0\x01\0\x01\0\0\x07version\x04bind... HTB{GoTtgUnyze9Psw4vGjcuMpHRp} ...`
+
+**Conclusion:** The underlying service is **BIND**. The target was successfully enumerated, and the configuration file yielded the HTB flag directly on the service banner.
+
+---
+
+### Service Version Detection & Evasion Tactics
+When conducting internal or external audits, identifying the exact version of running services is a critical phase. It allows us to map the attack surface and cross-reference the discovered software with known vulnerabilities (CVEs) using tools like `searchsploit` or the NVD database. 
+
+#### Execution & Output Analysis
+```bash
+sudo nmap --max-rate 30 -f -D RND:5 -sV --top-ports 100 10.129.105.118
+```
+*   `--top-ports 100`: Scans the 100 most common ports (optimizing execution time while retaining a high probability of finding standard services).
+*   `-sV`: Service Version detection (grabs banners and matches Nmap's `nmap-service-probes` database to determine the exact software release).
+*   `-f`: Packet fragmentation (MTU manipulation to bypass strict IDS/IPS/Firewall rules).
+*   `-D RND:5`: Decoy scan generating 5 random IP addresses to obfuscate the real source IP of the probe.
+*   `--max-rate 30`: Throttles the scan to send a maximum of 30 packets per second, preventing network congestion or triggering rate-limiting alerts.
+
+**Nmap Results (Discovered Services):**
+*   **Port 22/tcp (SSH):** `OpenSSH 7.6p1 Ubuntu 4ubuntu0.7` (Ubuntu Linux; protocol 2.0)
+*   **Port 80/tcp (HTTP):** `Apache httpd 2.4.29` ((Ubuntu))
+
+**Conclusion:** The `-sV` flag successfully fingerprinted two core services. The explicit version disclosure provides a clear vector for the subsequent vulnerability assessment and exploitation phases.
+
+---
+
+### Firewall Evasion & Packet Tracing
+When auditing hardened environments, standard scans might get dropped or filtered by perimeter firewalls. In these scenarios, we can leverage Nmap's advanced options to manipulate our packets and trace the TCP responses, applying deep network troubleshooting techniques.
+
+#### Source Port Manipulation & Stealth Execution
+```bash
+sudo nmap 10.129.105.118 --top-ports 100 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53
+```
+*   `--source-port 53`: Source port spoofing. By forcing our Nmap probes to originate from port 53 (DNS), we attempt to bypass poorly configured firewall rules (ACLs) that blindly trust traffic coming from common service ports.
+*   `--packet-trace`: Enables verbose packet-level debugging. It prints a summary of every packet sent or received, which is crucial for Layer 4 troubleshooting.
+*   `-sS`: SYN Scan (stealth). Leaves the TCP connection half-open.
+*   `-Pn`: Disables ICMP host discovery. Assumes the target is alive, bypassing ping-blocking firewalls.
+*   `-n`: Disables DNS resolution to speed up the scan and prevent leaking our IP to the target's DNS servers.
+*   `--disable-arp-ping`: Prevents ARP requests, enforcing stealth mode within local network segments.
+
+#### Packet Trace Output Analysis
+By analyzing the `--packet-trace` dump, we can interpret the raw TCP flags to determine port states without relying solely on Nmap's final summary:
+*   **Probes (SENT):** `SENT (...) TCP 10.10.15.53:53 > 10.129.105.118:22 S ...` -> Nmap sends a `SYN` (S) packet to initiate the connection.
+*   **Open Ports (RCVD SA):** `RCVD (...) TCP 10.129.105.118:22 > 10.10.15.53:53 SA ...` -> The target responds with a `SYN-ACK` (SA), confirming the port is open and listening.
+*   **Closed Ports (RCVD RA):** `RCVD (...) TCP 10.129.105.118:23 > 10.10.15.53:53 RA ...` -> The target responds with a `RST-ACK` (RA), explicitly resetting the connection because no service is bound to that port.
+
+**Conclusion:** Using source port evasion successfully mapped the attack surface. Ports 22 (SSH) and 80 (HTTP) returned `SYN-ACK` packets, confirming they are accessible from the outside.
+
+---
+
+### Advanced IDS/IPS Evasion & Non-Standard Port Discovery
+When a target infrastructure is actively defended by a properly configured Intrusion Detection/Prevention System (IDS/IPS), conventional port scanning methodologies will trigger alerts and inevitably lead to an IP ban. Furthermore, SysAdmins often implement *Security Through Obscurity* by moving critical daemons to non-standard, high-range ports to avoid automated scanners.
+
+#### Scenario Analysis & Strategy
+*   **IDS/IPS in place:** Strict packet filtering and traffic analysis are active. We must enforce low-profile techniques (fragmentation, decoys, and rate-limiting).
+*   **Modified services:** The target daemons have been migrated from their default ports. A full TCP port scan (`-p 1-65535` or `-p-`) is mandatory.
+
+#### Execution Plan
+To map this hardened surface, we combine stealth SYN scanning with multiple evasion tactics across all TCP ports.
+```bash
+sudo nmap -p- -sS -sV -f -D RND:5 --max-rate 30 <TARGET_IP>
+```
+
+---
+
+### Scan Optimization: The "Divide & Conquer" Tactic
+Executing a full port sweep (`-p-`) combined with strict rate-limiting (`--max-rate 30`) and service versioning (`-sV`) is highly inefficient and time-consuming. To optimize the auditing workflow while bypassing IDS/IPS appliances, we split the reconnaissance into two phases, leveraging ACL misconfigurations.
+
+#### Phase 1: Fast Port Sweep via Source Port Evasion
+If the perimeter firewall trusts traffic originating from specific ports (e.g., DNS/53), we can spoof our source port to bypass rate-limiting alerts, allowing us to increase the packet rate safely.
+```bash
+sudo nmap -p- -sS -Pn -n --disable-arp-ping --source-port 53 --min-rate 1000 <TARGET_IP>
+```
+*   `--min-rate 1000`: Forces Nmap to send at least 1000 packets per second, drastically reducing the scan time for all 65,535 ports.
+*   `--source-port 53`: Bypasses firewall rules and potentially IDS rate-limiting thresholds by masking the traffic as legitimate DNS responses.
+
+#### Phase 2: Targeted Service Versioning
+Once the non-standard port is discovered (e.g., a hidden FTP or SMB share), we run the intrusive service probe exclusively against that target.
+```bash
+sudo nmap -p <DISCOVERED_PORT> -sV --source-port 53 <TARGET_IP>
+```
+
+---
+
+### Troubleshooting: The 'tcpwrapped' State
+Encountering a `tcpwrapped` state during a `-sV` (Service Version) scan implies that a full TCP connection was established, but the connection was immediately dropped before the application payload could be evaluated. 
+
+This behavior is typically enforced by **TCP Wrappers** limiting access via IP ACLs, or by an active IPS blocking Nmap's specific service probes. Alternatively, the underlying daemon might require the client to initiate the data exchange.
+
+#### Manual Banner Grabbing with Netcat
+To bypass Nmap's probe signatures and manually interact with the daemon, we can use `nc` (Netcat) while preserving our firewall evasion tactic (Source Port Spoofing).
+
+```bash
+nc -nv -p 53 <TARGET_IP> <TARGET_PORT>
+```
+*   `-n`: Disables DNS resolution (speeds up connection and prevents leaks).
+*   `-v`: Verbose output (confirms connection establishment).
+*   `-p 53`: Binds the local source port to 53 to bypass standard perimeter firewall ACLs.
+
+Once connected, if the server does not immediately present a banner, send raw input (e.g., `ENTER`, `HELP`, or `GET / HTTP/1.0`) to trigger an application-layer response and identify the software version.
+
+#### Netcat Results & Output Analysis
+```text
+220 HTB{kjnsdf2n982n1827eh76238s98di1w6}
+214-The following commands are recognized (* =>'s unimplemented):
+214-CWD     XCWD    CDUP    XCUP    SMNT*   QUIT    PORT    PASV    
+...
+214 Direct comments to root@nix-nmap-hard
+```
+**Conclusion:** The hidden service on port 50000 was successfully identified as an **FTP Server**. The output confirms standard FTP operational commands (`CWD`, `PASV`, `RETR`, `STOR`). Furthermore, the sysadmin modified the initial 220 banner greeting, which leaked the objective flag.
+
+---
+
+### Module Conclusion & Key Takeaways
+This module provided an in-depth exploration of **Nmap**, the industry-standard network enumeration and scanning utility. It reinforced core SysAdmin troubleshooting skills and offensive network auditing techniques through practical challenges, ultimately validating these concepts in a comprehensive skills assessment.
+
+#### Core Competencies Acquired
+*   **Advanced Network Mapping:** Mastery of host discovery and port scanning methodologies to accurately map network topologies and attack surfaces.
+*   **Service & OS Fingerprinting:** Execution of service enumeration (`-sV`) and Operating System detection (`-O`) to identify underlying infrastructure and software versions.
+*   **Extensibility via NSE:** Leveraging the Nmap Scripting Engine (NSE) to automate vulnerability scanning, bypass security controls, and perform advanced service enumeration.
+*   **Evasion Tactics:** Applying stealth methodologies—such as packet fragmentation (`-f`), decoy scans (`-D`), source port spoofing (`--source-port`), and rate limiting (`--max-rate`)—to bypass strict perimeter firewalls and IDS/IPS appliances.
+*   **Output Management:** Parsing and managing Nmap scan results (`-oA`) effectively for reporting, documentation, and subsequent exploitation phases.
+
+Cheatsheet - "12_Network_Enumeration_Nmap" :
+* nmap <scan types> <options> <target> - Estructura básica de ejecución de Nmap para análisis y auditoría perimetral
+* sudo nmap -sS localhost - Ejecuta un TCP-SYN (Stealth Scan) rápido y eficiente contra localhost
+* sudo nmap 10.129.2.0/24 -sn -oA tnet | grep for | cut -d" " -f5 - Realiza Host Discovery (ping sweep) en un rango CIDR exportando resultados en todos los formatos
+* sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d" " -f5 - Ejecuta descubrimiento de hosts leyendo objetivos masivos desde un archivo de lista IP
+* sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d" " -f5 - Realiza Host Discovery sobre múltiples direcciones IP específicas separadas por espacios
+* sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d" " -f5 - Ejecuta descubrimiento de hosts especificando un rango de octetos IP
+* sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace - Realiza Host Discovery mediante ICMP Echo Request con registro detallado de paquetes a nivel de red
+* sudo nmap 10.129.2.18 -sn -oA host -PE --reason - Muestra la razón explícita por la cual un host es marcado como activo (ej. respuesta ARP)
+* sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace --disable-arp-ping - Fuerza la validación Layer 3 ICMP omitiendo el ping ARP predeterminado en redes locales
+* sudo nmap 10.129.2.28 --top-ports=10 - Escanea los 10 puertos TCP más frecuentes según la base de datos de Nmap
+* sudo nmap 10.129.2.28 -p 21 --packet-trace -Pn -n --disable-arp-ping - Analiza el comportamiento de paquetes SYN aislando el ruido de red (desactivando ICMP, DNS y ARP)
+* sudo nmap 10.129.2.28 -p 443 --packet-trace --disable-arp-ping -Pn -n --reason -sT - Ejecuta un TCP Connect Scan completo completando el handshake de 3 vías con traza de paquetes
+* sudo nmap 10.129.2.28 -p 445 --packet-trace -n --disable-arp-ping -Pn - Analiza puertos filtrados por firewall y respuestas de puerto inalcanzable ICMP (Type 3 / Code 3)
+* sudo nmap 10.129.2.28 -F -sU - Realiza un escaneo rápido de puertos UDP sobre los 100 puertos más comunes
+* sudo nmap 10.129.2.28 -Pn -n --disable-arp-ping --packet-trace -p 445 --reason -sV - Ejecuta detección de versión de servicio con traza de paquetes sobre un puerto específico
+* sudo nmap 10.129.2.28 -p- -oA target - Escanea los 65,535 puertos TCP y exporta resultados simultáneamente en formatos Normal, Grepable y XML
+* xsltproc target.xml -o target.html - Convierte la salida XML de Nmap en un reporte HTML estructurado usando hojas de estilo XSL
+* sudo nmap 10.129.2.28 -p- -sV --stats-every=5s - Escanea todos los puertos con versionado automatizando informes de progreso cada 5 segundos
+* sudo nmap 10.129.2.28 -p- -sV -v - Escanea todos los puertos con detección de versiones y alta verbosity para visualizar puertos abiertos en tiempo real
+* sudo tcpdump -i eth0 host 10.10.14.2 and 10.129.2.28 - Captura tráfico de red para analizar handshakes TCP y banners de servicio a nivel de socket
+* nc -nv 10.129.2.28 25 - Conecta manualmente mediante Netcat para capturar banners de servicio sin filtrar
+* sudo nmap <target> -sC - Ejecuta el conjunto predeterminado de scripts seguros del Nmap Scripting Engine (NSE)
+* sudo nmap <target> --script <category> - Ejecuta todos los scripts NSE pertenecientes a una categoría específica (ej. vuln, auth, exploit)
+* sudo nmap <target> -p 25 --script banner,smtp-commands - Ejecuta scripts NSE específicos contra un puerto para enumeración avanzada de servicios
+* sudo nmap <target> -p 80 -A - Realiza un escaneo agresivo agrupando detección de OS, versionado, scripts NSE y traceroute
+* sudo nmap <target> -p 80 -sV --script vuln - Ejecuta scripts de evaluación de vulnerabilidades NSE contra un servicio detectado
+* sudo nmap 10.129.2.0/24 -F --initial-rtt-timeout 50ms --max-rtt-timeout 100ms - Optimiza tiempos de espera RTT (Round-Trip-Time) para acelerar escaneos en redes rápidas
+* sudo nmap 10.129.2.0/24 -F --max-retries 0 - Acelera drásticamente el escaneo descartando reintentos de paquetes ante falta de respuesta
+* sudo nmap 10.129.2.0/24 -F -oN tnet.minrate300 --min-rate 300 - Fuerza un caudal mínimo de paquetes por segundo para optimizar la velocidad de sondeo
+* sudo nmap 10.129.2.0/24 -F -oN tnet.T5 -T 5 - Ejecuta una plantilla de temporización agresiva e intrusiva (-T5) para máxima velocidad
+* sudo nmap 10.129.2.28 -p 21,22,25 -sA -Pn -n --disable-arp-ping --packet-trace - Ejecuta un TCP ACK Scan para mapear reglas de firewalls sin estado (stateless)
+* sudo nmap 10.129.2.28 -p 80 -sS -Pn -n --disable-arp-ping --packet-trace -D RND:5 - Genera direcciones IP señuelo (decoys) aleatorias para enmascarar la IP de origen ante sistemas IDS/IPS
+* sudo nmap 10.129.2.28 -n -Pn -p 445 -O -S 10.129.2.200 -e tun0 - Suplanta la dirección IP de origen y fuerza el tráfico a través de una interfaz de red específica
+* sudo nmap 10.129.2.28 -p50000 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53 - Modifica el puerto de origen a 53 (DNS) para evadir reglas restrictivas de firewall y ACLs
+* ncat -nv --source-port 53 10.129.2.28 50000 - Conecta mediante Ncat utilizando un puerto de origen suplantado para interacción manual con servicios ocultos
+* sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP> - Realiza un SYN scan sigiloso con fragmentación de paquetes y señuelos para evasión avanzada de IDS/IPS
+* sudo nmap --max-rate 30 -f -D RND:5 -sV -sU -p 53 <target_IP> - Ejecuta un escaneo UDP versionado contra el puerto 53 para extracción de información de bindings DNS
+* sudo nmap -p- -sS -Pn -n --disable-arp-ping --source-port 53 --min-rate 1000 <TARGET_IP> - Ejecuta un escaneo masivo de alta velocidad en todos los puertos utilizando suplantación de puerto origen (DNS)
