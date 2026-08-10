@@ -937,6 +937,8 @@ Combining techniques to perform a comprehensive port discovery while keeping a l
 
 sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP>
 
+---
+
 ### DNS Enumeration & Banner Grabbing (Port 53 UDP)
 When performing a UDP port scan and service detection (`-sU -sV`) against port 53 (DNS), Nmap triggers a specific reconnaissance technique. It sends a CHAOS class TXT query for `version.bind` to map the exact software release running on the target.
 
