@@ -1083,6 +1083,8 @@ This module provided an in-depth exploration of **Nmap**, the industry-standard 
 *   **Evasion Tactics:** Applying stealth methodologies—such as packet fragmentation (`-f`), decoy scans (`-D`), source port spoofing (`--source-port`), and rate limiting (`--max-rate`)—to bypass strict perimeter firewalls and IDS/IPS appliances.
 *   **Output Management:** Parsing and managing Nmap scan results (`-oA`) effectively for reporting, documentation, and subsequent exploitation phases.
 
+---
+
 # Cheatsheet - "12_Network_Enumeration_Nmap" :
 * nmap <scan types> <options> <target> - Estructura básica de ejecución de Nmap para análisis y auditoría perimetral
 * sudo nmap -sS localhost - Ejecuta un TCP-SYN (Stealth Scan) rápido y eficiente contra localhost
