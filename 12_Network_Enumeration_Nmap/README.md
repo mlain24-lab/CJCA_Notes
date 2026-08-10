@@ -1086,41 +1086,44 @@ This module provided an in-depth exploration of **Nmap**, the industry-standard 
 ---
 
 # Cheatsheet - "12_Network_Enumeration_Nmap" :
-* nmap <scan types> <options> <target> - Estructura básica de ejecución de Nmap para análisis y auditoría perimetral
-* sudo nmap -sS localhost - Ejecuta un TCP-SYN (Stealth Scan) rápido y eficiente contra localhost
-* sudo nmap 10.129.2.0/24 -sn -oA tnet | grep for | cut -d" " -f5 - Realiza Host Discovery (ping sweep) en un rango CIDR exportando resultados en todos los formatos
-* sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d" " -f5 - Ejecuta descubrimiento de hosts leyendo objetivos masivos desde un archivo de lista IP
-* sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d" " -f5 - Realiza Host Discovery sobre múltiples direcciones IP específicas separadas por espacios
-* sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d" " -f5 - Ejecuta descubrimiento de hosts especificando un rango de octetos IP
-* sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace - Realiza Host Discovery mediante ICMP Echo Request con registro detallado de paquetes a nivel de red
-* sudo nmap 10.129.2.18 -sn -oA host -PE --reason - Muestra la razón explícita por la cual un host es marcado como activo (ej. respuesta ARP)
-* sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace --disable-arp-ping - Fuerza la validación Layer 3 ICMP omitiendo el ping ARP predeterminado en redes locales
-* sudo nmap 10.129.2.28 --top-ports=10 - Escanea los 10 puertos TCP más frecuentes según la base de datos de Nmap
-* sudo nmap 10.129.2.28 -p 21 --packet-trace -Pn -n --disable-arp-ping - Analiza el comportamiento de paquetes SYN aislando el ruido de red (desactivando ICMP, DNS y ARP)
-* sudo nmap 10.129.2.28 -p 443 --packet-trace --disable-arp-ping -Pn -n --reason -sT - Ejecuta un TCP Connect Scan completo completando el handshake de 3 vías con traza de paquetes
-* sudo nmap 10.129.2.28 -p 445 --packet-trace -n --disable-arp-ping -Pn - Analiza puertos filtrados por firewall y respuestas de puerto inalcanzable ICMP (Type 3 / Code 3)
-* sudo nmap 10.129.2.28 -F -sU - Realiza un escaneo rápido de puertos UDP sobre los 100 puertos más comunes
-* sudo nmap 10.129.2.28 -Pn -n --disable-arp-ping --packet-trace -p 445 --reason -sV - Ejecuta detección de versión de servicio con traza de paquetes sobre un puerto específico
-* sudo nmap 10.129.2.28 -p- -oA target - Escanea los 65,535 puertos TCP y exporta resultados simultáneamente en formatos Normal, Grepable y XML
-* xsltproc target.xml -o target.html - Convierte la salida XML de Nmap en un reporte HTML estructurado usando hojas de estilo XSL
-* sudo nmap 10.129.2.28 -p- -sV --stats-every=5s - Escanea todos los puertos con versionado automatizando informes de progreso cada 5 segundos
-* sudo nmap 10.129.2.28 -p- -sV -v - Escanea todos los puertos con detección de versiones y alta verbosity para visualizar puertos abiertos en tiempo real
-* sudo tcpdump -i eth0 host 10.10.14.2 and 10.129.2.28 - Captura tráfico de red para analizar handshakes TCP y banners de servicio a nivel de socket
-* nc -nv 10.129.2.28 25 - Conecta manualmente mediante Netcat para capturar banners de servicio sin filtrar
-* sudo nmap <target> -sC - Ejecuta el conjunto predeterminado de scripts seguros del Nmap Scripting Engine (NSE)
-* sudo nmap <target> --script <category> - Ejecuta todos los scripts NSE pertenecientes a una categoría específica (ej. vuln, auth, exploit)
-* sudo nmap <target> -p 25 --script banner,smtp-commands - Ejecuta scripts NSE específicos contra un puerto para enumeración avanzada de servicios
-* sudo nmap <target> -p 80 -A - Realiza un escaneo agresivo agrupando detección de OS, versionado, scripts NSE y traceroute
-* sudo nmap <target> -p 80 -sV --script vuln - Ejecuta scripts de evaluación de vulnerabilidades NSE contra un servicio detectado
-* sudo nmap 10.129.2.0/24 -F --initial-rtt-timeout 50ms --max-rtt-timeout 100ms - Optimiza tiempos de espera RTT (Round-Trip-Time) para acelerar escaneos en redes rápidas
-* sudo nmap 10.129.2.0/24 -F --max-retries 0 - Acelera drásticamente el escaneo descartando reintentos de paquetes ante falta de respuesta
-* sudo nmap 10.129.2.0/24 -F -oN tnet.minrate300 --min-rate 300 - Fuerza un caudal mínimo de paquetes por segundo para optimizar la velocidad de sondeo
-* sudo nmap 10.129.2.0/24 -F -oN tnet.T5 -T 5 - Ejecuta una plantilla de temporización agresiva e intrusiva (-T5) para máxima velocidad
-* sudo nmap 10.129.2.28 -p 21,22,25 -sA -Pn -n --disable-arp-ping --packet-trace - Ejecuta un TCP ACK Scan para mapear reglas de firewalls sin estado (stateless)
-* sudo nmap 10.129.2.28 -p 80 -sS -Pn -n --disable-arp-ping --packet-trace -D RND:5 - Genera direcciones IP señuelo (decoys) aleatorias para enmascarar la IP de origen ante sistemas IDS/IPS
-* sudo nmap 10.129.2.28 -n -Pn -p 445 -O -S 10.129.2.200 -e tun0 - Suplanta la dirección IP de origen y fuerza el tráfico a través de una interfaz de red específica
-* sudo nmap 10.129.2.28 -p50000 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53 - Modifica el puerto de origen a 53 (DNS) para evadir reglas restrictivas de firewall y ACLs
-* ncat -nv --source-port 53 10.129.2.28 50000 - Conecta mediante Ncat utilizando un puerto de origen suplantado para interacción manual con servicios ocultos
-* sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP> - Realiza un SYN scan sigiloso con fragmentación de paquetes y señuelos para evasión avanzada de IDS/IPS
-* sudo nmap --max-rate 30 -f -D RND:5 -sV -sU -p 53 <target_IP> - Ejecuta un escaneo UDP versionado contra el puerto 53 para extracción de información de bindings DNS
-* sudo nmap -p- -sS -Pn -n --disable-arp-ping --source-port 53 --min-rate 1000 <TARGET_IP> - Ejecuta un escaneo masivo de alta velocidad en todos los puertos utilizando suplantación de puerto origen (DNS)
+* "nmap <scan types> <options> <target>" - Estructura básica de ejecución de Nmap para análisis y auditoría perimetral
+* "sudo nmap -sS localhost" - Ejecuta un TCP-SYN (Stealth Scan) rápido y eficiente contra localhost
+* "sudo nmap 10.129.2.0/24 -sn -oA tnet | grep for | cut -d' ' -f5" - Realiza Host Discovery (ping sweep) en un rango CIDR exportando resultados en todos los formatos
+* "sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d' ' -f5" - Ejecuta descubrimiento de hosts leyendo objetivos masivos desde un archivo de lista IP
+* "sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d' ' -f5" - Realiza Host Discovery sobre múltiples direcciones IP específicas separadas por espacios
+* "sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d' ' -f5" - Ejecuta descubrimiento de hosts especificando un rango de octetos IP
+* "sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace" - Realiza Host Discovery mediante ICMP Echo Request con registro detallado de paquetes a nivel de red
+* "sudo nmap 10.129.2.18 -sn -oA host -PE --reason" - Muestra la razón explícita por la cual un host es marcado como activo (ej. respuesta ARP)
+* "sudo nmap 10.129.2.18 -sn -oA host -PE --packet-trace --disable-arp-ping" - Fuerza la validación Layer 3 ICMP omitiendo el ping ARP predeterminado en redes locales
+* "sudo nmap 10.129.2.28 --top-ports=10" - Escanea los 10 puertos TCP más frecuentes según la base de datos de Nmap
+* "sudo nmap 10.129.2.28 -p 21 --packet-trace -Pn -n --disable-arp-ping" - Analiza el comportamiento de paquetes SYN aislando el ruido de red (desactivando ICMP, DNS y ARP)
+* "sudo nmap 10.129.2.28 -p 443 --packet-trace --disable-arp-ping -Pn -n --reason -sT" - Ejecuta un TCP Connect Scan completo completando el handshake de 3 vías con traza de paquetes
+* "sudo nmap 10.129.2.28 -p 445 --packet-trace -n --disable-arp-ping -Pn" - Analiza puertos filtrados por firewall y respuestas de puerto inalcanzable ICMP (Type 3 / Code 3)
+* "sudo nmap 10.129.2.28 -F -sU" - Realiza un escaneo rápido de puertos UDP sobre los 100 puertos más comunes
+* "sudo nmap 10.129.2.28 -Pn -n --disable-arp-ping --packet-trace -p 445 --reason -sV" - Ejecuta detección de versión de servicio con traza de paquetes sobre un puerto específico
+* "sudo nmap 10.129.2.28 -p- -oA target" - Escanea los 65,535 puertos TCP y exporta resultados simultáneamente en formatos Normal, Grepable y XML
+* "xsltproc target.xml -o target.html" - Convierte la salida XML de Nmap en un reporte HTML estructurado usando hojas de estilo XSL
+* "sudo nmap 10.129.2.28 -p- -sV --stats-every=5s" - Escanea todos los puertos con versionado automatizando informes de progreso cada 5 segundos
+* "sudo nmap 10.129.2.28 -p- -sV -v" - Escanea todos los puertos con detección de versiones y alta verbosity para visualizar puertos abiertos en tiempo real
+* "sudo tcpdump -i eth0 host 10.10.14.2 and 10.129.2.28" - Captura tráfico de red para analizar handshakes TCP y banners de servicio a nivel de socket
+* "nc -nv 10.129.2.28 25" - Conecta manualmente mediante Netcat para capturar banners de servicio sin filtrar
+* "sudo nmap <target> -sC" - Ejecuta el conjunto predeterminado de scripts seguros del Nmap Scripting Engine (NSE)
+* "sudo nmap <target> --script <category>" - Ejecuta todos los scripts NSE pertenecientes a una categoría específica (ej. vuln, auth, exploit)
+* "sudo nmap <target> -p 25 --script banner,smtp-commands" - Ejecuta scripts NSE específicos contra un puerto para enumeración avanzada de servicios
+* "sudo nmap <target> -p 80 -A" - Realiza un escaneo agresivo agrupando detección de OS, versionado, scripts NSE y traceroute
+* "sudo nmap <target> -p 80 -sV --script vuln" - Ejecuta scripts de evaluación de vulnerabilidades NSE contra un servicio detectado
+* "sudo nmap 10.129.2.0/24 -F --initial-rtt-timeout 50ms --max-rtt-timeout 100ms" - Optimiza tiempos de espera RTT (Round-Trip-Time) para acelerar escaneos en redes rápidas
+* "sudo nmap 10.129.2.0/24 -F --max-retries 0" - Acelera drásticamente el escaneo descartando reintentos de paquetes ante falta de respuesta
+* "sudo nmap 10.129.2.0/24 -F -oN tnet.minrate300 --min-rate 300" - Fuerza un caudal mínimo de paquetes por segundo para optimizar la velocidad de sondeo
+* "sudo nmap 10.129.2.0/24 -F -oN tnet.T5 -T 5" - Ejecuta una plantilla de temporización agresiva e intrusiva (-T5) para máxima velocidad
+* "sudo nmap 10.129.2.28 -p 21,22,25 -sA -Pn -n --disable-arp-ping --packet-trace" - Ejecuta un TCP ACK Scan para mapear reglas de firewalls sin estado (stateless)
+* "sudo nmap 10.129.2.28 -p 80 -sS -Pn -n --disable-arp-ping --packet-trace -D RND:5" - Genera direcciones IP señuelo (decoys) aleatorias para enmascarar la IP de origen ante sistemas IDS/IPS
+* "sudo nmap 10.129.2.28 -n -Pn -p 445 -O -S 10.129.2.200 -e tun0" - Suplanta la dirección IP de origen y fuerza el tráfico a través de una interfaz de red específica
+* "sudo nmap 10.129.2.28 -p50000 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53" - Modifica el puerto de origen a 53 (DNS) para evadir reglas restrictivas de firewall y ACLs
+* "ncat -nv --source-port 53 10.129.2.28 50000" - Conecta mediante Ncat utilizando un puerto de origen suplantado para interacción manual con servicios ocultos
+* "sudo nmap -sS --top-ports 100 --max-rate 30 -f -D RND:5 <target_IP>" - Realiza un SYN scan sigiloso con fragmentación de paquetes y señuelos para evasión avanzada de IDS/IPS
+* "sudo nmap --max-rate 30 -f -D RND:5 -sV -sU -p 53 <target_IP>" - Ejecuta un escaneo UDP versionado contra el puerto 53 para extracción de información de bindings DNS
+* "sudo nmap --max-rate 30 -f -D RND:5 -sV --top-ports 100 <target_IP>" - Escanea los 100 puertos principales con detección de versiones combinando evasión de IDS y limitación de tasa
+* "sudo nmap -p- -sS -Pn -n --disable-arp-ping --source-port 53 --min-rate 1000 <TARGET_IP>" - Ejecuta un escaneo masivo de alta velocidad en todos los puertos utilizando suplantación de puerto origen (DNS)
+* "sudo nmap -p <DISCOVERED_PORT> -sV --source-port 53 <target_IP>" - Realiza un escaneo de versión dirigido exclusivamente al puerto descubierto utilizando suplantación de puerto de origen
+* "nc -nv -p 53 <TARGET_IP> <TARGET_PORT>" - Establece conexión manual mediante Netcat vinculando el puerto local 53 para bypass de ACLs perimetrales
