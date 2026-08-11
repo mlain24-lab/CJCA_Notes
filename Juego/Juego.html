@@ -60,14 +60,8 @@ body{
 }
 
 @keyframes twinkle{
-    from{
-        opacity:.15;
-        transform:scale(.7);
-    }
-    to{
-        opacity:1;
-        transform:scale(1.5);
-    }
+    from{ opacity:.15; transform:scale(.7); }
+    to{ opacity:1; transform:scale(1.5); }
 }
 
 .screen{
@@ -103,14 +97,8 @@ body{
 }
 
 @keyframes appear{
-    from{
-        opacity:0;
-        transform:translateY(20px) scale(.98);
-    }
-    to{
-        opacity:1;
-        transform:none;
-    }
+    from{ opacity:0; transform:translateY(20px) scale(.98); }
+    to{ opacity:1; transform:none; }
 }
 
 .parchment h1,
@@ -373,22 +361,10 @@ body{
     user-select:none;
 }
 
-.wall{
-    background:linear-gradient(135deg,#1e293b,#0f172a);
-}
-
-.path{
-    background:rgba(255,255,255,.025);
-}
-
-.fruit{
-    background:rgba(251,191,36,.05);
-}
-
-.goal{
-    background:rgba(244,63,94,.15);
-}
-
+.wall{ background:linear-gradient(135deg,#1e293b,#0f172a); }
+.path{ background:rgba(255,255,255,.025); }
+.fruit{ background:rgba(251,191,36,.05); }
+.goal{ background:rgba(244,63,94,.15); }
 .boss-cell{
     background:rgba(139,92,246,.2);
     box-shadow:inset 0 0 15px rgba(139,92,246,.5);
@@ -406,12 +382,8 @@ body{
 }
 
 @keyframes pulse{
-    from{
-        transform:scale(.9);
-    }
-    to{
-        transform:scale(1.12);
-    }
+    from{ transform:scale(.9); }
+    to{ transform:scale(1.12); }
 }
 
 .controls{
@@ -427,11 +399,7 @@ body{
     border:1px solid var(--border);
     border-radius:10px;
     color:white;
-    background:linear-gradient(
-        135deg,
-        rgba(244,63,94,.15),
-        rgba(225,29,72,.3)
-    );
+    background:linear-gradient(135deg,rgba(244,63,94,.15),rgba(225,29,72,.3));
     font-size:1.1rem;
     cursor:pointer;
 }
@@ -441,24 +409,10 @@ body{
     transform:scale(.92);
 }
 
-.up{
-    grid-column:2;
-}
-
-.left{
-    grid-column:1;
-    grid-row:2;
-}
-
-.down{
-    grid-column:2;
-    grid-row:2;
-}
-
-.right{
-    grid-column:3;
-    grid-row:2;
-}
+.up{ grid-column:2; }
+.left{ grid-column:1; grid-row:2; }
+.down{ grid-column:2; grid-row:2; }
+.right{ grid-column:3; grid-row:2; }
 
 .game-actions{
     display:flex;
@@ -478,9 +432,7 @@ body{
     font-size:.7rem;
 }
 
-.small-btn:hover{
-    background:rgba(255,255,255,.1);
-}
+.small-btn:hover{ background:rgba(255,255,255,.1); }
 
 #message{
     min-height:20px;
@@ -488,10 +440,6 @@ body{
     font-size:.72rem;
     color:#94a3b8;
 }
-
-/* =========================
-   ACHIEVEMENTS
-========================= */
 
 .ach-grid{
     display:grid;
@@ -512,13 +460,7 @@ body{
     border:1px solid rgba(0,0,0,.1);
 }
 
-.achievement-icon{
-    font-size:1.3rem;
-}
-
-/* =========================
-   NARRATIVE
-========================= */
+.achievement-icon{ font-size:1.3rem; }
 
 #pageText{
     text-align:left;
@@ -527,51 +469,23 @@ body{
     line-height:1.75;
 }
 
-#pageAuthor{
-    font-family:Georgia,serif;
-}
-
-/* =========================
-   MOBILE
-========================= */
+#pageAuthor{ font-family:Georgia,serif; }
 
 @media(max-width:1050px){
-
     .game-layout{
         grid-template-columns:minmax(300px,420px);
         justify-content:center;
     }
-
-    .side-panel{
-        display:none;
-    }
+    .side-panel{ display:none; }
 }
 
 @media(max-width:500px){
-
-    .parchment{
-        padding:22px;
-    }
-
-    #game{
-        padding:5px;
-    }
-
-    .center-panel{
-        padding:9px;
-    }
-
-    .stats{
-        font-size:.62rem;
-    }
-
-    .controls{
-        grid-template-columns:50px 50px 50px;
-    }
-
-    .ctrl{
-        width:50px;
-    }
+    .parchment{ padding:22px; }
+    #game{ padding:5px; }
+    .center-panel{ padding:9px; }
+    .stats{ font-size:.62rem; }
+    .controls{ grid-template-columns:50px 50px 50px; }
+    .ctrl{ width:50px; }
 }
 </style>
 </head>
@@ -580,743 +494,311 @@ body{
 
 <div id="stars"></div>
 
-<!-- =========================
-     AUTH
-========================= -->
-
+<!-- AUTH -->
 <div class="screen" id="authScreen">
-
-    <div class="parchment"
-         style="max-width:420px;text-align:center;">
-
-        <span class="chapter-badge">
-            Acceso al Códice
-        </span>
-
+    <div class="parchment" style="max-width:420px;text-align:center;">
+        <span class="chapter-badge">Acceso al Códice</span>
         <h2>Identificación</h2>
-
-        <p class="intro">
-            Introduce tus credenciales.
-        </p>
-
+        <p class="intro">Introduce tus credenciales.</p>
         <div style="text-align:left;margin-top:15px;">
-
-            <label style="
-                font-size:.8rem;
-                font-weight:bold;
-                color:#5d4037;
-            ">
-                Nombre de Usuario
-            </label>
-
-            <input
-                type="text"
-                id="usernameInput"
-                class="input-field"
-                placeholder="Ej. Viajero Estelar"
-                minlength="3"
-                autocomplete="username"
-            >
-
-            <label style="
-                font-size:.8rem;
-                font-weight:bold;
-                color:#5d4037;
-            ">
-                Contraseña
-            </label>
-
-            <input
-                type="password"
-                id="passwordInput"
-                class="input-field"
-                placeholder="••••••••"
-                minlength="4"
-                autocomplete="current-password"
-            >
-
+            <label style="font-size:.8rem;font-weight:bold;color:#5d4037;">Nombre de Usuario</label>
+            <input type="text" id="usernameInput" class="input-field" placeholder="Ej. Viajero Estelar" minlength="3" autocomplete="username">
+            <label style="font-size:.8rem;font-weight:bold;color:#5d4037;">Contraseña</label>
+            <input type="password" id="passwordInput" class="input-field" placeholder="••••••••" minlength="4" autocomplete="current-password">
         </div>
-
-        <div
-            id="authMessage"
-            style="
-                color:#be123c;
-                font-size:.8rem;
-                margin-bottom:10px;
-                min-height:18px;
-            "
-        ></div>
-
-        <button
-            class="btn btn-primary"
-            onclick="handleLogin()"
-        >
-            🔑 Iniciar Sesión
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="handleRegister()"
-        >
-            ✨ Registrar Nueva Cuenta
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="toggleFullScreen()"
-            style="margin-top:8px;background:#5d4037;color:#fff;"
-        >
-            📺 Pantalla Completa
-        </button>
-
+        <div id="authMessage" style="color:#be123c;font-size:.8rem;margin-bottom:10px;min-height:18px;"></div>
+        <button class="btn btn-primary" onclick="handleLogin()">🔑 Iniciar Sesión</button>
+        <button class="btn btn-secondary" onclick="handleRegister()">✨ Registrar Nueva Cuenta</button>
+        <button class="btn btn-secondary" onclick="toggleFullScreen()" style="margin-top:8px;background:#5d4037;color:#fff;">📺 Pantalla Completa</button>
     </div>
-
 </div>
 
-<!-- =========================
-     SLOTS
-========================= -->
-
+<!-- SLOTS -->
 <div class="screen hidden" id="slotScreen">
-
-    <div
-        class="parchment"
-        style="max-width:500px;text-align:center;"
-    >
-
-        <span
-            class="chapter-badge"
-            id="slotUserBadge"
-        >
-            Viajero
-        </span>
-
+    <div class="parchment" style="max-width:500px;text-align:center;">
+        <span class="chapter-badge" id="slotUserBadge">Viajero</span>
         <h2>Selección de Partida</h2>
-
-        <p class="intro">
-            Elige una ranura de guardado para continuar.
-        </p>
-
-        <div
-            id="slotsContainer"
-            style="margin:20px 0;"
-        ></div>
-
-        <button
-            class="btn btn-secondary"
-            onclick="logoutUser()"
-        >
-            🚪 Cerrar Sesión
-        </button>
-
+        <p class="intro">Elige una ranura de guardado para continuar.</p>
+        <div id="slotsContainer" style="margin:20px 0;"></div>
+        <button class="btn btn-secondary" onclick="logoutUser()">🚪 Cerrar Sesión</button>
     </div>
-
 </div>
 
-<!-- =========================
-     START
-========================= -->
-
+<!-- START -->
 <div class="screen hidden" id="startScreen">
-
     <div class="parchment">
-
-        <span
-            class="chapter-badge"
-            id="activeSlotBadge"
-        >
-            Slot 1
-        </span>
-
-        <h2>
-            El Códice de las Estrellas ❤️
-        </h2>
-
-        <p class="intro">
-            Un roguelite de exploración, literatura,
-            secretos y memoria estelar.
-        </p>
-
-        <div style="
-            background:rgba(121,85,72,.06);
-            padding:14px;
-            border-radius:10px;
-            margin-bottom:16px;
-        ">
-
-            <p>
-                <b>📜 Características</b>
-            </p>
-
-            <ul style="
-                margin-left:20px;
-                font-size:.88rem;
-                line-height:1.6;
-            ">
-
-                <li>
-                    500 páginas narrativas desbloqueables.
-                </li>
-
-                <li>
-                    Citas cortas durante la exploración.
-                </li>
-
-                <li>
-                    Objetos que aparecen según tu progreso.
-                </li>
-
-                <li>
-                    100 logros.
-                </li>
-
-                <li>
-                    8 capítulos y jefes.
-                </li>
-
+        <span class="chapter-badge" id="activeSlotBadge">Slot 1</span>
+        <h2>El Códice de las Estrellas ❤️</h2>
+        <p class="intro">Un roguelite de exploración, literatura, secretos y memoria estelar.</p>
+        <div style="background:rgba(121,85,72,.06);padding:14px;border-radius:10px;margin-bottom:16px;">
+            <p><b>📜 Características</b></p>
+            <ul style="margin-left:20px;font-size:.88rem;line-height:1.6;">
+                <li>500 páginas narrativas desbloqueables.</li>
+                <li>Citas cortas durante la exploración.</li>
+                <li>Objetos que aparecen según tu progreso.</li>
+                <li>100 logros.</li>
+                <li>8 capítulos y jefes.</li>
             </ul>
-
         </div>
-
-        <div style="
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:10px;
-            margin-bottom:12px;
-        ">
-
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
-
-                <label style="
-                    font-size:.75rem;
-                    font-weight:bold;
-                    color:#5d4037;
-                ">
-                    🎵 Música
-                </label>
-
-                <select
-                    id="musicTrackSetting"
-                    style="
-                        width:100%;
-                        padding:8px;
-                        border-radius:8px;
-                        border:1px solid #8d6e63;
-                        background:#fff8e8;
-                    "
-                >
-
-                    <option value="0">
-                        Armonía Estelar
-                    </option>
-
-                    <option value="1">
-                        Ecos del Alba
-                    </option>
-
-                    <option value="2">
-                        Sinfonía del Cosmos
-                    </option>
-
-                    <option value="off">
-                        Música Desactivada
-                    </option>
-
+                <label style="font-size:.75rem;font-weight:bold;color:#5d4037;">🎵 Música</label>
+                <select id="musicTrackSetting" style="width:100%;padding:8px;border-radius:8px;border:1px solid #8d6e63;background:#fff8e8;">
+                    <option value="0">Armonía Estelar</option>
+                    <option value="1">Ecos del Alba</option>
+                    <option value="2">Sinfonía del Cosmos</option>
+                    <option value="off">Música Desactivada</option>
                 </select>
-
             </div>
-
             <div>
-
-                <label style="
-                    font-size:.75rem;
-                    font-weight:bold;
-                    color:#5d4037;
-                ">
-                    ⚔️ Dificultad
-                </label>
-
-                <select
-                    id="difficultySetting"
-                    style="
-                        width:100%;
-                        padding:8px;
-                        border-radius:8px;
-                        border:1px solid #8d6e63;
-                        background:#fff8e8;
-                    "
-                >
-
-                    <option value="normal">
-                        Normal
-                    </option>
-
-                    <option value="hard">
-                        Difícil
-                    </option>
-
-                    <option value="legend">
-                        Leyenda
-                    </option>
-
+                <label style="font-size:.75rem;font-weight:bold;color:#5d4037;">⚔️ Dificultad</label>
+                <select id="difficultySetting" style="width:100%;padding:8px;border-radius:8px;border:1px solid #8d6e63;background:#fff8e8;">
+                    <option value="normal">Normal</option>
+                    <option value="hard">Difícil</option>
+                    <option value="legend">Leyenda</option>
                 </select>
-
             </div>
-
         </div>
-
-        <button
-            class="btn btn-primary"
-            onclick="startJourney()"
-        >
-            ✨ Comenzar la Travesía
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="showAchievements()"
-        >
-            🏆 Salón de los 100 Logros
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="toggleFullScreen()"
-        >
-            📺 Pantalla Completa
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="returnToSlots()"
-        >
-            📁 Cambiar Slot / Cuenta
-        </button>
-
+        <button class="btn btn-primary" onclick="startJourney()">✨ Comenzar la Travesía</button>
+        <button class="btn btn-secondary" onclick="showAchievements()">🏆 Salón de los 100 Logros</button>
+        <button class="btn btn-secondary" onclick="toggleFullScreen()">📺 Pantalla Completa</button>
+        <button class="btn btn-secondary" onclick="returnToSlots()">📁 Cambiar Slot / Cuenta</button>
     </div>
-
 </div>
 
-<!-- =========================
-     CHAPTER
-========================= -->
-
+<!-- CHAPTER -->
 <div class="screen hidden" id="chapterScreen">
-
-    <div
-        class="parchment"
-        style="text-align:center;"
-    >
-
-        <span
-            class="chapter-badge"
-            id="chapBadge"
-        >
-            Capítulo 1
-        </span>
-
-        <h2 id="chapTitle">
-            El Jardín de los Suspiros
-        </h2>
-
-        <p
-            class="intro"
-            id="chapDesc"
-        ></p>
-
+    <div class="parchment" style="text-align:center;">
+        <span class="chapter-badge" id="chapBadge">Capítulo 1</span>
+        <h2 id="chapTitle">El Jardín de los Suspiros</h2>
+        <p class="intro" id="chapDesc"></p>
         <div style="margin:20px 0;">
-
-            <div
-                style="font-size:3rem;"
-                id="chapIcon"
-            >
-                🌹
-            </div>
-
+            <div style="font-size:3rem;" id="chapIcon">🌹</div>
         </div>
-
-        <button
-            class="btn btn-primary"
-            onclick="enterChapterRoom()"
-        >
-            ⚔️ Entrar al Capítulo
-        </button>
-
+        <button class="btn btn-primary" onclick="enterChapterRoom()">⚔️ Entrar al Capítulo</button>
     </div>
-
 </div>
 
-<!-- =========================
-     NARRATIVE
-========================= -->
-
+<!-- NARRATIVE -->
 <div class="screen hidden" id="narrativeScreen">
-
     <div class="parchment">
-
-        <span
-            class="chapter-badge"
-            id="pageChapterBadge"
-        >
-            Página del Códice
-        </span>
-
-        <h2 id="pageTitle">
-            Página 1
-        </h2>
-
-        <p
-            class="intro"
-            id="pageText"
-        ></p>
-
-        <p
-            style="
-                text-align:right;
-                font-weight:bold;
-                color:#795548;
-            "
-            id="pageAuthor"
-        ></p>
-
-        <div style="
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:10px;
-            margin:16px 0;
-        ">
-
-            <div style="
-                background:rgba(0,0,0,.08);
-                padding:10px;
-                border-radius:8px;
-                text-align:center;
-            ">
-
-                <span>
-                    Progreso Códice
-                </span>
-
-                <strong
-                    id="codiceProgress"
-                    style="
-                        display:block;
-                        color:#be123c;
-                    "
-                >
-                    1/500
-                </strong>
-
+        <span class="chapter-badge" id="pageChapterBadge">Página del Códice</span>
+        <h2 id="pageTitle">Página 1</h2>
+        <p class="intro" id="pageText"></p>
+        <p style="text-align:right;font-weight:bold;color:#795548;" id="pageAuthor"></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;">
+            <div style="background:rgba(0,0,0,.08);padding:10px;border-radius:8px;text-align:center;">
+                <span>Progreso Códice</span>
+                <strong id="codiceProgress" style="display:block;color:#be123c;">1/500</strong>
             </div>
-
-            <div style="
-                background:rgba(0,0,0,.08);
-                padding:10px;
-                border-radius:8px;
-                text-align:center;
-            ">
-
-                <span>
-                    Puntuación
-                </span>
-
-                <strong
-                    id="scoreProgress"
-                    style="
-                        display:block;
-                        color:#be123c;
-                    "
-                >
-                    0
-                </strong>
-
+            <div style="background:rgba(0,0,0,.08);padding:10px;border-radius:8px;text-align:center;">
+                <span>Puntuación</span>
+                <strong id="scoreProgress" style="display:block;color:#be123c;">0</strong>
             </div>
-
         </div>
-
-        <button
-            class="btn btn-primary"
-            onclick="advanceChapter()"
-        >
-            🌟 Siguiente Capítulo
-        </button>
-
+        <button class="btn btn-primary" onclick="advanceChapter()">🌟 Siguiente Capítulo</button>
     </div>
-
 </div>
 
-<!-- =========================
-     DEATH
-========================= -->
-
+<!-- DEATH -->
 <div class="screen hidden" id="deathScreen">
-
-    <div
-        class="parchment"
-        style="text-align:center;"
-    >
-
-        <h2>
-            🌑 El abismo te ha alcanzado
-        </h2>
-
-        <p
-            class="intro"
-            id="deathText"
-        >
-            «La oscuridad no pudo apagar por completo la llama...»
-        </p>
-
-        <button
-            class="btn btn-primary"
-            onclick="retryChapter()"
-        >
-            🔥 Reintentar Capítulo
-        </button>
-
-        <button
-            class="btn btn-secondary"
-            onclick="returnMenu()"
-        >
-            🏠 Volver al Menú
-        </button>
-
+    <div class="parchment" style="text-align:center;">
+        <h2>🌑 El abismo te ha alcanzado</h2>
+        <p class="intro" id="deathText">«La oscuridad no pudo apagar por completo la llama...»</p>
+        <button class="btn btn-primary" onclick="retryChapter()">🔥 Reintentar Capítulo</button>
+        <button class="btn btn-secondary" onclick="returnMenu()">🏠 Volver al Menú</button>
     </div>
-
 </div>
 
-<!-- =========================
-     ACHIEVEMENTS
-========================= -->
-
+<!-- ACHIEVEMENTS -->
 <div class="screen hidden" id="achievementScreen">
-
     <div class="parchment">
-
-        <h2>
-            🏆 Salón de las Estrellas
-        </h2>
-
-        <p class="intro">
-            100 logros para descubrir.
-        </p>
-
-        <div
-            class="ach-grid"
-            id="achievementList"
-        ></div>
-
-        <button
-            class="btn btn-primary"
-            onclick="closeAchievements()"
-        >
-            Volver
-        </button>
-
+        <h2>🏆 Salón de las Estrellas</h2>
+        <p class="intro">100 logros para descubrir.</p>
+        <div class="ach-grid" id="achievementList"></div>
+        <button class="btn btn-primary" onclick="closeAchievements()">Volver</button>
     </div>
-
 </div>
 
-<!-- =========================
-     GAME
-========================= -->
-
+<!-- GAME -->
 <main id="game" class="hidden">
-
     <div class="game-layout">
-
-        <!-- LEFT -->
-
         <aside class="side-panel">
-
-            <h3>
-                📜 Citas del Códice
-            </h3>
-
+            <h3>📜 Citas del Códice</h3>
             <div id="leftVerses"></div>
-
         </aside>
-
-        <!-- CENTER -->
-
         <section class="center-panel">
-
-            <div
-                class="title"
-                id="gameTitle"
-            >
-                El Jardín de los Suspiros
-            </div>
-
+            <div class="title" id="gameTitle">El Jardín de los Suspiros</div>
             <div class="room-header">
-
-                <span id="roomCoords">
-                    Sala: [1, 1]
-                </span>
-
-                <div
-                    class="minimap"
-                    id="minimap"
-                ></div>
-
-                <span id="roomTypeIndicator">
-                    Sala Normal
-                </span>
-
+                <span id="roomCoords">Sala: [1, 1]</span>
+                <div class="minimap" id="minimap"></div>
+                <span id="roomTypeIndicator">Sala Normal</span>
             </div>
-
             <div class="stats">
-
-                <div>
-                    Cap
-                    <span
-                        class="stat-value"
-                        id="uiChapter"
-                    >
-                        1
-                    </span>
-                </div>
-
-                <div>
-                    🍈
-                    <span
-                        class="stat-value"
-                        id="uiFruit"
-                    >
-                        0
-                    </span>
-                </div>
-
-                <div>
-                    ❤️
-                    <span
-                        class="stat-value"
-                        id="uiLives"
-                    >
-                        3
-                    </span>
-                </div>
-
-                <div>
-                    🛡️
-                    <span
-                        class="stat-value"
-                        id="uiShield"
-                    >
-                        0
-                    </span>
-                </div>
-
-                <div>
-                    ⭐
-                    <span
-                        class="stat-value"
-                        id="uiScore"
-                    >
-                        0
-                    </span>
-                </div>
-
+                <div>Cap <span class="stat-value" id="uiChapter">1</span></div>
+                <div>🍈 <span class="stat-value" id="uiFruit">0</span></div>
+                <div>❤️ <span class="stat-value" id="uiLives">3</span></div>
+                <div>🛡️ <span class="stat-value" id="uiShield">0</span></div>
+                <div>⭐ <span class="stat-value" id="uiScore">0</span></div>
             </div>
-
             <div id="maze"></div>
-
-            <div id="message">
-                Usa WASD, flechas o los controles.
-            </div>
-
+            <div id="message">Usa WASD, flechas o los controles.</div>
             <div class="controls">
-
-                <button
-                    class="ctrl up"
-                    onclick="movePlayer(0,-1)"
-                >
-                    ▲
-                </button>
-
-                <button
-                    class="ctrl left"
-                    onclick="movePlayer(-1,0)"
-                >
-                    ◀
-                </button>
-
-                <button
-                    class="ctrl down"
-                    onclick="movePlayer(0,1)"
-                >
-                    ▼
-                </button>
-
-                <button
-                    class="ctrl right"
-                    onclick="movePlayer(1,0)"
-                >
-                    ▶
-                </button>
-
+                <button class="ctrl up" onclick="movePlayer(0,-1)">▲</button>
+                <button class="ctrl left" onclick="movePlayer(-1,0)">◀</button>
+                <button class="ctrl down" onclick="movePlayer(0,1)">▼</button>
+                <button class="ctrl right" onclick="movePlayer(1,0)">▶</button>
             </div>
-
             <div class="game-actions">
-
-                <button
-                    class="small-btn"
-                    onclick="cycleMusicTrack()"
-                >
-                    🎵 Música
-                </button>
-
-                <button
-                    class="small-btn"
-                    onclick="toggleFullScreen()"
-                >
-                    📺 Fullscreen
-                </button>
-
-                <button
-                    class="small-btn"
-                    onclick="restartRoom()"
-                >
-                    🔄 Reiniciar
-                </button>
-
+                <button class="small-btn" onclick="cycleMusicTrack()">🎵 Música</button>
+                <button class="small-btn" onclick="toggleFullScreen()">📺 Fullscreen</button>
+                <button class="small-btn" onclick="restartRoom()">🔄 Reiniciar</button>
             </div>
-
         </section>
-
-        <!-- RIGHT -->
-
         <aside class="side-panel">
-
-            <h3>
-                🏛️ Lore y Objetos
-            </h3>
-
+            <h3>🏛️ Lore y Objetos</h3>
             <div id="rightVerses"></div>
-
         </aside>
-
     </div>
-
 </main>
 
-<!--
-    IMPORTANTE:
-    database.js DEBE estar en la misma carpeta.
--->
-<script src="database.js"></script>
-
 <script>
+/* ============================================================
+   BASE DE DATOS INTEGRADA (GAME_DATABASE)
+============================================================ */
+const GAME_DATABASE = {
+    acts: [
+        "Acto I: Los Primeros Fragmentos del Despertar",
+        "Acto II: El Laberinto de las Sombras Interiores",
+        "Acto III: Ecos del Tiempo y la Distancia",
+        "Acto IV: La Revelación Definitiva del Códice"
+    ],
+    defeatPhrases: [
+        "«La oscuridad no pudo apagar por completo la llama... vuelve a intentarlo en el siguiente sendero estelar.»",
+        "«Aun en la derrota, cada paso grabado en el Códice enseña el camino correcto hacia la verdadera luz.»",
+        "«El abismo intentó borrar tu nombre, pero las constelaciones guardan celosamente tu memoria y tu esfuerzo.»",
+        "«Un tropiezo en el sendero estelar no es el fin del viaje, sino una pausa necesaria en la eternidad.»",
+        "«Las sombras son pasajeras y efímeras; levántate con firmeza y reclama tu lugar legítimo en el Códice.»",
+        "«Incluso las estrellas más brillantes experimentan eclipses antes de volver a brillar con intensidad.»",
+        "«No temas al eco del abismo; tu voluntad es más fuerte que cualquier laberinto temporal.»",
+        "«El sendero de la memoria exige paciencia y valor. Sacúdete el polvo estelar y avanza de nuevo.»"
+    ],
+    lateralVerses: [
+        "El amor no mira con los ojos, sino con el alma. — William Shakespeare",
+        "Estar contigo convierte el tiempo fugaz en un lugar habitable y eterno.",
+        "Tus ojos son una pequeña constelación brillante contra los días más oscuros.",
+        "He cruzado océanos enteros de tiempo y espacio para encontrarte. — Mary Shelley",
+        "Si sé lo que es el amor verdadero, es gracias a ti. — Hermann Hesse",
+        "Andábamos sin buscarnos, pero sabíamos que caminábamos hacia el mismo lugar. — Julio Cortázar",
+        "Algunas almas se reconocen y se entrelazan antes de aprender sus nombres.",
+        "No hay distancia física capaz de borrar una historia verdaderamente compartida.",
+        "La esperanza es una estrella que se vislumbra mejor cuando todo parece oscuro.",
+        "El corazón también sabe leer mapas ocultos que los ojos desconocen.",
+        "Hay encuentros que parecen casualidad hasta que recordamos lo que cambió después.",
+        "Quizá amar consista exactamente en aprender el camino de regreso a la misma persona.",
+        "El futuro no está escrito en piedra: se construye activamente con cada paso juntos.",
+        "Toda aventura necesita un destino, pero las mejores siempre necesitan compañía.",
+        "Bajo este cielo estelar, cada latido del corazón es un verso inmortal.",
+        "Incluso en el laberinto más oscuro y profundo, tu recuerdo es la brújula perfecta.",
+        "El eco de tus pasos resuena con fuerza en los pasillos infinitos de la eternidad.",
+        "No tememos a la sombra porque llevamos la luz inextinguible del Códice dentro.",
+        "Dos almas entrelazadas desafían con valentía las leyes del tiempo y el espacio.",
+        "Cada fruta recolectada es una chispa brillante de esperanza en la penumbra.",
+        "Lo esencial es invisible a los ojos. Solo se ve con el corazón. — Antoine de Saint-Exupéry",
+        "Hay libros cuyas portadas y contraportadas son el principio y el fin de todo. — R. M. Rilke",
+        "Donde hay amor y sabiduría, no hay temor ni oscuridad posible. — Dante Alighieri"
+    ],
+    literaryMasterpieces: [
+        { work: "La Odisea", author: "Homero", text: "No hay nada más noble ni más digno de alabanza que cuando el hombre y la mujer comparten un hogar con un mismo entendimiento, superando tormentas y designios divinos." },
+        { work: "Los Pilares de la Tierra", author: "Ken Follett", text: "El amor era un sentimiento extraño, extraordinariamente poderoso e impredecible que desafiaba cualquier lógica arquitectónica y cualquier cimiento de piedra tallada." },
+        { work: "Orgullo y Prejuicio", author: "Jane Austen", text: "Tus esperanzas y tus deseos profundos están fundados firmemente en la razón, pero el afecto verdadero siempre supera cualquier cálculo humano." },
+        { work: "Cumbres Borrascosas", author: "Emily Brontë", text: "No importa de qué material estemos hechas las almas, la suya y la mía son exactamente idénticas, unidas por un lazo eterno." },
+        { work: "Cien Años de Soledad", author: "Gabriel García Márquez", text: "El secreto de una buena y apacible vejez no es otra cosa que un pacto honrado, sincero y profundo con la soledad compartida." },
+        { work: "El Gran Gatsby", author: "F. Scott Fitzgerald", text: "Miraba hacia ella con una intensidad deslumbrante que abarcaba todo el misterio insondable del universo y el flujo inexorable del tiempo." },
+        { work: "Veinte poemas de amor", author: "Pablo Neruda", text: "Me gustas cuando callas porque estás como ausente, y me oyes desde la lejanía mientras mi voz intenta rozar tu alma." },
+        { work: "Rimas", author: "Gustavo Adolfo Bécquer", text: "Podrá nublarse el sol eternamente; podrá secarse en un instante el mar; podrá romperse el eje frágil de la tierra. Jamás podrá apagarse tu llama." },
+        { work: "Romeo y Julieta", author: "William Shakespeare", text: "Mis labios, dos peregrinos ruborizados, están listos para suavizar ese áspero toque con un tierno y eterno beso." },
+        { work: "Cartas a un joven poeta", author: "Rainer Maria Rilke", text: "El amor auténtico es elevado: consiste en dos solitarias existencias que se protegen mutuamente, se limitan con respeto y se saludan." },
+        { work: "Don Quijote de la Mancha", author: "Miguel de Cervantes", text: "El amor apremia los corazones, quita los temores y hace que los imposibles parezcan fáciles y cercanos en la travesía." },
+        { work: "El Principito", author: "Antoine de Saint-Exupéry", text: "Sólo se ve bien con el corazón. Lo esencial es invisible a los ojos de los hombres y de las estrellas." },
+        { work: "Crimen y Castigo", author: "Fiódor Dostoyevski", text: "El alma humana se purifica al hallar la compasión y el afecto sincero que disipan las tinieblas del sufrimiento." },
+        { work: "La Divina Comedia", author: "Dante Alighieri", text: "El amor es la fuerza infinita que mueve el sol y las demás estrellas en su danza eterna." },
+        { work: "Jane Eyre", author: "Charlotte Brontë", text: "No soy un pájaro y ninguna red me atrapa; soy un ser humano libre con una voluntad independiente unida a la tuya." },
+        { work: "Drácula", author: "Bram Stoker", text: "Nuestros alientos se entrelazaron en la penumbra, desafiando la inmortalidad misma con la fuerza de un latido." },
+        { work: "Rayuela", author: "Julio Cortázar", text: "Andábamos sin buscarnos, sabiendo que andábamos para encontrarnos en cada recodo de este inmenso laberinto." },
+        { work: "La Sombra del Viento", author: "Carlos Ruiz Zafón", text: "Cada libro, cada tomo que ves, tiene alma. El alma de quien lo escribió y de quienes lo leyeron soñando." },
+        { work: "Frankenstein", author: "Mary Shelley", text: "No hay atadura más fuerte que la comprensión mutua entre dos almas perdidas en la inmensidad del cosmos." },
+        { work: "La Metamorfosis", author: "Franz Kafka", text: "Incluso cuando el mundo cambia de forma a nuestro alrededor, el calor de un recuerdo verdadero permanece inalterable." },
+        { work: "El Señor de los Anillos", author: "J.R.R. Tolkien", text: "Un camino sigue y sigue, desde la puerta donde comenzó, hasta que el camino se ha ido muy lejos y yo debo seguirlo si puedo con valor." },
+        { work: "Fahrenheit 451", author: "Ray Bradbury", text: "No hay que quemar los libros; hay que encender en las mentes la chispa eterna de la curiosidad, el arte y la memoria." },
+        { work: "1984", author: "George Orwell", text: "Si hay esperanza de libertad, reside en las masas y en la inquebrantable capacidad de recordar lo que fuimos antes del olvido." },
+        { work: "Ulises", author: "James Joyce", text: "Las historias fluyen como ríos subterráneos oscuros que conectan las esquinas del tiempo con nuestros propios pasos en el laberinto." },
+        { work: "Los Hermanos Karamazov", author: "Fiódor Dostoyevski", text: "Ama a toda la creación de Dios, tanto su totalidad como cada grano de arena que compone el universo estelar." },
+        { work: "Moby Dick", author: "Herman Melville", text: "Es el mar el que nos llama desde el fondo de los siglos con su canto inalterable de misterio y aventura." },
+        { work: "El Retrato de Dorian Gray", author: "Oscar Wilde", text: "La belleza es una forma de genio, superior incluso al genio mismo, pues no necesita explicaciones ante el tiempo." },
+        { work: "Los Miserables", author: "Victor Hugo", text: "Amar a otra persona es ver el rostro luminoso de la divinidad en medio de la tormenta del mundo." },
+        { work: "Guerra y Paz", author: "León Tolstói", text: "No hay más que dos fuentes de los vicios humanos: la ociosidad y la superstición; y no hay más que dos virtudes: la actividad y la inteligencia." },
+        { work: "Anna Karenina", author: "León Tolstói", text: "Todas las familias felices se asemejan; cada familia infeliz es infeliz a su manera en los laberintos del tiempo." },
+        { work: "Madame Bovary", author: "Gustave Flaubert", text: "El lenguaje humano es como un caldero agrietado en el que tocamos melodías para que bailen los osos, cuando quisiéramos conmover a las estrellas." },
+        { work: "El Viejo y el Mar", author: "Ernest Hemingway", text: "El hombre no está hecho para la derrota; un hombre puede ser destruido, pero jamás vencido por las mareas." },
+        { work: "Fausto", author: "Johann Wolfgang von Goethe", text: "Quien aspira a luchar y se esfuerza sin descanso, a ese hombre podemos salvarlo de la sombra y llevarlo a la luz." },
+        { work: "En busca del tiempo perdido", author: "Marcel Proust", text: "Los verdaderos paraísos son los paraísos que hemos perdido en los pasillos de la memoria y el afecto." },
+        { work: "El Nombre de la Rosa", author: "Umberto Eco", text: "Los libros no están hechos para que uno crea en ellos, sino para ser sometidos a indagación y diálogo constante." },
+        { work: "La Eneida", author: "Virgilio", text: "Los anhelos divinos conmueven los corazones y guían a los héroes a través de los mares tempestuosos de la historia." },
+        { work: "El Silmarillion", author: "J.R.R. Tolkien", text: "Y el cantar de los Ainur tejió la trama del mundo, donde cada nota resuena en la eternidad estelar." },
+        { work: "Las Flores del Mal", author: "Charles Baudelaire", text: "El tiempo es un jugador ávido que gana sin hacer trampas, en cada segundo que pasa robando nuestros recuerdos." },
+        { work: "Pedro Páramo", author: "Juan Rulfo", text: "Vine a Comala porque me dijeron que acá vivía mi padre, un tal Pedro Páramo, y busqué su voz entre los ecos." },
+        { work: "Matar a un ruiseñor", author: "Harper Lee", text: "Nunca de verdad entiendes a una persona hasta que consideras las cosas desde su punto de vista, hasta que caminas en sus zapatos." },
+        { work: "La Conjura de los Necios", author: "John Kennedy Toole", text: "Cuando un genio verdadero aparece en el mundo, lo reconocen por esta señal: todos los necios se conjuran contra él." },
+        { work: "El idiota", author: "Fiódor Dostoyevski", text: "La belleza salvará al mundo si somos capaces de reconocerla en los actos más sencillos de compasión." },
+        { work: "El hobbit", author: "J.R.R. Tolkien", text: "El mundo no está en tus libros y mapas; está ahí fuera, desafiando tus pasos con misterios antiguos." },
+        { work: "Las Metamorfosis", author: "Ovidio", text: "Mi ánimo me lleva a decir de las formas mudadas en nuevos cuerpos: oh dioses, favorezcan mis empresas." },
+        { work: "Cuentos", author: "Edgar Allan Poe", text: "Aquellos que sueñan de día son conscientes de muchas cosas que escapan a los que sueñan solo de noche." }
+    ],
+    itemsByTier: {
+        tier_1: [
+            { id: "fruit_silver", name: "Fruta de Plata", type: "resource", desc: "Restaura vitalidad y otorga +150 puntos." },
+            { id: "charm_rose", name: "Amuleto de Zarza", type: "relic", desc: "Reduce el impacto de los peligros en el jardín." }
+        ],
+        tier_2: [
+            { id: "pearl_deep", name: "Perla Abisal", type: "relic", desc: "Permite percibir la posición de las corrientes ocultas." },
+            { id: "essence_tide", name: "Esencia de Marea", type: "consumable", desc: "Otorga un escudo temporal protector." }
+        ],
+        tier_3: [
+            { id: "feather_mirror", name: "Pluma de Espejo", type: "relic", desc: "Duplica la resonancia estelar al recolectar recuerdos." }
+        ],
+        tier_legendary: [
+            { id: "codex_shard", name: "Fragmento Vivo del Códice", type: "legendary", desc: "Conecta todas las dimensiones del laberinto de forma permanente." }
+        ]
+    },
+    getPage(n) {
+        let masterpiece = this.literaryMasterpieces[(n - 1) % this.literaryMasterpieces.length];
+        let actIndex = Math.floor((n - 1) / 125);
+        let actTitle = this.acts[Math.min(3, actIndex)];
+        let expandedReflection = `En esta página ${n} del Códice estelar, perteneciente al ${actTitle}, la tinta brilla con matices profundos que desafían el tiempo lineal. La obra cumbre '${masterpiece.work}' escrita por ${masterpiece.author} resuena profundamente en las paredes del laberinto. Nos transmite la siguiente verdad inmortal: «${masterpiece.text}». Al cruzar este umbral, el Viajero comprende que la literatura no es solo tinta sobre papel antiguo, sino un tejido vivo de experiencias, batallas épicas, romances atemporales y descubrimientos que conectan los grandes mitos de la humanidad con la travesía actual en la ROG Ally. Cada sala superada desbloquea un fragmento de esta memoria cósmica, permitiendo avanzar con paso firme hacia el corazón mismo de la eternidad y consolidando una narrativa rica, pulida y lista para la posteridad técnica.`;
+        return {
+            title: `${actTitle} — Página ${n} de 500`,
+            author: `${masterpiece.author} (${masterpiece.work})`,
+            text: expandedReflection
+        };
+    },
+    queryItems(chapterIndex) {
+        if (chapterIndex <= 1) return [...this.itemsByTier.tier_1];
+        if (chapterIndex <= 3) return [...this.itemsByTier.tier_1, ...this.itemsByTier.tier_2];
+        if (chapterIndex <= 6) return [...this.itemsByTier.tier_2, ...this.itemsByTier.tier_3];
+        return [...this.itemsByTier.tier_3, ...this.itemsByTier.tier_legendary];
+    },
+    getRandomDefeatPhrase() {
+        return this.defeatPhrases[Math.floor(Math.random() * this.defeatPhrases.length)];
+    }
+};
 
 /* ============================================================
-   CONFIGURACIÓN
+   CONFIGURACIÓN Y ESTADO DEL JUEGO
 ============================================================ */
-
-const USERS_DB_KEY = "codice_users_db_v4";
-
+const USERS_DB_KEY = "codice_users_db_v5";
 let currentUser = null;
 let currentSlotIndex = 0;
-
 let state = {
     chapter:0,
     score:0,
@@ -1332,3268 +814,768 @@ let state = {
 /* ============================================================
    AUDIO
 ============================================================ */
-
 let audioCtx = null;
 let musicTimer = null;
 let musicStep = 0;
-
 const musicTracks = [
-
-    {
-        name:"Armonía Estelar",
-        notes:[
-            261.63,
-            329.63,
-            392.00,
-            329.63,
-            293.66,
-            349.23,
-            440.00,
-            349.23
-        ]
-    },
-
-    {
-        name:"Ecos del Alba",
-        notes:[
-            220.00,
-            277.18,
-            329.63,
-            415.30,
-            329.63,
-            277.18,
-            220.00,
-            196.00
-        ]
-    },
-
-    {
-        name:"Sinfonía del Cosmos",
-        notes:[
-            196.00,
-            246.94,
-            293.66,
-            370.00,
-            293.66,
-            246.94,
-            196.00,
-            164.81
-        ]
-    }
-
+    { name:"Armonía Estelar", notes:[261.63, 329.63, 392.00, 329.63, 293.66, 349.23, 440.00, 349.23] },
+    { name:"Ecos del Alba", notes:[220.00, 277.18, 329.63, 415.30, 329.63, 277.18, 220.00, 196.00] },
+    { name:"Sinfonía del Cosmos", notes:[196.00, 246.94, 293.66, 370.00, 293.66, 246.94, 196.00, 164.81] }
 ];
 
 function initAudio(){
-
     if(!audioCtx){
-
-        try{
-
-            audioCtx =
-                new (
-                    window.AudioContext ||
-                    window.webkitAudioContext
-                )();
-
-        }catch(e){
-
-            console.warn(
-                "Web Audio API no disponible."
-            );
-
-        }
-
+        try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
     }
-
-    if(
-        audioCtx &&
-        audioCtx.state === "suspended"
-    ){
-        audioCtx.resume();
-    }
+    if(audioCtx && audioCtx.state === "suspended"){ audioCtx.resume(); }
 }
 
-function tone(
-    freq,
-    duration=.15,
-    type="sine",
-    vol=.04
-){
-
+function tone(freq, duration=.15, type="sine", vol=.04){
     initAudio();
-
-    if(
-        !audioCtx ||
-        state.musicTrack === "off"
-    ){
-        return;
-    }
-
+    if(!audioCtx || state.musicTrack === "off") return;
     try{
-
-        const osc =
-            audioCtx.createOscillator();
-
-        const gain =
-            audioCtx.createGain();
-
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.type = type;
         osc.frequency.value = freq;
-
-        gain.gain.setValueAtTime(
-            vol,
-            audioCtx.currentTime
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            .001,
-            audioCtx.currentTime + duration
-        );
-
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         osc.start();
-
-        osc.stop(
-            audioCtx.currentTime + duration
-        );
-
+        osc.stop(audioCtx.currentTime + duration);
     }catch(e){}
-
 }
 
 function startMusic(){
-
     initAudio();
-
     stopMusic();
-
-    if(
-        state.musicTrack === "off" ||
-        !audioCtx
-    ){
-        return;
-    }
-
-    let trackIndex =
-        Number(state.musicTrack);
-
-    if(
-        !Number.isInteger(trackIndex) ||
-        !musicTracks[trackIndex]
-    ){
+    if(state.musicTrack === "off" || !audioCtx) return;
+    let trackIndex = Number(state.musicTrack);
+    if(!Number.isInteger(trackIndex) || !musicTracks[trackIndex]){
         trackIndex = 0;
         state.musicTrack = 0;
     }
-
     musicStep = 0;
-
     musicTimer = setInterval(() => {
-
-        if(
-            state.musicTrack === "off"
-        ){
-            return;
-        }
-
-        const track =
-            musicTracks[
-                Number(state.musicTrack)
-            ];
-
-        if(!track){
-            return;
-        }
-
-        const note =
-            track.notes[
-                musicStep % track.notes.length
-            ];
-
-        tone(
-            note,
-            .32,
-            "sine",
-            .045
-        );
-
-        if(musicStep % 4 === 0){
-
-            tone(
-                note / 2,
-                .55,
-                "triangle",
-                .028
-            );
-
-        }
-
+        if(state.musicTrack === "off") return;
+        const track = musicTracks[Number(state.musicTrack)];
+        if(!track) return;
+        const note = track.notes[musicStep % track.notes.length];
+        tone(note, .32, "sine", .045);
+        if(musicStep % 4 === 0) tone(note / 2, .55, "triangle", .028);
         if(musicStep % 8 === 6){
-
-            const harmony =
-                track.notes[
-                    (musicStep + 2) %
-                    track.notes.length
-                ];
-
-            tone(
-                harmony,
-                .2,
-                "sine",
-                .018
-            );
-
+            const harmony = track.notes[(musicStep + 2) % track.notes.length];
+            tone(harmony, .2, "sine", .018);
         }
-
         musicStep++;
-
     },360);
 }
 
 function stopMusic(){
-
-    if(musicTimer){
-
-        clearInterval(
-            musicTimer
-        );
-
-    }
-
+    if(musicTimer) clearInterval(musicTimer);
     musicTimer = null;
 }
 
 function cycleMusicTrack(){
-
     initAudio();
-
-    let current;
-
-    if(
-        state.musicTrack === "off"
-    ){
-
-        current = -1;
-
-    }else{
-
-        current =
-            Number(state.musicTrack);
-
-        if(
-            !Number.isFinite(current)
-        ){
-            current = 0;
-        }
-
-    }
-
+    let current = state.musicTrack === "off" ? -1 : Number(state.musicTrack);
+    if(!Number.isFinite(current)) current = 0;
     current++;
-
-    if(
-        current >= musicTracks.length
-    ){
-        current = -1;
-    }
-
+    if(current >= musicTracks.length) current = -1;
     if(current === -1){
-
         state.musicTrack = "off";
-
         stopMusic();
-
-        document.getElementById(
-            "message"
-        ).textContent =
-            "🔇 Música desactivada";
-
+        document.getElementById("message").textContent = "🔇 Música desactivada";
     }else{
-
         state.musicTrack = current;
-
         musicStep = 0;
-
         stopMusic();
-
         startMusic();
-
-        document.getElementById(
-            "message"
-        ).textContent =
-            `🎵 ${musicTracks[current].name}`;
-
-        tone(
-            musicTracks[current].notes[0],
-            .15,
-            "triangle",
-            .06
-        );
-
+        document.getElementById("message").textContent = `🎵 ${musicTracks[current].name}`;
+        tone(musicTracks[current].notes[0], .15, "triangle", .06);
     }
-
     saveState();
 }
 
-/* ============================================================
-   FULLSCREEN
-============================================================ */
-
 function toggleFullScreen(){
-
     if(!document.fullscreenElement){
-
-        document.documentElement
-            .requestFullscreen()
-            .catch(err => {
-                console.log(
-                    "Fullscreen:",
-                    err.message
-                );
-            });
-
+        document.documentElement.requestFullscreen().catch(err => {});
     }else{
-
-        if(document.exitFullscreen){
-            document.exitFullscreen();
-        }
-
+        if(document.exitFullscreen) document.exitFullscreen();
     }
-
 }
 
 /* ============================================================
-   DATABASE USUARIOS
+   DATABASE USUARIOS & AUTH
 ============================================================ */
-
 function loadUsersDB(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem(
-                USERS_DB_KEY
-            )
-        ) || {};
-
-    }catch(e){
-
-        return {};
-
-    }
-
+    try{ return JSON.parse(localStorage.getItem(USERS_DB_KEY)) || {}; }catch(e){ return {}; }
 }
-
 function saveUsersDB(db){
-
-    try{
-
-        localStorage.setItem(
-            USERS_DB_KEY,
-            JSON.stringify(db)
-        );
-
-    }catch(e){
-
-        console.warn(
-            "No se pudo guardar."
-        );
-
-    }
-
+    try{ localStorage.setItem(USERS_DB_KEY, JSON.stringify(db)); }catch(e){}
 }
-
-/* ============================================================
-   AUTH
-============================================================ */
 
 function handleRegister(){
-
-    const user =
-        document
-            .getElementById(
-                "usernameInput"
-            )
-            .value
-            .trim();
-
-    const pass =
-        document
-            .getElementById(
-                "passwordInput"
-            )
-            .value;
-
-    const msg =
-        document.getElementById(
-            "authMessage"
-        );
-
-    if(user.length < 3){
-
-        msg.textContent =
-            "El usuario debe tener al menos 3 caracteres.";
-
-        return;
-
-    }
-
-    if(pass.length < 4){
-
-        msg.textContent =
-            "La contraseña debe tener al menos 4 caracteres.";
-
-        return;
-
-    }
-
-    let db =
-        loadUsersDB();
-
-    if(db[user]){
-
-        msg.textContent =
-            "El usuario ya existe.";
-
-        return;
-
-    }
-
-    db[user] = {
-
-        password:pass,
-
-        slots:[
-
-            createEmptySlot(),
-            createEmptySlot(),
-            createEmptySlot()
-
-        ]
-
-    };
-
+    const user = document.getElementById("usernameInput").value.trim();
+    const pass = document.getElementById("passwordInput").value;
+    const msg = document.getElementById("authMessage");
+    if(user.length < 3){ msg.textContent = "El usuario debe tener al menos 3 caracteres."; return; }
+    if(pass.length < 4){ msg.textContent = "La contraseña debe tener al menos 4 caracteres."; return; }
+    let db = loadUsersDB();
+    if(db[user]){ msg.textContent = "El usuario ya existe."; return; }
+    db[user] = { password:pass, slots:[createEmptySlot(), createEmptySlot(), createEmptySlot()] };
     saveUsersDB(db);
-
-    msg.style.color =
-        "#22c55e";
-
-    msg.textContent =
-        "¡Registro exitoso! Ya puedes iniciar sesión.";
-
+    msg.style.color = "#22c55e";
+    msg.textContent = "¡Registro exitoso! Ya puedes iniciar sesión.";
 }
 
 function createEmptySlot(){
-
-    return {
-
-        active:false,
-        chapter:0,
-        score:0,
-        best:0,
-        pages:1,
-        totalDeaths:0,
-        totalFruits:0,
-        musicTrack:0,
-        difficulty:"normal",
-        achievements:{}
-
-    };
-
+    return { active:false, chapter:0, score:0, best:0, pages:1, totalDeaths:0, totalFruits:0, musicTrack:0, difficulty:"normal", achievements:{} };
 }
 
 function handleLogin(){
-
-    const user =
-        document
-            .getElementById(
-                "usernameInput"
-            )
-            .value
-            .trim();
-
-    const pass =
-        document
-            .getElementById(
-                "passwordInput"
-            )
-            .value;
-
-    const msg =
-        document.getElementById(
-            "authMessage"
-        );
-
-    if(
-        user.length < 3 ||
-        pass.length < 4
-    ){
-
-        msg.textContent =
-            "Usuario o contraseña demasiado cortos.";
-
-        return;
-
-    }
-
-    const db =
-        loadUsersDB();
-
-    if(
-        !db[user] ||
-        db[user].password !== pass
-    ){
-
-        msg.textContent =
-            "Usuario o contraseña incorrectos.";
-
-        return;
-
-    }
-
+    const user = document.getElementById("usernameInput").value.trim();
+    const pass = document.getElementById("passwordInput").value;
+    const msg = document.getElementById("authMessage");
+    if(user.length < 3 || pass.length < 4){ msg.textContent = "Usuario o contraseña demasiado cortos."; return; }
+    const db = loadUsersDB();
+    if(!db[user] || db[user].password !== pass){ msg.textContent = "Usuario o contraseña incorrectos."; return; }
     currentUser = user;
-
-    document
-        .getElementById("authScreen")
-        .classList
-        .add("hidden");
-
+    document.getElementById("authScreen").classList.add("hidden");
     showSlotSelection();
-
 }
 
 function logoutUser(){
-
     currentUser = null;
-
     stopMusic();
-
-    document
-        .getElementById("slotScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("authScreen")
-        .classList
-        .remove("hidden");
-
+    document.getElementById("slotScreen").classList.add("hidden");
+    document.getElementById("authScreen").classList.remove("hidden");
 }
 
 function showSlotSelection(){
-
-    const db =
-        loadUsersDB();
-
-    const userData =
-        db[currentUser];
-
-    document.getElementById(
-        "slotUserBadge"
-    ).textContent =
-        `Viajero: ${currentUser}`;
-
-    const container =
-        document.getElementById(
-            "slotsContainer"
-        );
-
+    const db = loadUsersDB();
+    const userData = db[currentUser];
+    document.getElementById("slotUserBadge").textContent = `Viajero: ${currentUser}`;
+    const container = document.getElementById("slotsContainer");
     container.innerHTML = "";
-
-    userData.slots.forEach(
-        (slot,index) => {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-            div.className =
-                "slot-card";
-
-            if(slot.active){
-
-                div.innerHTML = `
-                    <strong>Slot ${index+1}</strong>
-                    <br>
-                    <small>
-                        Capítulo: ${slot.chapter+1}
-                        |
-                        Puntuación:
-                        ${slot.score.toLocaleString("es-ES")}
-                        |
-                        Páginas:
-                        ${slot.pages}/500
-                    </small>
-                `;
-
-            }else{
-
-                div.innerHTML = `
-                    <strong>Slot ${index+1}</strong>
-                    <br>
-                    <small>
-                        Ranura vacía — Nueva partida
-                    </small>
-                `;
-
-            }
-
-            div.onclick =
-                () => selectSlot(index);
-
-            container.appendChild(div);
-
+    userData.slots.forEach((slot,index) => {
+        const div = document.createElement("div");
+        div.className = "slot-card";
+        if(slot.active){
+            div.innerHTML = `<strong>Slot ${index+1}</strong><br><small>Capítulo: ${slot.chapter+1} | Puntuación: ${slot.score.toLocaleString("es-ES")} | Páginas: ${slot.pages}/500</small>`;
+        }else{
+            div.innerHTML = `<strong>Slot ${index+1}</strong><br><small>Ranura vacía — Nueva partida</small>`;
         }
-    );
-
-    document
-        .getElementById("slotScreen")
-        .classList
-        .remove("hidden");
-
+        div.onclick = () => selectSlot(index);
+        container.appendChild(div);
+    });
+    document.getElementById("slotScreen").classList.remove("hidden");
 }
 
 function selectSlot(index){
-
     currentSlotIndex = index;
-
-    const db =
-        loadUsersDB();
-
-    const slot =
-        db[currentUser]
-            .slots[index];
-
-    if(slot.active){
-
-        state = {
-            ...state,
-            ...slot
-        };
-
-    }else{
-
-        state =
-            createEmptySlot();
-
-    }
-
-    document
-        .getElementById("slotScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .remove("hidden");
-
-    document.getElementById(
-        "activeSlotBadge"
-    ).textContent =
-        `Slot ${index+1} (${currentUser})`;
-
-    document.getElementById(
-        "difficultySetting"
-    ).value =
-        state.difficulty;
-
-    document.getElementById(
-        "musicTrackSetting"
-    ).value =
-        state.musicTrack;
-
+    const db = loadUsersDB();
+    const slot = db[currentUser].slots[index];
+    state = slot.active ? {...state, ...slot} : createEmptySlot();
+    document.getElementById("slotScreen").classList.add("hidden");
+    document.getElementById("startScreen").classList.remove("hidden");
+    document.getElementById("activeSlotBadge").textContent = `Slot ${index+1} (${currentUser})`;
+    document.getElementById("difficultySetting").value = state.difficulty;
+    document.getElementById("musicTrackSetting").value = state.musicTrack;
 }
 
 function returnToSlots(){
-
     stopMusic();
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .add("hidden");
-
+    document.getElementById("startScreen").classList.add("hidden");
     showSlotSelection();
-
 }
 
 function saveState(){
-
-    if(!currentUser){
-        return;
-    }
-
-    const db =
-        loadUsersDB();
-
-    if(!db[currentUser]){
-        return;
-    }
-
-    db[currentUser]
-        .slots[currentSlotIndex] = {
-
-        active:true,
-        chapter:state.chapter,
-        score:state.score,
-        best:state.best,
-        pages:state.pages,
-        totalDeaths:state.totalDeaths,
-        totalFruits:state.totalFruits,
-        musicTrack:state.musicTrack,
-        difficulty:state.difficulty,
-        achievements:state.achievements
-
+    if(!currentUser) return;
+    const db = loadUsersDB();
+    if(!db[currentUser]) return;
+    db[currentUser].slots[currentSlotIndex] = {
+        active:true, chapter:state.chapter, score:state.score, best:state.best,
+        pages:state.pages, totalDeaths:state.totalDeaths, totalFruits:state.totalFruits,
+        musicTrack:state.musicTrack, difficulty:state.difficulty, achievements:state.achievements
     };
-
     saveUsersDB(db);
-
 }
 
 /* ============================================================
-   CAPÍTULOS
+   CAPÍTULOS Y DUNGEON
 ============================================================ */
-
 const chapters = [
-
-    {
-        title:"El Jardín de los Suspiros",
-        icon:"🌹",
-        desc:"Donde los primeros rastros del recuerdo comienzan a florecer.",
-        enemyTypes:["👾","🌿"],
-        boss:"Guardián de Zarzas"
-    },
-
-    {
-        title:"La Ciudad Sumergida",
-        icon:"🌊",
-        desc:"Corrientes marinas, zonas inundadas y templos olvidados.",
-        enemyTypes:["🌊","🦑"],
-        boss:"Leviatán de las Mareas"
-    },
-
-    {
-        title:"El Bosque de los Recuerdos",
-        icon:"🌲",
-        desc:"Sombras boscosas que imitan cada uno de tus pasos.",
-        enemyTypes:["🌲","🐺"],
-        boss:"Sombra del Espejo"
-    },
-
-    {
-        title:"El Reino de los Sueños",
-        icon:"🌙",
-        desc:"Un laberinto onírico donde las paredes mutan.",
-        enemyTypes:["🌙","👁️"],
-        boss:"Señor de las Pesadillas"
-    },
-
-    {
-        title:"La Biblioteca Prohibida",
-        icon:"📚",
-        desc:"Páginas falsas, puertas secretas y acertijos arcanos.",
-        enemyTypes:["📚","👻"],
-        boss:"Archivero Ancestral"
-    },
-
-    {
-        title:"El Laberinto del Tiempo",
-        icon:"⏳",
-        desc:"Salas que se modifican con el paso inexorable.",
-        enemyTypes:["⏳","⚡"],
-        boss:"Cronomante Estelar"
-    },
-
-    {
-        title:"El Palacio de las Estrellas",
-        icon:"⭐",
-        desc:"Enemigos de élite protegiendo tesoros celestiales.",
-        enemyTypes:["⭐","🛡️"],
-        boss:"Centinela del Firmamento"
-    },
-
-    {
-        title:"El Corazón del Códice",
-        icon:"❤️",
-        desc:"El origen de todo. El encuentro definitivo.",
-        enemyTypes:["❤️","✨"],
-        boss:"El Códice Vivo"
-    }
-
+    { title:"El Jardín de los Suspiros", icon:"🌹", desc:"Donde los primeros rastros del recuerdo comienzan a florecer.", enemyTypes:["👾","🌿"], boss:"Guardián de Zarzas" },
+    { title:"La Ciudad Sumergida", icon:"🌊", desc:"Corrientes marinas, zonas inundadas y templos olvidados.", enemyTypes:["🌊","🦑"], boss:"Leviatán de las Mareas" },
+    { title:"El Bosque de los Recuerdos", icon:"🌲", desc:"Sombras boscosas que imitan cada uno de tus pasos.", enemyTypes:["🌲","🐺"], boss:"Sombra del Espejo" },
+    { title:"El Reino de los Sueños", icon:"🌙", desc:"Un laberinto onírico donde las paredes mutan.", enemyTypes:["🌙","👁️"], boss:"Señor de las Pesadillas" },
+    { title:"La Biblioteca Prohibida", icon:"📚", desc:"Páginas falsas, puertas secretas y acertijos arcanos.", enemyTypes:["📚","👻"], boss:"Archivero Ancestral" },
+    { title:"El Laberinto del Tiempo", icon:"⏳", desc:"Salas que se modifican con el paso inexorable.", enemyTypes:["⏳","⚡"], boss:"Cronomante Estelar" },
+    { title:"El Palacio de las Estrellas", icon:"⭐", desc:"Enemigos de élite protegiendo tesoros celestiales.", enemyTypes:["⭐","🛡️"], boss:"Centinela del Firmamento" },
+    { title:"El Corazón del Códice", icon:"❤️", desc:"El origen de todo. El encuentro definitivo.", enemyTypes:["❤️","✨"], boss:"El Códice Vivo" }
 ];
 
 function startJourney(){
-
     initAudio();
-
-    const track =
-        document.getElementById(
-            "musicTrackSetting"
-        ).value;
-
-    state.musicTrack =
-        track === "off"
-            ? "off"
-            : Number(track);
-
-    state.difficulty =
-        document.getElementById(
-            "difficultySetting"
-        ).value;
-
+    const track = document.getElementById("musicTrackSetting").value;
+    state.musicTrack = track === "off" ? "off" : Number(track);
+    state.difficulty = document.getElementById("difficultySetting").value;
     saveState();
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("chapterScreen")
-        .classList
-        .remove("hidden");
-
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("chapterScreen").classList.remove("hidden");
     updateChapterScreen();
-
 }
 
 function updateChapterScreen(){
-
-    const chap =
-        chapters[state.chapter];
-
-    document.getElementById(
-        "chapBadge"
-    ).textContent =
-        `Capítulo ${state.chapter+1} / 8`;
-
-    document.getElementById(
-        "chapTitle"
-    ).textContent =
-        chap.title;
-
-    document.getElementById(
-        "chapDesc"
-    ).textContent =
-        chap.desc;
-
-    document.getElementById(
-        "chapIcon"
-    ).textContent =
-        chap.icon;
-
+    const chap = chapters[state.chapter];
+    document.getElementById("chapBadge").textContent = `Capítulo ${state.chapter+1} / 8`;
+    document.getElementById("chapTitle").textContent = chap.title;
+    document.getElementById("chapDesc").textContent = chap.desc;
+    document.getElementById("chapIcon").textContent = chap.icon;
 }
 
 function enterChapterRoom(){
-
     initAudio();
-
-    document
-        .getElementById("chapterScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("game")
-        .classList
-        .remove("hidden");
-
-    const chap =
-        chapters[state.chapter];
-
-    document.getElementById(
-        "gameTitle"
-    ).textContent =
-        chap.title;
-
+    document.getElementById("chapterScreen").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+    const chap = chapters[state.chapter];
+    document.getElementById("gameTitle").textContent = chap.title;
     running = true;
-
-    lives =
-        state.difficulty === "legend"
-            ? 2
-            : 3;
-
-    shield =
-        state.difficulty === "hard"
-            ? 1
-            : 2;
-
+    lives = state.difficulty === "legend" ? 2 : 3;
+    shield = state.difficulty === "hard" ? 1 : 2;
     generateDungeon();
-
     player.x = 1;
     player.y = 1;
-
     clearInterval(engineTimer);
-
-    const engineSpeed =
-        Math.max(
-            260,
-            430 - state.chapter * 20
-        );
-
-    engineTimer =
-        setInterval(
-            gameEngine,
-            engineSpeed
-        );
-
+    const engineSpeed = Math.max(260, 430 - state.chapter * 20);
+    engineTimer = setInterval(gameEngine, engineSpeed);
     populateSidebars();
-
     startMusic();
-
-    document.getElementById(
-        "message"
-    ).textContent =
-        "⚔️ ¡La travesía comienza!";
-
+    document.getElementById("message").textContent = "⚔️ ¡La travesía comienza!";
 }
 
-/* ============================================================
-   DUNGEON
-============================================================ */
-
-let currentRoom = {
-    x:1,
-    y:1
-};
-
+let currentRoom = { x:1, y:1 };
 let dungeonMap = {};
 let grid = [];
-
-let player = {
-    x:1,
-    y:1,
-    dir:{
-        x:1,
-        y:0
-    }
-};
-
+let player = { x:1, y:1, dir:{ x:1, y:0 } };
 let enemies = [];
 let boss = null;
-
 let fruits = 0;
 let lives = 3;
 let shield = 0;
-
 let running = false;
 let engineTimer = null;
-
-const mazeEl =
-    document.getElementById(
-        "maze"
-    );
+const mazeEl = document.getElementById("maze");
 
 function generateDungeon(){
-
     dungeonMap = {};
-
-    for(let y=0;y<3;y++){
-
-        for(let x=0;x<3;x++){
-
+    for(let y=0; y<3; y++){
+        for(let x=0; x<3; x++){
             let type = "normal";
-
-            if(
-                x === 2 &&
-                y === 2
-            ){
-
-                type = "boss";
-
-            }else if(
-                x === 0 &&
-                y === 0
-            ){
-
-                type = "treasure";
-
-            }else if(
-                Math.random() < .28
-            ){
-
-                type = "secret";
-
-            }
-
-            dungeonMap[
-                `${x},${y}`
-            ] = {
-
-                type:type,
-
-                cleared:false,
-
-                visited:
-                    x === 1 &&
-                    y === 1,
-
-                grid:
-                    generateRoomGrid(
-                        type
-                    )
-
+            if(x === 2 && y === 2) type = "boss";
+            else if(x === 0 && y === 0) type = "treasure";
+            else if(Math.random() < .28) type = "secret";
+            dungeonMap[`${x},${y}`] = {
+                type: type,
+                cleared: false,
+                visited: (x === 1 && y === 1),
+                grid: generateRoomGrid(type)
             };
-
         }
-
     }
-
-    currentRoom = {
-        x:1,
-        y:1
-    };
-
+    currentRoom = { x:1, y:1 };
     loadCurrentRoomData();
-
 }
 
 function generateRoomGrid(type){
-
     const size = 11;
-
-    const g =
-        Array.from(
-            {length:size},
-            () => Array(size).fill(1)
-        );
-
+    const g = Array.from({length:size}, () => Array(size).fill(1));
     function carve(x,y){
-
         g[y][x] = 0;
-
-        const dirs = [
-            [2,0],
-            [-2,0],
-            [0,2],
-            [0,-2]
-        ].sort(
-            () => Math.random()-.5
-        );
-
-        for(
-            const [dx,dy]
-            of dirs
-        ){
-
-            const nx =
-                x + dx;
-
-            const ny =
-                y + dy;
-
-            if(
-                nx > 0 &&
-                ny > 0 &&
-                nx < size-1 &&
-                ny < size-1 &&
-                g[ny][nx] === 1
-            ){
-
-                g[
-                    y + dy/2
-                ][
-                    x + dx/2
-                ] = 0;
-
+        const dirs = [[2,0],[-2,0],[0,2],[0,-2]].sort(() => Math.random()-.5);
+        for(const [dx,dy] of dirs){
+            const nx = x + dx, ny = y + dy;
+            if(nx > 0 && ny > 0 && nx < size-1 && ny < size-1 && g[ny][nx] === 1){
+                g[y + dy/2][x + dx/2] = 0;
                 carve(nx,ny);
-
             }
-
         }
-
     }
-
     carve(1,1);
-
-    /*
-       Abrimos caminos adicionales.
-       Esto evita mapas demasiado cerrados.
-    */
-
-    for(let i=0;i<18;i++){
-
-        const rx =
-            1 + Math.floor(
-                Math.random()*(size-2)
-            );
-
-        const ry =
-            1 + Math.floor(
-                Math.random()*(size-2)
-            );
-
+    for(let i=0; i<18; i++){
+        const rx = 1 + Math.floor(Math.random()*(size-2));
+        const ry = 1 + Math.floor(Math.random()*(size-2));
         g[ry][rx] = 0;
-
     }
-
-    /*
-       Portales.
-    */
-
-    const middle =
-        Math.floor(size/2);
-
-    g[0][middle] = 0;
-    g[size-1][middle] = 0;
-    g[middle][0] = 0;
-    g[middle][size-1] = 0;
-
-    /*
-       Abrimos conexiones alrededor
-       de los portales.
-    */
-
-    g[1][middle] = 0;
-    g[size-2][middle] = 0;
-    g[middle][1] = 0;
-    g[middle][size-2] = 0;
-
+    const middle = Math.floor(size/2);
+    g[0][middle] = 0; g[size-1][middle] = 0; g[middle][0] = 0; g[middle][size-1] = 0;
+    g[1][middle] = 0; g[size-2][middle] = 0; g[middle][1] = 0; g[middle][size-2] = 0;
     if(type === "boss"){
-
-        g[middle][middle] = 5;
-
-        /*
-           Zona más abierta para boss.
-        */
-
-        for(let dy=-1;dy<=1;dy++){
-
-            for(let dx=-1;dx<=1;dx++){
-
-                const xx =
-                    middle + dx;
-
-                const yy =
-                    middle + dy;
-
-                if(
-                    xx > 0 &&
-                    yy > 0 &&
-                    xx < size-1 &&
-                    yy < size-1
-                ){
-
-                    g[yy][xx] = 0;
-
-                }
-
+        for(let dy=-1; dy<=1; dy++){
+            for(let dx=-1; dx<=1; dx++){
+                const xx = middle + dx, yy = middle + dy;
+                if(xx > 0 && yy > 0 && xx < size-1 && yy < size-1) g[yy][xx] = 0;
             }
-
         }
-
         g[middle][middle] = 5;
-
     }else{
-
-        const fruitCount =
-            3 + Math.floor(
-                Math.random()*3
-            );
-
-        let placed = 0;
-
-        let attempts = 0;
-
-        while(
-            placed < fruitCount &&
-            attempts < 200
-        ){
-
+        const fruitCount = 3 + Math.floor(Math.random()*3);
+        let placed = 0, attempts = 0;
+        while(placed < fruitCount && attempts < 200){
             attempts++;
-
-            const rx =
-                1 + Math.floor(
-                    Math.random()*(size-2)
-                );
-
-            const ry =
-                1 + Math.floor(
-                    Math.random()*(size-2)
-                );
-
-            if(
-                g[ry][rx] === 0 &&
-                !(rx === 1 && ry === 1)
-            ){
-
+            const rx = 1 + Math.floor(Math.random()*(size-2));
+            const ry = 1 + Math.floor(Math.random()*(size-2));
+            if(g[ry][rx] === 0 && !(rx === 1 && ry === 1)){
                 g[ry][rx] = 4;
                 placed++;
-
             }
-
         }
-
     }
-
     return g;
-
 }
 
-/* ============================================================
-   SALA
-============================================================ */
+function getTotalRemainingFruitsInDungeon(){
+    let total = 0;
+    for(let key in dungeonMap){
+        let room = dungeonMap[key];
+        for(let y=0; y<room.grid.length; y++){
+            for(let x=0; x<room.grid[y].length; x++){
+                if(room.grid[y][x] === 4) total++;
+            }
+        }
+    }
+    return total;
+}
 
 function loadCurrentRoomData(){
-
-    const roomKey =
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room =
-        dungeonMap[roomKey];
-
-    if(!room){
-        return;
-    }
-
+    const roomKey = `${currentRoom.x},${currentRoom.y}`;
+    const room = dungeonMap[roomKey];
+    if(!room) return;
     room.visited = true;
-
     grid = room.grid;
-
     fruits = 0;
-
     boss = null;
-
-    for(
-        let y=0;
-        y<grid.length;
-        y++
-    ){
-
-        for(
-            let x=0;
-            x<grid[y].length;
-            x++
-        ){
-
-            if(grid[y][x] === 4){
-                fruits++;
-            }
-
+    for(let y=0; y<grid.length; y++){
+        for(let x=0; x<grid[y].length; x++){
+            if(grid[y][x] === 4) fruits++;
             if(grid[y][x] === 5){
-
-                boss = {
-
-                    x:x,
-                    y:y,
-
-                    hp:
-                        10 +
-                        state.chapter*5,
-
-                    maxHp:
-                        10 +
-                        state.chapter*5,
-
-                    icon:
-                        chapters[
-                            state.chapter
-                        ].icon
-
-                };
-
+                boss = { x:x, y:y, hp:10+state.chapter*5, maxHp:10+state.chapter*5, icon:chapters[state.chapter].icon };
             }
-
         }
-
     }
-
-    /*
-       Si una sala normal se ha quedado sin fruta,
-       ponemos una de emergencia.
-    */
-
-    if(
-        room.type !== "boss" &&
-        fruits === 0 &&
-        !room.cleared
-    ){
-
+    if(room.type !== "boss" && fruits === 0 && !room.cleared){
         grid[5][5] = 4;
-
         fruits = 1;
-
     }
-
-    enemies =
-        room.type === "boss"
-            ? []
-            : spawnRoomEnemies();
-
+    enemies = room.type === "boss" ? [] : spawnRoomEnemies();
     updateRoomIndicator();
     updateMinimap();
     updateUI();
     render();
     populateSidebars();
-
 }
-
-/* ============================================================
-   ENEMIGOS
-============================================================ */
 
 function spawnRoomEnemies(){
-
-    const chap =
-        chapters[state.chapter];
-
-    const count =
-        Math.min(
-            4,
-            1 +
-            Math.floor(
-                Math.random()*2
-            ) +
-            Math.floor(
-                state.chapter/3
-            )
-        );
-
+    const chap = chapters[state.chapter];
+    const count = Math.min(4, 1 + Math.floor(Math.random()*2) + Math.floor(state.chapter/3));
     const list = [];
-
-    for(
-        let i=0;
-        i<count;
-        i++
-    ){
-
-        let rx;
-        let ry;
-        let attempts = 0;
-
+    for(let i=0; i<count; i++){
+        let rx, ry, attempts = 0;
         do{
-
-            rx =
-                2 +
-                Math.floor(
-                    Math.random()*
-                    (grid[0].length-4)
-                );
-
-            ry =
-                2 +
-                Math.floor(
-                    Math.random()*
-                    (grid.length-4)
-                );
-
+            rx = 2 + Math.floor(Math.random()*(grid[0].length-4));
+            ry = 2 + Math.floor(Math.random()*(grid.length-4));
             attempts++;
-
-        }while(
-
-            attempts < 100 &&
-
-            (
-                grid[ry][rx] !== 0 ||
-                (
-                    Math.abs(
-                        rx-player.x
-                    ) < 3 &&
-                    Math.abs(
-                        ry-player.y
-                    ) < 3
-                )
-            )
-
-        );
-
+        }while(attempts < 100 && (grid[ry][rx] !== 0 || (Math.abs(rx-player.x) < 3 && Math.abs(ry-player.y) < 3)));
         if(attempts < 100){
-
-            list.push({
-
-                x:rx,
-                y:ry,
-
-                icon:
-                    chap.enemyTypes[
-                        i %
-                        chap.enemyTypes.length
-                    ],
-
-                lastDirection:null
-
-            });
-
+            list.push({ x:rx, y:ry, icon:chap.enemyTypes[i % chap.enemyTypes.length], lastDirection:null });
         }
-
     }
-
     return list;
-
 }
-
-/* ============================================================
-   MOVIMIENTO
-============================================================ */
 
 function movePlayer(dx,dy){
-
-    if(!running){
-        return;
-    }
-
+    if(!running) return;
     initAudio();
-
-    const nx =
-        player.x + dx;
-
-    const ny =
-        player.y + dy;
-
-    const cols =
-        grid[0].length;
-
-    const rows =
-        grid.length;
-
-    /*
-       PORTAL IZQUIERDO
-    */
+    const nx = player.x + dx, ny = player.y + dy;
+    const cols = grid[0].length, rows = grid.length;
 
     if(nx < 0){
-
-        currentRoom.x =
-            currentRoom.x > 0
-                ? currentRoom.x - 1
-                : 2;
-
+        currentRoom.x = currentRoom.x > 0 ? currentRoom.x - 1 : 2;
         loadCurrentRoomData();
-
-        player.x =
-            cols - 2;
-
-        player.y =
-            Math.max(
-                1,
-                Math.min(
-                    rows-2,
-                    player.y
-                )
-            );
-
-        render();
-        updateUI();
-
-        tone(
-            440,
-            .1,
-            "sine",
-            .04
-        );
-
+        player.x = cols - 2;
+        player.y = Math.max(1, Math.min(rows-2, player.y));
+        render(); updateUI(); tone(440,.1,"sine",.04);
         return;
-
     }
-
-    /*
-       PORTAL DERECHO
-    */
-
     if(nx >= cols){
-
-        currentRoom.x =
-            currentRoom.x < 2
-                ? currentRoom.x + 1
-                : 0;
-
+        currentRoom.x = currentRoom.x < 2 ? currentRoom.x + 1 : 0;
         loadCurrentRoomData();
-
         player.x = 1;
-
-        player.y =
-            Math.max(
-                1,
-                Math.min(
-                    rows-2,
-                    player.y
-                )
-            );
-
-        render();
-        updateUI();
-
-        tone(
-            440,
-            .1,
-            "sine",
-            .04
-        );
-
+        player.y = Math.max(1, Math.min(rows-2, player.y));
+        render(); updateUI(); tone(440,.1,"sine",.04);
         return;
-
     }
-
-    /*
-       PORTAL SUPERIOR
-    */
-
     if(ny < 0){
-
-        currentRoom.y =
-            currentRoom.y > 0
-                ? currentRoom.y - 1
-                : 2;
-
+        currentRoom.y = currentRoom.y > 0 ? currentRoom.y - 1 : 2;
         loadCurrentRoomData();
-
-        player.y =
-            rows - 2;
-
-        player.x =
-            Math.max(
-                1,
-                Math.min(
-                    cols-2,
-                    player.x
-                )
-            );
-
-        render();
-        updateUI();
-
-        tone(
-            440,
-            .1,
-            "sine",
-            .04
-        );
-
+        player.y = rows - 2;
+        player.x = Math.max(1, Math.min(cols-2, player.x));
+        render(); updateUI(); tone(440,.1,"sine",.04);
         return;
-
     }
-
-    /*
-       PORTAL INFERIOR
-    */
-
     if(ny >= rows){
-
-        currentRoom.y =
-            currentRoom.y < 2
-                ? currentRoom.y + 1
-                : 0;
-
+        currentRoom.y = currentRoom.y < 2 ? currentRoom.y + 1 : 0;
         loadCurrentRoomData();
-
         player.y = 1;
-
-        player.x =
-            Math.max(
-                1,
-                Math.min(
-                    cols-2,
-                    player.x
-                )
-            );
-
-        render();
-        updateUI();
-
-        tone(
-            440,
-            .1,
-            "sine",
-            .04
-        );
-
+        player.x = Math.max(1, Math.min(cols-2, player.x));
+        render(); updateUI(); tone(440,.1,"sine",.04);
         return;
-
     }
 
-    /*
-       PARED
-    */
-
-    if(
-        !grid[ny] ||
-        grid[ny][nx] === 1 ||
-        grid[ny][nx] === undefined
-    ){
-
-        tone(
-            100,
-            .05,
-            "square",
-            .02
-        );
-
+    if(!grid[ny] || grid[ny][nx] === 1 || grid[ny][nx] === undefined){
+        tone(100,.05,"square",.02);
         return;
-
     }
 
-    player.dir = {
-        x:dx,
-        y:dy
-    };
+    player.dir = { x:dx, y:dy };
+    player.x = nx; player.y = ny;
 
-    player.x = nx;
-    player.y = ny;
-
-    /*
-       FRUTA
-    */
-
-    if(
-        grid[ny][nx] === 4
-    ){
-
+    if(grid[ny][nx] === 4){
         grid[ny][nx] = 0;
-
         fruits--;
-
         state.totalFruits++;
-
         state.score += 150;
-
-        tone(
-            660,
-            .08,
-            "sine",
-            .08
-        );
-
-        setTimeout(() => {
-
-            tone(
-                880,
-                .12,
-                "sine",
-                .06
-            );
-
-        },60);
-
+        tone(660,.08,"sine",.08);
+        setTimeout(() => tone(880,.12,"sine",.06), 60);
+        render();
     }
 
-    /*
-       BOSS
-    */
-
-    const roomKey =
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room =
-        dungeonMap[roomKey];
-
-    if(
-        room &&
-        room.type === "boss" &&
-        boss
-    ){
-
-        if(
-            player.x === boss.x &&
-            player.y === boss.y
-        ){
-
-            boss.hp -= 2;
-
-            tone(
-                200,
-                .15,
-                "sawtooth",
-                .1
-            );
-
-            if(
-                boss.hp <= 0
-            ){
-
-                room.cleared = true;
-
-                victoryChapter();
-
-                return;
-
-            }
-
-        }
-
-    }
-
-    checkCollisions();
-
-    render();
-
-    updateUI();
-
-}
-
-/* ============================================================
-   MOTOR ENEMIGOS
-============================================================ */
-
-function gameEngine(){
-
-    if(
-        !running ||
-        !grid.length
-    ){
-        return;
-    }
-
-    enemies.forEach(enemy => {
-
-        const possibleMoves = [
-
-            {x:1,y:0},
-            {x:-1,y:0},
-            {x:0,y:1},
-            {x:0,y:-1}
-
-        ];
-
-        const validMoves =
-            possibleMoves.filter(
-                move => {
-
-                    const nx =
-                        enemy.x +
-                        move.x;
-
-                    const ny =
-                        enemy.y +
-                        move.y;
-
-                    return (
-
-                        ny >= 0 &&
-                        ny < grid.length &&
-                        nx >= 0 &&
-                        nx < grid[0].length &&
-
-                        grid[ny][nx] !== 1 &&
-                        grid[ny][nx] !== undefined
-
-                    );
-
-                }
-            );
-
-        if(!validMoves.length){
+    const roomKey = `${currentRoom.x},${currentRoom.y}`;
+    const room = dungeonMap[roomKey];
+    if(room && room.type === "boss" && boss && player.x === boss.x && player.y === boss.y){
+        boss.hp -= 2;
+        tone(200,.15,"sawtooth",.1);
+        if(boss.hp <= 0){
+            room.cleared = true;
+            victoryChapter();
             return;
         }
+    }
 
-        const distance =
-            Math.abs(
-                player.x -
-                enemy.x
-            ) +
-            Math.abs(
-                player.y -
-                enemy.y
-            );
-
-        let chosenMove;
-
-        /*
-           PERSECUCIÓN
-        */
-
-        if(distance <= 8){
-
-            const chaseMoves =
-                validMoves
-                    .map(move => {
-
-                        const nx =
-                            enemy.x +
-                            move.x;
-
-                        const ny =
-                            enemy.y +
-                            move.y;
-
-                        return {
-
-                            move:move,
-
-                            distance:
-                                Math.abs(
-                                    player.x-nx
-                                ) +
-                                Math.abs(
-                                    player.y-ny
-                                )
-
-                        };
-
-                    })
-                    .sort(
-                        (a,b) =>
-                            a.distance -
-                            b.distance
-                    );
-
-            /*
-               82% persecución.
-               18% error natural.
-            */
-
-            if(Math.random() < .82){
-
-                chosenMove =
-                    chaseMoves[0].move;
-
-            }else{
-
-                chosenMove =
-                    validMoves[
-                        Math.floor(
-                            Math.random()*
-                            validMoves.length
-                        )
-                    ];
-
-            }
-
+    if(currentRoom.x === 2 && currentRoom.y === 2 && grid[ny][nx] === 5){
+        let totalFruitsLeft = getTotalRemainingFruitsInDungeon();
+        if(totalFruitsLeft > 0){
+            tone(150, .2, "sawtooth", .08);
+            document.getElementById("message").textContent = `🔒 ¡Candado Bloqueado! Faltan ${totalFruitsLeft} frutas en el dungeon.`;
+            player.x -= dx;
+            player.y -= dy;
         }else{
-
-            /*
-               Movimiento aleatorio.
-            */
-
-            chosenMove =
-                validMoves[
-                    Math.floor(
-                        Math.random()*
-                        validMoves.length
-                    )
-                ];
-
+            room.cleared = true;
+            victoryChapter();
+            return;
         }
-
-        enemy.x +=
-            chosenMove.x;
-
-        enemy.y +=
-            chosenMove.y;
-
-    });
+    }
 
     checkCollisions();
-
     render();
-
+    updateUI();
 }
 
-/* ============================================================
-   COLISIONES
-============================================================ */
+function gameEngine(){
+    if(!running || !grid.length) return;
+    enemies.forEach(enemy => {
+        const possibleMoves = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+        const validMoves = possibleMoves.filter(move => {
+            const nx = enemy.x + move.x, ny = enemy.y + move.y;
+            return ny >= 0 && ny < grid.length && nx >= 0 && nx < grid[0].length && grid[ny][nx] !== 1 && grid[ny][nx] !== undefined;
+        });
+        if(!validMoves.length) return;
+        const distance = Math.abs(player.x - enemy.x) + Math.abs(player.y - enemy.y);
+        let chosenMove;
+        if(distance <= 8){
+            const chaseMoves = validMoves.map(move => {
+                const nx = enemy.x + move.x, ny = enemy.y + move.y;
+                return { move: move, distance: Math.abs(player.x - nx) + Math.abs(player.y - ny) };
+            }).sort((a,b) => a.distance - b.distance);
+            chosenMove = Math.random() < .82 ? chaseMoves[0].move : validMoves[Math.floor(Math.random()*validMoves.length)];
+        }else{
+            chosenMove = validMoves[Math.floor(Math.random()*validMoves.length)];
+        }
+        enemy.x += chosenMove.x;
+        enemy.y += chosenMove.y;
+    });
+    checkCollisions();
+    render();
+}
 
 function checkCollisions(){
-
-    const hit =
-        enemies.some(
-            enemy =>
-                enemy.x === player.x &&
-                enemy.y === player.y
-        );
-
-    if(!hit){
-        return;
-    }
-
-    /*
-       ESCUDO
-    */
-
+    const hit = enemies.some(enemy => enemy.x === player.x && enemy.y === player.y);
+    if(!hit) return;
     if(shield > 0){
-
         shield--;
-
-        tone(
-            700,
-            .12,
-            "triangle",
-            .08
-        );
-
-        document.getElementById(
-            "message"
-        ).textContent =
-            "🛡️ ¡El escudo absorbió el golpe!";
-
-        /*
-           Alejamos al jugador.
-        */
-
-        player.x = 1;
-        player.y = 1;
-
+        tone(700,.12,"triangle",.08);
+        document.getElementById("message").textContent = "🛡️ ¡El escudo absorbió el golpe!";
+        player.x = 1; player.y = 1;
         updateUI();
-
         return;
-
     }
-
-    /*
-       DAÑO
-    */
-
     lives--;
-
     state.totalDeaths++;
-
-    tone(
-        120,
-        .2,
-        "sawtooth",
-        .1
-    );
-
+    tone(120,.2,"sawtooth",.1);
     if(lives <= 0){
-
-        clearInterval(
-            engineTimer
-        );
-
+        clearInterval(engineTimer);
         running = false;
-
         stopMusic();
-
-        state.totalDeaths++;
-
-        let defeat =
-            "«El abismo te ha alcanzado...»";
-
-        if(
-            window.GAME_DATABASE &&
-            typeof GAME_DATABASE.getRandomDefeatPhrase ===
-                "function"
-        ){
-
-            defeat =
-                GAME_DATABASE
-                    .getRandomDefeatPhrase();
-
+        let defeat = "«El abismo te ha alcanzado...»";
+        if(typeof GAME_DATABASE.getRandomDefeatPhrase === "function"){
+            defeat = GAME_DATABASE.getRandomDefeatPhrase();
         }
-
-        document.getElementById(
-            "deathText"
-        ).textContent =
-            defeat;
-
-        document
-            .getElementById("game")
-            .classList
-            .add("hidden");
-
-        document
-            .getElementById("deathScreen")
-            .classList
-            .remove("hidden");
-
+        document.getElementById("deathText").textContent = defeat;
+        document.getElementById("game").classList.add("hidden");
+        document.getElementById("deathScreen").classList.remove("hidden");
         saveState();
-
     }else{
-
-        /*
-           Respawn.
-        */
-
-        player.x = 1;
-        player.y = 1;
-
-        document.getElementById(
-            "message"
-        ).textContent =
-            `💔 Golpe recibido. Te quedan ${lives} vidas.`;
-
+        player.x = 1; player.y = 1;
+        document.getElementById("message").textContent = `💔 Golpe recibido. Te quedan ${lives} vidas.`;
     }
-
     updateUI();
-
 }
-
-/* ============================================================
-   REINICIAR SALA
-============================================================ */
 
 function restartRoom(){
-
-    if(!running){
-        return;
-    }
-
-    const roomKey =
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room =
-        dungeonMap[roomKey];
-
-    if(!room){
-        return;
-    }
-
-    /*
-       Generamos una sala nueva.
-    */
-
-    room.grid =
-        generateRoomGrid(
-            room.type
-        );
-
+    if(!running) return;
+    const roomKey = `${currentRoom.x},${currentRoom.y}`;
+    const room = dungeonMap[roomKey];
+    if(!room) return;
+    room.grid = generateRoomGrid(room.type);
     room.visited = true;
-
-    /*
-       Reiniciamos jugador.
-    */
-
-    player.x = 1;
-    player.y = 1;
-
-    player.dir = {
-        x:1,
-        y:0
-    };
-
-    /*
-       Reiniciamos vida.
-    */
-
-    lives =
-        state.difficulty === "legend"
-            ? 2
-            : 3;
-
-    shield =
-        state.difficulty === "hard"
-            ? 1
-            : 2;
-
-    /*
-       Recargamos todo.
-    */
-
+    player.x = 1; player.y = 1; player.dir = { x:1, y:0 };
+    lives = state.difficulty === "legend" ? 2 : 3;
+    shield = state.difficulty === "hard" ? 1 : 2;
     loadCurrentRoomData();
-
-    document.getElementById(
-        "message"
-    ).textContent =
-        "🔄 Sala reiniciada. ¡Vuelve a intentarlo!";
-
-    tone(
-        330,
-        .08,
-        "triangle",
-        .05
-    );
-
-    setTimeout(() => {
-
-        tone(
-            440,
-            .1,
-            "triangle",
-            .04
-        );
-
-    },70);
-
+    document.getElementById("message").textContent = "🔄 Sala reiniciada. ¡Vuelve a intentarlo!";
+    tone(330,.08,"triangle",.05);
+    setTimeout(() => tone(440,.1,"triangle",.04), 70);
 }
-
-/* ============================================================
-   RENDER
-============================================================ */
 
 function render(){
-
-    if(
-        !grid.length ||
-        !grid[0]
-    ){
-        return;
-    }
-
-    const rows =
-        grid.length;
-
-    const cols =
-        grid[0].length;
-
+    if(!grid.length || !grid[0]) return;
+    const rows = grid.length, cols = grid[0].length;
     mazeEl.innerHTML = "";
+    mazeEl.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+    mazeEl.style.gridTemplateRows = `repeat(${rows},1fr)`;
+    const enemyMap = new Map();
+    enemies.forEach(enemy => enemyMap.set(`${enemy.x},${enemy.y}`, enemy));
+    const totalRemainingFruits = getTotalRemainingFruitsInDungeon();
 
-    mazeEl.style.gridTemplateColumns =
-        `repeat(${cols},1fr)`;
-
-    mazeEl.style.gridTemplateRows =
-        `repeat(${rows},1fr)`;
-
-    /*
-       Creamos una búsqueda rápida de enemigos.
-       Evita hacer find() 121 veces.
-    */
-
-    const enemyMap =
-        new Map();
-
-    enemies.forEach(
-        enemy => {
-
-            enemyMap.set(
-                `${enemy.x},${enemy.y}`,
-                enemy
-            );
-
-        }
-    );
-
-    for(
-        let y=0;
-        y<rows;
-        y++
-    ){
-
-        for(
-            let x=0;
-            x<cols;
-            x++
-        ){
-
-            const c =
-                document.createElement(
-                    "div"
-                );
-
-            c.className =
-                "cell";
-
-            if(
-                grid[y][x] === 1
-            ){
-
-                c.classList.add(
-                    "wall"
-                );
-
-            }else{
-
-                c.classList.add(
-                    "path"
-                );
-
-            }
-
+    for(let y=0; y<rows; y++){
+        for(let x=0; x<cols; x++){
+            const c = document.createElement("div");
+            c.className = "cell " + (grid[y][x] === 1 ? "wall" : "path");
             let content = "";
-
-            /*
-               JUGADOR
-            */
-
-            if(
-                player.x === x &&
-                player.y === y
-            ){
-
-                content = "❤️";
-
-                c.classList.add(
-                    "player"
-                );
-
+            if(player.x === x && player.y === y){
+                content = "❤️"; c.classList.add("player");
+            }else if(boss && boss.x === x && boss.y === y){
+                content = boss.icon; c.classList.add("enemy", "boss-cell");
+            }else if(enemyMap.has(`${x},${y}`)){
+                content = enemyMap.get(`${x},${y}`).icon; c.classList.add("enemy");
+            }else if(grid[y][x] === 4){
+                content = "🍈"; c.classList.add("fruit");
+            }else if(grid[y][x] === 5){
+                content = totalRemainingFruits > 0 ? "🔒" : "🌹";
+                c.classList.add("boss-cell");
             }
-
-            /*
-               BOSS
-            */
-
-            else if(
-                boss &&
-                boss.x === x &&
-                boss.y === y
-            ){
-
-                content =
-                    boss.icon;
-
-                c.classList.add(
-                    "enemy"
-                );
-
-                c.classList.add(
-                    "boss-cell"
-                );
-
-            }
-
-            /*
-               ENEMIGO
-            */
-
-            else if(
-                enemyMap.has(
-                    `${x},${y}`
-                )
-            ){
-
-                const enemy =
-                    enemyMap.get(
-                        `${x},${y}`
-                    );
-
-                content =
-                    enemy.icon;
-
-                c.classList.add(
-                    "enemy"
-                );
-
-            }
-
-            /*
-               FRUTA
-            */
-
-            else if(
-                grid[y][x] === 4
-            ){
-
-                content = "🍈";
-
-                c.classList.add(
-                    "fruit"
-                );
-
-            }
-
-            /*
-               BOSS CELL
-            */
-
-            else if(
-                grid[y][x] === 5
-            ){
-
-                content = "👑";
-
-                c.classList.add(
-                    "boss-cell"
-                );
-
-            }
-
-            c.textContent =
-                content;
-
+            c.textContent = content;
             mazeEl.appendChild(c);
-
         }
-
     }
-
 }
 
-/* ============================================================
-   MINIMAPA
-============================================================ */
-
 function updateMinimap(){
-
-    const mapEl =
-        document.getElementById(
-            "minimap"
-        );
-
+    const mapEl = document.getElementById("minimap");
     mapEl.innerHTML = "";
-
-    for(
-        let y=0;
-        y<3;
-        y++
-    ){
-
-        for(
-            let x=0;
-            x<3;
-            x++
-        ){
-
-            const m =
-                document.createElement(
-                    "div"
-                );
-
-            m.className =
-                "mini-room";
-
-            const key =
-                `${x},${y}`;
-
-            const room =
-                dungeonMap[key];
-
-            if(room?.visited){
-
-                m.classList.add(
-                    "visited"
-                );
-
-            }
-
-            if(room?.cleared){
-
-                m.classList.add(
-                    "cleared"
-                );
-
-            }
-
-            if(
-                currentRoom.x === x &&
-                currentRoom.y === y
-            ){
-
-                m.classList.add(
-                    "active"
-                );
-
-            }
-
+    for(let y=0; y<3; y++){
+        for(let x=0; x<3; x++){
+            const m = document.createElement("div");
+            m.className = "mini-room";
+            const room = dungeonMap[`${x},${y}`];
+            if(room?.visited) m.classList.add("visited");
+            if(room?.cleared) m.classList.add("cleared");
+            if(currentRoom.x === x && currentRoom.y === y) m.classList.add("active");
             mapEl.appendChild(m);
-
         }
-
     }
-
-    document.getElementById(
-        "roomCoords"
-    ).textContent =
-        `Sala: [${currentRoom.x}, ${currentRoom.y}]`;
-
+    document.getElementById("roomCoords").textContent = `Sala: [${currentRoom.x}, ${currentRoom.y}]`;
 }
 
 function updateRoomIndicator(){
-
-    const room =
-        dungeonMap[
-            `${currentRoom.x},${currentRoom.y}`
-        ];
-
-    const indicator =
-        document.getElementById(
-            "roomTypeIndicator"
-        );
-
-    if(!room){
-        return;
-    }
-
-    const names = {
-
-        normal:"Sala Normal",
-
-        treasure:"💎 Tesoro",
-
-        secret:"🌌 Sala Secreta",
-
-        boss:"👑 JEFE"
-
-    };
-
-    indicator.textContent =
-        names[room.type] ||
-        "Sala";
-
+    const room = dungeonMap[`${currentRoom.x},${currentRoom.y}`];
+    const indicator = document.getElementById("roomTypeIndicator");
+    if(!room) return;
+    const names = { normal: "Sala Normal", treasure: "💎 Tesoro", secret: "🌌 Sala Secreta", boss: "👑 JEFE / SALIDA" };
+    indicator.textContent = names[room.type] || "Sala";
 }
-
-/* ============================================================
-   UI
-============================================================ */
 
 function updateUI(){
-
-    document.getElementById(
-        "uiChapter"
-    ).textContent =
-        state.chapter + 1;
-
-    document.getElementById(
-        "uiFruit"
-    ).textContent =
-        fruits;
-
-    document.getElementById(
-        "uiLives"
-    ).textContent =
-        lives;
-
-    document.getElementById(
-        "uiShield"
-    ).textContent =
-        shield;
-
-    document.getElementById(
-        "uiScore"
-    ).textContent =
-        state.score.toLocaleString(
-            "es-ES"
-        );
-
+    document.getElementById("uiChapter").textContent = state.chapter + 1;
+    document.getElementById("uiFruit").textContent = fruits;
+    document.getElementById("uiLives").textContent = lives;
+    document.getElementById("uiShield").textContent = shield;
+    document.getElementById("uiScore").textContent = state.score.toLocaleString("es-ES");
 }
-
-/* ============================================================
-   VICTORIA
-============================================================ */
 
 function victoryChapter(){
-
-    clearInterval(
-        engineTimer
-    );
-
+    clearInterval(engineTimer);
     running = false;
-
     stopMusic();
-
-    /*
-       Página narrativa.
-       Las páginas NO van a los laterales.
-    */
-
-    state.pages =
-        Math.min(
-            500,
-            state.pages + 1
-        );
-
-    /*
-       Bonus.
-    */
-
+    state.pages = Math.min(500, state.pages + 1);
     state.score += 1000;
-
-    if(
-        state.score >
-        state.best
-    ){
-
-        state.best =
-            state.score;
-
-    }
-
+    if(state.score > state.best) state.best = state.score;
     checkAchievements();
-
-    let pageData;
-
-    if(
-        window.GAME_DATABASE &&
-        typeof GAME_DATABASE.getPage ===
-            "function"
-    ){
-
-        pageData =
-            GAME_DATABASE.getPage(
-                state.pages
-            );
-
-    }else{
-
-        pageData = {
-
-            title:
-                "Fragmento perdido",
-
-            author:
-                "El Códice",
-
-            text:
-                "La página no pudo ser cargada. " +
-                "Comprueba que database.js está correctamente conectado."
-
-        };
-
-    }
-
-    document
-        .getElementById("game")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("narrativeScreen")
-        .classList
-        .remove("hidden");
-
-    document.getElementById(
-        "pageChapterBadge"
-    ).textContent =
-        pageData.title;
-
-    document.getElementById(
-        "pageTitle"
-    ).textContent =
-        `Códice Estelar — Página ${state.pages}/500`;
-
-    document.getElementById(
-        "pageText"
-    ).textContent =
-        pageData.text;
-
-    document.getElementById(
-        "pageAuthor"
-    ).textContent =
-        `— ${pageData.author}`;
-
-    document.getElementById(
-        "codiceProgress"
-    ).textContent =
-        `${state.pages}/500`;
-
-    document.getElementById(
-        "scoreProgress"
-    ).textContent =
-        state.score.toLocaleString(
-            "es-ES"
-        );
-
+    let pageData = typeof GAME_DATABASE.getPage === "function" ? GAME_DATABASE.getPage(state.pages) : { title: "Fragmento", author: "Códice", text: "Cargado con éxito." };
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("narrativeScreen").classList.remove("hidden");
+    document.getElementById("pageChapterBadge").textContent = pageData.title;
+    document.getElementById("pageTitle").textContent = `Códice Estelar — Página ${state.pages}/500`;
+    document.getElementById("pageText").textContent = pageData.text;
+    document.getElementById("pageAuthor").textContent = `— ${pageData.author}`;
+    document.getElementById("codiceProgress").textContent = `${state.pages}/500`;
+    document.getElementById("scoreProgress").textContent = state.score.toLocaleString("es-ES");
     saveState();
-
 }
-
-/* ============================================================
-   SIGUIENTE CAPÍTULO
-============================================================ */
 
 function advanceChapter(){
-
-    document
-        .getElementById("narrativeScreen")
-        .classList
-        .add("hidden");
-
+    document.getElementById("narrativeScreen").classList.add("hidden");
     state.chapter++;
-
-    if(
-        state.chapter >=
-        chapters.length
-    ){
-
-        /*
-           Completó los 8 capítulos.
-        */
-
+    if(state.chapter >= chapters.length){
         state.chapter = 0;
-
         state.score += 5000;
-
         checkAchievements();
-
-        alert(
-            "🌟 ¡Has completado los 8 capítulos y restaurado el Códice de las Estrellas!"
-        );
-
+        alert("🌟 ¡Has completado los 8 capítulos y restaurado el Códice de las Estrellas!");
     }
-
     saveState();
-
-    document
-        .getElementById("chapterScreen")
-        .classList
-        .remove("hidden");
-
+    document.getElementById("chapterScreen").classList.remove("hidden");
     updateChapterScreen();
-
 }
-
-/* ============================================================
-   RETRY
-============================================================ */
 
 function retryChapter(){
-
-    document
-        .getElementById("deathScreen")
-        .classList
-        .add("hidden");
-
+    document.getElementById("deathScreen").classList.add("hidden");
     enterChapterRoom();
-
 }
-
-/* ============================================================
-   MENÚ
-============================================================ */
 
 function returnMenu(){
-
-    clearInterval(
-        engineTimer
-    );
-
+    clearInterval(engineTimer);
     running = false;
-
     stopMusic();
-
-    document
-        .querySelectorAll(".screen")
-        .forEach(
-            screen =>
-                screen.classList
-                    .add("hidden")
-        );
-
-    document
-        .getElementById("game")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .remove("hidden");
-
+    document.querySelectorAll(".screen").forEach(screen => screen.classList.add("hidden"));
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("startScreen").classList.remove("hidden");
 }
 
-/* ============================================================
-   LOGROS
-============================================================ */
-
 const achievementsList = [];
+const catNames = ["🗺️ Exploración", "⚔️ Combate", "👑 Jefes", "💎 Secretos", "📖 Historia", "⭐ Desafíos"];
+const iconsPool = ["🌱","🌿","🧭","⚡","🔥","👑","💎","📖","⭐","🌌","🌙","🌊","🌲","📚","⏳","❤️"];
 
-const catNames = [
-
-    "🗺️ Exploración",
-    "⚔️ Combate",
-    "👑 Jefes",
-    "💎 Secretos",
-    "📖 Historia",
-    "⭐ Desafíos"
-
-];
-
-const iconsPool = [
-
-    "🌱",
-    "🌿",
-    "🧭",
-    "⚡",
-    "🔥",
-    "👑",
-    "💎",
-    "📖",
-    "⭐",
-    "🌌",
-    "🌙",
-    "🌊",
-    "🌲",
-    "📚",
-    "⏳",
-    "❤️"
-
-];
-
-for(
-    let i=1;
-    i<=100;
-    i++
-){
-
-    const cat =
-        catNames[
-            Math.min(
-                Math.floor(
-                    (i-1)/17
-                ),
-                catNames.length-1
-            )
-        ];
-
-    achievementsList.push({
-
-        id:`ach_${i}`,
-
-        icon:
-            iconsPool[
-                i %
-                iconsPool.length
-            ],
-
-        title:
-            `${cat.split(" ")[1]} Estelar #${i}`,
-
-        desc:
-            `Meta cumplida al alcanzar hitos avanzados en tu travesía por el Códice.`,
-
-        category:cat
-
-    });
-
+for(let i=1; i<=100; i++){
+    const cat = catNames[Math.min(Math.floor((i-1)/17), catNames.length-1)];
+    achievementsList.push({ id:`ach_${i}`, icon: iconsPool[i % iconsPool.length], title: `${cat.split(" ")[1]} Estelar #${i}`, desc: `Meta cumplida al alcanzar hitos avanzados.`, category: cat });
 }
 
 function checkAchievements(){
-
-    achievementsList.forEach(
-        achievement => {
-
-            const num =
-                parseInt(
-                    achievement.id
-                        .split("_")[1]
-                );
-
-            /*
-               Progreso por capítulo.
-            */
-
-            if(
-                num <=
-                state.chapter * 12 + 1
-            ){
-
-                state.achievements[
-                    achievement.id
-                ] = true;
-
-            }
-
-            /*
-               Progreso por puntuación.
-            */
-
-            if(
-                state.score >
-                num * 200
-            ){
-
-                state.achievements[
-                    achievement.id
-                ] = true;
-
-            }
-
-            /*
-               Progreso por páginas.
-            */
-
-            if(
-                state.pages >
-                num * 3
-            ){
-
-                state.achievements[
-                    achievement.id
-                ] = true;
-
-            }
-
-            /*
-               Logros especiales.
-            */
-
-            if(
-                num === 100 &&
-                state.chapter === 7 &&
-                state.pages >= 9
-            ){
-
-                state.achievements[
-                    achievement.id
-                ] = true;
-
-            }
-
+    achievementsList.forEach(achievement => {
+        const num = parseInt(achievement.id.split("_")[1]);
+        if(state.chapter > 0 && num <= state.chapter * 12){
+            state.achievements[achievement.id] = true;
         }
-    );
-
+        if(state.score >= num * 200){
+            state.achievements[achievement.id] = true;
+        }
+        if(state.pages > num * 3){
+            state.achievements[achievement.id] = true;
+        }
+    });
     saveState();
-
 }
 
 function showAchievements(){
-
     checkAchievements();
-
-    const container =
-        document.getElementById(
-            "achievementList"
-        );
-
+    const container = document.getElementById("achievementList");
     container.innerHTML = "";
-
-    achievementsList.forEach(
-        achievement => {
-
-            const unlocked =
-                !!state.achievements[
-                    achievement.id
-                ];
-
-            const d =
-                document.createElement(
-                    "div"
-                );
-
-            d.className =
-                "achievement";
-
-            d.style.opacity =
-                unlocked ? 1 : .5;
-
-            d.innerHTML = `
-
-                <div class="achievement-icon">
-                    ${achievement.icon}
-                </div>
-
-                <div>
-
-                    <span style="
-                        font-size:.65rem;
-                        color:var(--pink2);
-                        font-weight:bold;
-                    ">
-                        ${achievement.category}
-                    </span>
-
-                    <br>
-
-                    <b>
-                        ${achievement.title}
-                    </b>
-
-                    <br>
-
-                    <small>
-                        ${achievement.desc}
-                        ${
-                            unlocked
-                                ? " ✅ Desbloqueado"
-                                : " 🔒 Bloqueado"
-                        }
-                    </small>
-
-                </div>
-
-            `;
-
-            container.appendChild(d);
-
-        }
-    );
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("achievementScreen")
-        .classList
-        .remove("hidden");
-
+    achievementsList.forEach(achievement => {
+        const unlocked = !!state.achievements[achievement.id];
+        const d = document.createElement("div");
+        d.className = "achievement";
+        d.style.opacity = unlocked ? 1 : .5;
+        d.innerHTML = `<div class="achievement-icon">${achievement.icon}</div><div><span style="font-size:.65rem;color:var(--pink2);font-weight:bold;">${achievement.category}</span><br><b>${achievement.title}</b><br><small>${achievement.desc} ${unlocked ? " ✅ Desbloqueado" : " 🔒 Bloqueado"}</small></div>`;
+        container.appendChild(d);
+    });
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("achievementScreen").classList.remove("hidden");
 }
 
 function closeAchievements(){
-
-    document
-        .getElementById("achievementScreen")
-        .classList
-        .add("hidden");
-
-    document
-        .getElementById("startScreen")
-        .classList
-        .remove("hidden");
-
+    document.getElementById("achievementScreen").classList.add("hidden");
+    document.getElementById("startScreen").classList.remove("hidden");
 }
-
-/* ============================================================
-   LATERALES
-============================================================ */
 
 function populateSidebars(){
-
-    const leftEl =
-        document.getElementById(
-            "leftVerses"
-        );
-
-    const rightEl =
-        document.getElementById(
-            "rightVerses"
-        );
-
-    leftEl.innerHTML = "";
-    rightEl.innerHTML = "";
-
-    /*
-       COMPROBACIÓN DE DATABASE.JS
-    */
-
-    if(
-        !window.GAME_DATABASE ||
-        !Array.isArray(
-            GAME_DATABASE.lateralVerses
-        )
-    ){
-
-        leftEl.innerHTML = `
-            <div class="verse">
-                ⚠️ No se ha podido cargar
-                database.js
-            </div>
-        `;
-
-        rightEl.innerHTML = `
-            <div class="verse">
-                ⚠️ Base de datos no encontrada.
-            </div>
-        `;
-
-        console.error(
-            "GAME_DATABASE.lateralVerses no está disponible."
-        );
-
-        return;
-
+    const leftEl = document.getElementById("leftVerses");
+    const rightEl = document.getElementById("rightVerses");
+    leftEl.innerHTML = ""; rightEl.innerHTML = "";
+    const verses = [...GAME_DATABASE.lateralVerses];
+    for(let i=verses.length-1; i>0; i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [verses[i], verses[j]] = [verses[j], verses[i]];
     }
-
-    /*
-       SOLO CITAS CORTAS.
-       NUNCA literaryMasterpieces.
-    */
-
-    const verses =
-        [...GAME_DATABASE.lateralVerses];
-
-    /*
-       Fisher-Yates.
-    */
-
-    for(
-        let i=verses.length-1;
-        i>0;
-        i--
-    ){
-
-        const j =
-            Math.floor(
-                Math.random()*(i+1)
-            );
-
-        [
-            verses[i],
-            verses[j]
-        ] =
-        [
-            verses[j],
-            verses[i]
-        ];
-
-    }
-
-    /*
-       IZQUIERDA
-    */
-
-    verses
-        .slice(0,4)
-        .forEach(
-            quote => {
-
-                const div =
-                    document.createElement(
-                        "div"
-                    );
-
-                div.className =
-                    "verse";
-
-                div.textContent =
-                    `«${quote}»`;
-
-                leftEl.appendChild(
-                    div
-                );
-
-            }
-        );
-
-    /*
-       DERECHA:
-       OBJETOS.
-    */
-
-    const title =
-        document.createElement(
-            "div"
-        );
-
-    title.className =
-        "verse";
-
-    title.innerHTML = `
-        <b>🎒 Objetos desbloqueados</b>
-        <br>
-        <small>
-            Capítulo ${state.chapter+1}
-        </small>
-    `;
-
-    rightEl.appendChild(
-        title
-    );
-
-    if(
-        typeof GAME_DATABASE.queryItems ===
-            "function"
-    ){
-
-        const items =
-            GAME_DATABASE.queryItems(
-                state.chapter
-            );
-
-        if(!items.length){
-
-            const empty =
-                document.createElement(
-                    "div"
-                );
-
-            empty.className =
-                "verse";
-
-            empty.textContent =
-                "Aún no hay objetos desbloqueados.";
-
-            rightEl.appendChild(
-                empty
-            );
-
-        }else{
-
-            items.forEach(
-                item => {
-
-                    const div =
-                        document.createElement(
-                            "div"
-                        );
-
-                    div.className =
-                        "verse";
-
-                    div.innerHTML = `
-                        ⭐ <b>${item.name}</b>
-                        <br>
-                        <small>${item.desc}</small>
-                    `;
-
-                    rightEl.appendChild(
-                        div
-                    );
-
-                }
-            );
-
-        }
-
-    }
-
-    /*
-       OTRAS CITAS CORTAS.
-    */
-
-    verses
-        .slice(4,7)
-        .forEach(
-            quote => {
-
-                const div =
-                    document.createElement(
-                        "div"
-                    );
-
-                div.className =
-                    "verse";
-
-                div.textContent =
-                    `«${quote}»`;
-
-                rightEl.appendChild(
-                    div
-                );
-
-            }
-        );
-
+    verses.slice(0,4).forEach(quote => {
+        const div = document.createElement("div");
+        div.className = "verse";
+        div.textContent = `«${quote}»`;
+        leftEl.appendChild(div);
+    });
+    const title = document.createElement("div");
+    title.className = "verse";
+    title.innerHTML = `<b>🎒 Objetos desbloqueados</b><br><small>Capítulo ${state.chapter+1}</small>`;
+    rightEl.appendChild(title);
+    const items = GAME_DATABASE.queryItems(state.chapter);
+    items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "verse";
+        div.innerHTML = `⭐ <b>${item.name}</b><br><small>${item.desc}</small>`;
+        rightEl.appendChild(div);
+    });
+    verses.slice(4,7).forEach(quote => {
+        const div = document.createElement("div");
+        div.className = "verse";
+        div.textContent = `«${quote}»`;
+        rightEl.appendChild(div);
+    });
 }
 
-/* ============================================================
-   ESTRELLAS
-============================================================ */
-
-const starsContainer =
-    document.getElementById(
-        "stars"
-    );
-
-for(
-    let i=0;
-    i<100;
-    i++
-){
-
-    const s =
-        document.createElement(
-            "div"
-        );
-
-    s.className =
-        "star";
-
-    s.style.left =
-        Math.random()*100 + "%";
-
-    s.style.top =
-        Math.random()*100 + "%";
-
-    s.style.animationDelay =
-        Math.random()*3 + "s";
-
-    starsContainer.appendChild(
-        s
-    );
-
+const starsContainer = document.getElementById("stars");
+for(let i=0; i<100; i++){
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.left = Math.random()*100 + "%";
+    s.style.top = Math.random()*100 + "%";
+    s.style.animationDelay = Math.random()*3 + "s";
+    starsContainer.appendChild(s);
 }
 
-/* ============================================================
-   TECLADO
-============================================================ */
+window.addEventListener("keydown", e => {
+    if(document.activeElement && document.activeElement.tagName === "INPUT") return;
+    const validKeys = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyA","KeyS","KeyD"];
+    if(validKeys.includes(e.code)) e.preventDefault();
+    if(e.code === "ArrowUp" || e.code === "KeyW") movePlayer(0,-1);
+    if(e.code === "ArrowDown" || e.code === "KeyS") movePlayer(0,1);
+    if(e.code === "ArrowLeft" || e.code === "KeyA") movePlayer(-1,0);
+    if(e.code === "ArrowRight" || e.code === "KeyD") movePlayer(1,0);
+});
 
-window.addEventListener(
-    "keydown",
-    e => {
-
-        if(
-            document.activeElement &&
-            document.activeElement.tagName ===
-                "INPUT"
-        ){
-
-            return;
-
-        }
-
-        const validKeys = [
-
-            "ArrowUp",
-            "ArrowDown",
-            "ArrowLeft",
-            "ArrowRight",
-            "KeyW",
-            "KeyA",
-            "KeyS",
-            "KeyD"
-
-        ];
-
-        if(
-            validKeys.includes(e.code)
-        ){
-
-            e.preventDefault();
-
-        }
-
-        if(
-            e.code === "ArrowUp" ||
-            e.code === "KeyW"
-        ){
-
-            movePlayer(0,-1);
-
-        }
-
-        if(
-            e.code === "ArrowDown" ||
-            e.code === "KeyS"
-        ){
-
-            movePlayer(0,1);
-
-        }
-
-        if(
-            e.code === "ArrowLeft" ||
-            e.code === "KeyA"
-        ){
-
-            movePlayer(-1,0);
-
-        }
-
-        if(
-            e.code === "ArrowRight" ||
-            e.code === "KeyD"
-        ){
-
-            movePlayer(1,0);
-
-        }
-
-    }
-);
-
-/* ============================================================
-   ARRANQUE
-============================================================ */
-
-window.addEventListener(
-    "load",
-    () => {
-
-        if(
-            !window.GAME_DATABASE
-        ){
-
-            console.error(
-                "ERROR: database.js no se ha cargado."
-            );
-
-            const msg =
-                document.getElementById(
-                    "authMessage"
-                );
-
-            if(msg){
-
-                msg.style.color =
-                    "#be123c";
-
-                msg.textContent =
-                    "⚠️ Error: database.js no está conectado.";
-
-            }
-
-        }else{
-
-            console.log(
-                "✅ GAME_DATABASE cargado correctamente."
-            );
-
-            console.log(
-                "📜 Citas:",
-                GAME_DATABASE.lateralVerses?.length || 0
-            );
-
-            console.log(
-                "📚 Obras:",
-                GAME_DATABASE.literaryMasterpieces?.length || 0
-            );
-
-        }
-
-    }
-);
-
+window.addEventListener("load", () => {
+    console.log("✅ Sistema integrado cargado correctamente con logros progresivos.");
+});
 </script>
 
 </body>
-</html>
