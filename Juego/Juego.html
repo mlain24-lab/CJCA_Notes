@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#020617">
-<title>El Códice de las Estrellas: Roguelite Edition ❤️</title>
+<title>El Códice de las Estrellas ❤️</title>
 
 <style>
 *{
@@ -27,10 +27,13 @@
     --border:rgba(244,63,94,.35);
 }
 
-body{
-    min-height:100vh;
-    width:100vw;
+html,body{
+    width:100%;
+    height:100%;
     overflow:hidden;
+}
+
+body{
     color:#f8fafc;
     background:
         radial-gradient(circle at 50% 45%,#1e1b4b 0%,#0f172a 40%,#020617 100%);
@@ -44,6 +47,7 @@ body{
     inset:0;
     pointer-events:none;
     z-index:0;
+    overflow:hidden;
 }
 
 .star{
@@ -56,8 +60,14 @@ body{
 }
 
 @keyframes twinkle{
-    from{opacity:.15;transform:scale(.7)}
-    to{opacity:1;transform:scale(1.5)}
+    from{
+        opacity:.15;
+        transform:scale(.7);
+    }
+    to{
+        opacity:1;
+        transform:scale(1.5);
+    }
 }
 
 .screen{
@@ -95,11 +105,11 @@ body{
 @keyframes appear{
     from{
         opacity:0;
-        transform:translateY(20px) scale(.98)
+        transform:translateY(20px) scale(.98);
     }
     to{
         opacity:1;
-        transform:none
+        transform:none;
     }
 }
 
@@ -211,6 +221,10 @@ body{
     font-size:1.05rem;
 }
 
+/* =========================
+   GAME
+========================= */
+
 #game{
     position:relative;
     z-index:5;
@@ -311,7 +325,7 @@ body{
     gap:3px;
     width:60px;
     height:60px;
-    margin:0 auto 8px auto;
+    margin:0 auto 8px;
 }
 
 .mini-room{
@@ -323,6 +337,7 @@ body{
 .mini-room.active{
     background:var(--pink);
     border-color:var(--pink2);
+    box-shadow:0 0 8px rgba(244,63,94,.5);
 }
 
 .mini-room.visited{
@@ -330,7 +345,7 @@ body{
 }
 
 .mini-room.cleared{
-    background:rgba(34,211,238,.35);
+    background:rgba(34,211,238,.3);
 }
 
 #maze{
@@ -345,6 +360,7 @@ body{
     border:2px solid #334155;
     border-radius:10px;
     overflow:hidden;
+    contain:layout paint;
 }
 
 .cell{
@@ -354,6 +370,7 @@ body{
     align-items:center;
     overflow:hidden;
     font-size:clamp(12px,3vw,18px);
+    user-select:none;
 }
 
 .wall{
@@ -365,12 +382,11 @@ body{
 }
 
 .fruit{
-    background:rgba(251,191,36,.08);
+    background:rgba(251,191,36,.05);
 }
 
 .goal{
     background:rgba(244,63,94,.15);
-    box-shadow:inset 0 0 10px rgba(244,63,94,.3);
 }
 
 .boss-cell{
@@ -380,30 +396,21 @@ body{
 
 .player{
     filter:drop-shadow(0 0 6px rgba(244,63,94,.9));
-    animation:pulse .7s infinite alternate;
+    animation:pulse .8s infinite alternate;
+    z-index:5;
 }
 
 .enemy{
     filter:drop-shadow(0 0 5px rgba(139,92,246,.8));
-}
-
-.boss-visual{
-    animation:bossPulse .45s infinite alternate;
+    z-index:4;
 }
 
 @keyframes pulse{
-    from{transform:scale(.9)}
-    to{transform:scale(1.12)}
-}
-
-@keyframes bossPulse{
     from{
         transform:scale(.9);
-        filter:drop-shadow(0 0 6px rgba(139,92,246,.7));
     }
     to{
         transform:scale(1.12);
-        filter:drop-shadow(0 0 16px rgba(167,139,250,1));
     }
 }
 
@@ -434,16 +441,31 @@ body{
     transform:scale(.92);
 }
 
-.up{grid-column:2}
-.left{grid-column:1;grid-row:2}
-.down{grid-column:2;grid-row:2}
-.right{grid-column:3;grid-row:2}
+.up{
+    grid-column:2;
+}
+
+.left{
+    grid-column:1;
+    grid-row:2;
+}
+
+.down{
+    grid-column:2;
+    grid-row:2;
+}
+
+.right{
+    grid-column:3;
+    grid-row:2;
+}
 
 .game-actions{
     display:flex;
     justify-content:center;
     gap:6px;
     margin-top:8px;
+    flex-wrap:wrap;
 }
 
 .small-btn{
@@ -466,6 +488,10 @@ body{
     font-size:.72rem;
     color:#94a3b8;
 }
+
+/* =========================
+   ACHIEVEMENTS
+========================= */
 
 .ach-grid{
     display:grid;
@@ -490,14 +516,27 @@ body{
     font-size:1.3rem;
 }
 
-.db-status{
-    margin-top:10px;
-    font-size:.68rem;
-    color:#795548;
-    opacity:.8;
+/* =========================
+   NARRATIVE
+========================= */
+
+#pageText{
+    text-align:left;
+    font-family:Georgia,serif;
+    font-size:1rem;
+    line-height:1.75;
 }
 
+#pageAuthor{
+    font-family:Georgia,serif;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
 @media(max-width:1050px){
+
     .game-layout{
         grid-template-columns:minmax(300px,420px);
         justify-content:center;
@@ -505,6 +544,33 @@ body{
 
     .side-panel{
         display:none;
+    }
+}
+
+@media(max-width:500px){
+
+    .parchment{
+        padding:22px;
+    }
+
+    #game{
+        padding:5px;
+    }
+
+    .center-panel{
+        padding:9px;
+    }
+
+    .stats{
+        font-size:.62rem;
+    }
+
+    .controls{
+        grid-template-columns:50px 50px 50px;
+    }
+
+    .ctrl{
+        width:50px;
     }
 }
 </style>
@@ -519,21 +585,28 @@ body{
 ========================= -->
 
 <div class="screen" id="authScreen">
-    <div class="parchment" style="max-width:420px;text-align:center;">
 
-        <span class="chapter-badge">Acceso al Códice</span>
+    <div class="parchment"
+         style="max-width:420px;text-align:center;">
+
+        <span class="chapter-badge">
+            Acceso al Códice
+        </span>
 
         <h2>Identificación</h2>
 
         <p class="intro">
-            Introduce tus credenciales
-            (Mínimo 3 caracteres para usuario y 4 para contraseña).
+            Introduce tus credenciales.
         </p>
 
         <div style="text-align:left;margin-top:15px;">
 
-            <label style="font-size:.8rem;font-weight:bold;color:#5d4037;">
-                Nombre de Usuario (Mín. 3)
+            <label style="
+                font-size:.8rem;
+                font-weight:bold;
+                color:#5d4037;
+            ">
+                Nombre de Usuario
             </label>
 
             <input
@@ -542,10 +615,15 @@ body{
                 class="input-field"
                 placeholder="Ej. Viajero Estelar"
                 minlength="3"
+                autocomplete="username"
             >
 
-            <label style="font-size:.8rem;font-weight:bold;color:#5d4037;">
-                Contraseña (Mín. 4)
+            <label style="
+                font-size:.8rem;
+                font-weight:bold;
+                color:#5d4037;
+            ">
+                Contraseña
             </label>
 
             <input
@@ -554,7 +632,9 @@ body{
                 class="input-field"
                 placeholder="••••••••"
                 minlength="4"
+                autocomplete="current-password"
             >
+
         </div>
 
         <div
@@ -567,14 +647,16 @@ body{
             "
         ></div>
 
-        <button class="btn btn-primary" onclick="handleLogin()">
+        <button
+            class="btn btn-primary"
+            onclick="handleLogin()"
+        >
             🔑 Iniciar Sesión
         </button>
 
         <button
             class="btn btn-secondary"
             onclick="handleRegister()"
-            style="margin-top:8px;"
         >
             ✨ Registrar Nueva Cuenta
         </button>
@@ -586,7 +668,9 @@ body{
         >
             📺 Pantalla Completa
         </button>
+
     </div>
+
 </div>
 
 <!-- =========================
@@ -595,26 +679,38 @@ body{
 
 <div class="screen hidden" id="slotScreen">
 
-    <div class="parchment" style="max-width:500px;text-align:center;">
+    <div
+        class="parchment"
+        style="max-width:500px;text-align:center;"
+    >
 
-        <span class="chapter-badge" id="slotUserBadge">
+        <span
+            class="chapter-badge"
+            id="slotUserBadge"
+        >
             Viajero
         </span>
 
-        <h2>Selección de Partida (Slots)</h2>
+        <h2>Selección de Partida</h2>
 
         <p class="intro">
-            Elige una ranura de guardado para continuar tu aventura
-            o iniciar una nueva.
+            Elige una ranura de guardado para continuar.
         </p>
 
-        <div id="slotsContainer" style="margin:20px 0;"></div>
+        <div
+            id="slotsContainer"
+            style="margin:20px 0;"
+        ></div>
 
-        <button class="btn btn-secondary" onclick="logoutUser()">
+        <button
+            class="btn btn-secondary"
+            onclick="logoutUser()"
+        >
             🚪 Cerrar Sesión
         </button>
 
     </div>
+
 </div>
 
 <!-- =========================
@@ -625,60 +721,78 @@ body{
 
     <div class="parchment">
 
-        <span class="chapter-badge" id="activeSlotBadge">
+        <span
+            class="chapter-badge"
+            id="activeSlotBadge"
+        >
             Slot 1
         </span>
 
-        <h2>El Códice de las Estrellas ❤️</h2>
+        <h2>
+            El Códice de las Estrellas ❤️
+        </h2>
 
         <p class="intro">
-            «Un viaje a través de 8 capítulos, base de datos literaria,
-            logros, música ambiental y combates.»
+            Un roguelite de exploración, literatura,
+            secretos y memoria estelar.
         </p>
 
-        <div
-            style="
-                background:rgba(121,85,72,.06);
-                padding:14px;
-                border-radius:10px;
-                margin-bottom:16px;
-            "
-        >
-            <p><b>📜 Ajustes de Partida:</b></p>
+        <div style="
+            background:rgba(121,85,72,.06);
+            padding:14px;
+            border-radius:10px;
+            margin-bottom:16px;
+        ">
 
-            <ul
-                style="
-                    margin-left:20px;
-                    font-size:.88rem;
-                    line-height:1.5;
-                "
-            >
-                <li>500 páginas de literatura universal.</li>
-                <li>Fruta Gomu Gomu y objetos escalonados.</li>
-                <li>8 capítulos con mapas, enemigos y jefes.</li>
-                <li>Eventos secretos y salas especiales.</li>
+            <p>
+                <b>📜 Características</b>
+            </p>
+
+            <ul style="
+                margin-left:20px;
+                font-size:.88rem;
+                line-height:1.6;
+            ">
+
+                <li>
+                    500 páginas narrativas desbloqueables.
+                </li>
+
+                <li>
+                    Citas cortas durante la exploración.
+                </li>
+
+                <li>
+                    Objetos que aparecen según tu progreso.
+                </li>
+
+                <li>
+                    100 logros.
+                </li>
+
+                <li>
+                    8 capítulos y jefes.
+                </li>
+
             </ul>
+
         </div>
 
-        <div
-            style="
-                display:grid;
-                grid-template-columns:1fr 1fr;
-                gap:10px;
-                margin-bottom:12px;
-            "
-        >
+        <div style="
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+            margin-bottom:12px;
+        ">
 
             <div>
 
-                <label
-                    style="
-                        font-size:.75rem;
-                        font-weight:bold;
-                        color:#5d4037;
-                    "
-                >
-                    🎵 Pista de Música
+                <label style="
+                    font-size:.75rem;
+                    font-weight:bold;
+                    color:#5d4037;
+                ">
+                    🎵 Música
                 </label>
 
                 <select
@@ -691,23 +805,34 @@ body{
                         background:#fff8e8;
                     "
                 >
-                    <option value="0">Armonía Estelar</option>
-                    <option value="1">Ecos del Alba</option>
-                    <option value="2">Sinfonía del Cosmos</option>
-                    <option value="off">Música Desactivada</option>
+
+                    <option value="0">
+                        Armonía Estelar
+                    </option>
+
+                    <option value="1">
+                        Ecos del Alba
+                    </option>
+
+                    <option value="2">
+                        Sinfonía del Cosmos
+                    </option>
+
+                    <option value="off">
+                        Música Desactivada
+                    </option>
+
                 </select>
 
             </div>
 
             <div>
 
-                <label
-                    style="
-                        font-size:.75rem;
-                        font-weight:bold;
-                        color:#5d4037;
-                    "
-                >
+                <label style="
+                    font-size:.75rem;
+                    font-weight:bold;
+                    color:#5d4037;
+                ">
                     ⚔️ Dificultad
                 </label>
 
@@ -721,26 +846,42 @@ body{
                         background:#fff8e8;
                     "
                 >
-                    <option value="normal">Normal</option>
-                    <option value="hard">Difícil</option>
-                    <option value="legend">Leyenda</option>
+
+                    <option value="normal">
+                        Normal
+                    </option>
+
+                    <option value="hard">
+                        Difícil
+                    </option>
+
+                    <option value="legend">
+                        Leyenda
+                    </option>
+
                 </select>
 
             </div>
+
         </div>
 
-        <button class="btn btn-primary" onclick="startJourney()">
+        <button
+            class="btn btn-primary"
+            onclick="startJourney()"
+        >
             ✨ Comenzar la Travesía
         </button>
 
-        <button class="btn btn-secondary" onclick="showAchievements()">
+        <button
+            class="btn btn-secondary"
+            onclick="showAchievements()"
+        >
             🏆 Salón de los 100 Logros
         </button>
 
         <button
             class="btn btn-secondary"
             onclick="toggleFullScreen()"
-            style="margin-top:6px;"
         >
             📺 Pantalla Completa
         </button>
@@ -748,16 +889,12 @@ body{
         <button
             class="btn btn-secondary"
             onclick="returnToSlots()"
-            style="margin-top:6px;"
         >
-            📁 Cambiar de Slot / Cuenta
+            📁 Cambiar Slot / Cuenta
         </button>
 
-        <div class="db-status" id="databaseStatus">
-            📚 Comprobando base de datos...
-        </div>
-
     </div>
+
 </div>
 
 <!-- =========================
@@ -766,9 +903,15 @@ body{
 
 <div class="screen hidden" id="chapterScreen">
 
-    <div class="parchment" style="text-align:center;">
+    <div
+        class="parchment"
+        style="text-align:center;"
+    >
 
-        <span class="chapter-badge" id="chapBadge">
+        <span
+            class="chapter-badge"
+            id="chapBadge"
+        >
             Capítulo 1
         </span>
 
@@ -776,21 +919,31 @@ body{
             El Jardín de los Suspiros
         </h2>
 
-        <p class="intro" id="chapDesc">
-            Donde los primeros rastros del recuerdo comienzan a florecer.
-        </p>
+        <p
+            class="intro"
+            id="chapDesc"
+        ></p>
 
         <div style="margin:20px 0;">
-            <div style="font-size:3rem;" id="chapIcon">
+
+            <div
+                style="font-size:3rem;"
+                id="chapIcon"
+            >
                 🌹
             </div>
+
         </div>
 
-        <button class="btn btn-primary" onclick="enterChapterRoom()">
+        <button
+            class="btn btn-primary"
+            onclick="enterChapterRoom()"
+        >
             ⚔️ Entrar al Capítulo
         </button>
 
     </div>
+
 </div>
 
 <!-- =========================
@@ -801,7 +954,10 @@ body{
 
     <div class="parchment">
 
-        <span class="chapter-badge" id="pageChapterBadge">
+        <span
+            class="chapter-badge"
+            id="pageChapterBadge"
+        >
             Página del Códice
         </span>
 
@@ -809,7 +965,10 @@ body{
             Página 1
         </h2>
 
-        <p class="intro" id="pageText"></p>
+        <p
+            class="intro"
+            id="pageText"
+        ></p>
 
         <p
             style="
@@ -820,24 +979,24 @@ body{
             id="pageAuthor"
         ></p>
 
-        <div
-            style="
-                display:grid;
-                grid-template-columns:1fr 1fr;
-                gap:10px;
-                margin:16px 0;
-            "
-        >
+        <div style="
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+            margin:16px 0;
+        ">
 
-            <div
-                style="
-                    background:rgba(0,0,0,.08);
-                    padding:10px;
-                    border-radius:8px;
-                    text-align:center;
-                "
-            >
-                <span>Progreso Códice</span>
+            <div style="
+                background:rgba(0,0,0,.08);
+                padding:10px;
+                border-radius:8px;
+                text-align:center;
+            ">
+
+                <span>
+                    Progreso Códice
+                </span>
+
                 <strong
                     id="codiceProgress"
                     style="
@@ -847,17 +1006,19 @@ body{
                 >
                     1/500
                 </strong>
+
             </div>
 
-            <div
-                style="
-                    background:rgba(0,0,0,.08);
-                    padding:10px;
-                    border-radius:8px;
-                    text-align:center;
-                "
-            >
-                <span>Puntuación</span>
+            <div style="
+                background:rgba(0,0,0,.08);
+                padding:10px;
+                border-radius:8px;
+                text-align:center;
+            ">
+
+                <span>
+                    Puntuación
+                </span>
 
                 <strong
                     id="scoreProgress"
@@ -868,15 +1029,20 @@ body{
                 >
                     0
                 </strong>
+
             </div>
 
         </div>
 
-        <button class="btn btn-primary" onclick="advanceChapter()">
+        <button
+            class="btn btn-primary"
+            onclick="advanceChapter()"
+        >
             🌟 Siguiente Capítulo
         </button>
 
     </div>
+
 </div>
 
 <!-- =========================
@@ -885,23 +1051,38 @@ body{
 
 <div class="screen hidden" id="deathScreen">
 
-    <div class="parchment" style="text-align:center;">
+    <div
+        class="parchment"
+        style="text-align:center;"
+    >
 
-        <h2>🌑 El abismo te ha alcanzado</h2>
+        <h2>
+            🌑 El abismo te ha alcanzado
+        </h2>
 
-        <p class="intro" id="deathText">
+        <p
+            class="intro"
+            id="deathText"
+        >
             «La oscuridad no pudo apagar por completo la llama...»
         </p>
 
-        <button class="btn btn-primary" onclick="retryChapter()">
+        <button
+            class="btn btn-primary"
+            onclick="retryChapter()"
+        >
             🔥 Reintentar Capítulo
         </button>
 
-        <button class="btn btn-secondary" onclick="returnMenu()">
+        <button
+            class="btn btn-secondary"
+            onclick="returnMenu()"
+        >
             🏠 Volver al Menú
         </button>
 
     </div>
+
 </div>
 
 <!-- =========================
@@ -912,19 +1093,28 @@ body{
 
     <div class="parchment">
 
-        <h2>🏆 Salón de las Estrellas</h2>
+        <h2>
+            🏆 Salón de las Estrellas
+        </h2>
 
-        <div class="ach-grid" id="achievementList"></div>
+        <p class="intro">
+            100 logros para descubrir.
+        </p>
+
+        <div
+            class="ach-grid"
+            id="achievementList"
+        ></div>
 
         <button
             class="btn btn-primary"
             onclick="closeAchievements()"
-            style="margin-top:14px;"
         >
             Volver
         </button>
 
     </div>
+
 </div>
 
 <!-- =========================
@@ -935,17 +1125,26 @@ body{
 
     <div class="game-layout">
 
+        <!-- LEFT -->
+
         <aside class="side-panel">
 
-            <h3>📜 Versos Activos</h3>
+            <h3>
+                📜 Citas del Códice
+            </h3>
 
             <div id="leftVerses"></div>
 
         </aside>
 
+        <!-- CENTER -->
+
         <section class="center-panel">
 
-            <div class="title" id="gameTitle">
+            <div
+                class="title"
+                id="gameTitle"
+            >
                 El Jardín de los Suspiros
             </div>
 
@@ -955,7 +1154,10 @@ body{
                     Sala: [1, 1]
                 </span>
 
-                <div class="minimap" id="minimap"></div>
+                <div
+                    class="minimap"
+                    id="minimap"
+                ></div>
 
                 <span id="roomTypeIndicator">
                     Sala Normal
@@ -967,27 +1169,52 @@ body{
 
                 <div>
                     Cap
-                    <span class="stat-value" id="uiChapter">1</span>
+                    <span
+                        class="stat-value"
+                        id="uiChapter"
+                    >
+                        1
+                    </span>
                 </div>
 
                 <div>
                     🍈
-                    <span class="stat-value" id="uiFruit">0</span>
+                    <span
+                        class="stat-value"
+                        id="uiFruit"
+                    >
+                        0
+                    </span>
                 </div>
 
                 <div>
                     ❤️
-                    <span class="stat-value" id="uiLives">3</span>
+                    <span
+                        class="stat-value"
+                        id="uiLives"
+                    >
+                        3
+                    </span>
                 </div>
 
                 <div>
                     🛡️
-                    <span class="stat-value" id="uiShield">0</span>
+                    <span
+                        class="stat-value"
+                        id="uiShield"
+                    >
+                        0
+                    </span>
                 </div>
 
                 <div>
                     ⭐
-                    <span class="stat-value" id="uiScore">0</span>
+                    <span
+                        class="stat-value"
+                        id="uiScore"
+                    >
+                        0
+                    </span>
                 </div>
 
             </div>
@@ -995,7 +1222,7 @@ body{
             <div id="maze"></div>
 
             <div id="message">
-                ¡Explora las salas, recoge las frutas y encuentra el jefe!
+                Usa WASD, flechas o los controles.
             </div>
 
             <div class="controls">
@@ -1057,9 +1284,13 @@ body{
 
         </section>
 
+        <!-- RIGHT -->
+
         <aside class="side-panel">
 
-            <h3>🏛️ Lore y Misiones</h3>
+            <h3>
+                🏛️ Lore y Objetos
+            </h3>
 
             <div id="rightVerses"></div>
 
@@ -1069,273 +1300,17 @@ body{
 
 </main>
 
-<!-- =====================================================
-     DATABASE EXTERNA
-===================================================== -->
-
-<script src="database.js" onerror="databaseLoadFailed()"></script>
+<!--
+    IMPORTANTE:
+    database.js DEBE estar en la misma carpeta.
+-->
+<script src="database.js"></script>
 
 <script>
 
-/* =====================================================
-   BASE DE DATOS SEGURA
-===================================================== */
-
-const FALLBACK_DATABASE = {
-
-    lateralVerses: [
-        "Las estrellas recuerdan aquello que los hombres olvidan.",
-        "Cada puerta esconde un camino diferente.",
-        "La oscuridad también puede convertirse en guía.",
-        "El Códice observa cada paso del viajero.",
-        "Ningún laberinto es eterno.",
-        "Los recuerdos más poderosos sobreviven al tiempo.",
-        "Quien persigue las estrellas debe aceptar la noche.",
-        "El corazón del Códice todavía duerme."
-    ],
-
-    queryItems(chapter){
-
-        const items = [
-
-            [
-                {
-                    name:"Rosa del Recuerdo",
-                    desc:"Aumenta ligeramente la puntuación."
-                },
-                {
-                    name:"Semilla Estelar",
-                    desc:"Permite recuperar un poco de protección."
-                }
-            ],
-
-            [
-                {
-                    name:"Perla Abisal",
-                    desc:"Brilla incluso bajo las aguas oscuras."
-                },
-                {
-                    name:"Concha Lunar",
-                    desc:"Protege contra un impacto."
-                }
-            ],
-
-            [
-                {
-                    name:"Hoja del Recuerdo",
-                    desc:"Una hoja que nunca cae."
-                },
-                {
-                    name:"Colmillo Sombrío",
-                    desc:"Un fragmento dejado por las bestias."
-                }
-            ],
-
-            [
-                {
-                    name:"Fragmento Onírico",
-                    desc:"Una pieza de un sueño olvidado."
-                },
-                {
-                    name:"Ojo de Luna",
-                    desc:"Permite ver caminos ocultos."
-                }
-            ],
-
-            [
-                {
-                    name:"Página Prohibida",
-                    desc:"Contiene palabras que nadie debería leer."
-                },
-                {
-                    name:"Pluma Fantasma",
-                    desc:"Escribe incluso sobre el vacío."
-                }
-            ],
-
-            [
-                {
-                    name:"Reloj Roto",
-                    desc:"Sus agujas dejaron de obedecer al tiempo."
-                },
-                {
-                    name:"Arena Temporal",
-                    desc:"Un puñado de segundos atrapados."
-                }
-            ],
-
-            [
-                {
-                    name:"Estrella Real",
-                    desc:"Una estrella caída del firmamento."
-                },
-                {
-                    name:"Escudo Celestial",
-                    desc:"Una protección creada por los antiguos."
-                }
-            ],
-
-            [
-                {
-                    name:"Corazón Estelar",
-                    desc:"El último fragmento del Códice."
-                },
-                {
-                    name:"Lágrima de Eternidad",
-                    desc:"Una gota que jamás desaparece."
-                }
-            ]
-
-        ];
-
-        return items[chapter] || items[0];
-    },
-
-    getRandomDefeatPhrase(){
-
-        const phrases = [
-            "La oscuridad te encontró antes de que encontraras la salida.",
-            "El Códice guarda silencio... pero la aventura no ha terminado.",
-            "Has caído, viajero. El camino todavía puede recorrerse.",
-            "Las estrellas se han ocultado. Regresa y continúa.",
-            "El abismo reclama esta batalla, no toda la guerra."
-        ];
-
-        return phrases[
-            Math.floor(Math.random()*phrases.length)
-        ];
-    },
-
-    getPage(page){
-
-        const texts = [
-
-            "Las primeras páginas del Códice hablan de un jardín donde los recuerdos florecen como rosas bajo una luna eterna.",
-
-            "Bajo las aguas, las antiguas ciudades conservan secretos que ningún explorador había conseguido recuperar.",
-
-            "El bosque parece observarte. Cada árbol contiene una memoria que no pertenece solamente a este mundo.",
-
-            "Los sueños se mezclan con la realidad mientras las estrellas comienzan a desaparecer.",
-
-            "En la biblioteca prohibida, cada libro parece conocer el nombre del viajero.",
-
-            "El tiempo se ha convertido en un laberinto y cada segundo puede cambiar el camino.",
-
-            "El Palacio de las Estrellas está cerca. Los guardianes preparan su último desafío.",
-
-            "El Corazón del Códice despierta. La última página todavía debe ser escrita."
-        ];
-
-        return {
-            title:"Fragmento del Códice",
-            text:texts[(page-1) % texts.length],
-            author:"El Archivista de las Estrellas"
-        };
-    }
-};
-
-
-/*
-    IMPORTANTE:
-
-    database.js puede definir GAME_DATABASE de varias maneras.
-    Comprobamos todas las posibilidades.
-*/
-
-let GAME_DATABASE = null;
-
-function resolveDatabase(){
-
-    try{
-
-        if(
-            typeof window.GAME_DATABASE !== "undefined" &&
-            window.GAME_DATABASE
-        ){
-            GAME_DATABASE = window.GAME_DATABASE;
-        }
-
-    }catch(e){}
-
-    if(!GAME_DATABASE){
-
-        GAME_DATABASE = FALLBACK_DATABASE;
-
-        console.warn(
-            "database.js no está disponible o GAME_DATABASE no está definido. Se utilizará la base de datos de respaldo."
-        );
-
-        const status =
-            document.getElementById("databaseStatus");
-
-        if(status){
-            status.textContent =
-                "⚠️ database.js no cargado — usando base de datos integrada.";
-        }
-
-    }else{
-
-        GAME_DATABASE = normalizeDatabase(GAME_DATABASE);
-
-        const status =
-            document.getElementById("databaseStatus");
-
-        if(status){
-            status.textContent =
-                "📚 Base de datos externa conectada correctamente.";
-        }
-    }
-}
-
-function normalizeDatabase(db){
-
-    const normalized = db || {};
-
-    if(!Array.isArray(normalized.lateralVerses)){
-        normalized.lateralVerses =
-            FALLBACK_DATABASE.lateralVerses;
-    }
-
-    if(typeof normalized.queryItems !== "function"){
-        normalized.queryItems =
-            FALLBACK_DATABASE.queryItems;
-    }
-
-    if(typeof normalized.getRandomDefeatPhrase !== "function"){
-        normalized.getRandomDefeatPhrase =
-            FALLBACK_DATABASE.getRandomDefeatPhrase;
-    }
-
-    if(typeof normalized.getPage !== "function"){
-        normalized.getPage =
-            FALLBACK_DATABASE.getPage;
-    }
-
-    return normalized;
-}
-
-function databaseLoadFailed(){
-
-    GAME_DATABASE = FALLBACK_DATABASE;
-
-    const status =
-        document.getElementById("databaseStatus");
-
-    if(status){
-        status.textContent =
-            "⚠️ database.js no encontrado — usando base de datos integrada.";
-    }
-
-    console.warn(
-        "No se pudo cargar database.js. El juego utilizará el sistema interno."
-    );
-}
-
-
-/* =====================================================
-   USUARIOS
-===================================================== */
+/* ============================================================
+   CONFIGURACIÓN
+============================================================ */
 
 const USERS_DB_KEY = "codice_users_db_v4";
 
@@ -1343,433 +1318,26 @@ let currentUser = null;
 let currentSlotIndex = 0;
 
 let state = {
-
     chapter:0,
     score:0,
     best:0,
     pages:1,
-
     totalDeaths:0,
     totalFruits:0,
-
     musicTrack:0,
     difficulty:"normal",
-
     achievements:{}
-
 };
 
-function toggleFullScreen(){
-
-    if(!document.fullscreenElement){
-
-        document.documentElement
-            .requestFullscreen()
-            .catch(err=>{
-                console.log(
-                    `Error pantalla completa: ${err.message}`
-                );
-            });
-
-    }else{
-
-        if(document.exitFullscreen){
-            document.exitFullscreen();
-        }
-    }
-}
-
-function loadUsersDB(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem(USERS_DB_KEY)
-        ) || {};
-
-    }catch(e){
-
-        return {};
-    }
-}
-
-function saveUsersDB(db){
-
-    try{
-
-        localStorage.setItem(
-            USERS_DB_KEY,
-            JSON.stringify(db)
-        );
-
-    }catch(e){
-
-        console.error(e);
-    }
-}
-
-function createEmptyState(){
-
-    return {
-
-        chapter:0,
-        score:0,
-        best:0,
-        pages:1,
-
-        totalDeaths:0,
-        totalFruits:0,
-
-        musicTrack:0,
-        difficulty:"normal",
-
-        achievements:{}
-
-    };
-}
-
-function handleRegister(){
-
-    const user =
-        document.getElementById("usernameInput")
-            .value.trim();
-
-    const pass =
-        document.getElementById("passwordInput")
-            .value;
-
-    const msg =
-        document.getElementById("authMessage");
-
-    if(user.length < 3){
-
-        msg.style.color="#be123c";
-        msg.textContent=
-            "El usuario debe tener al menos 3 caracteres.";
-
-        return;
-    }
-
-    if(pass.length < 4){
-
-        msg.style.color="#be123c";
-        msg.textContent=
-            "La contraseña debe tener al menos 4 caracteres.";
-
-        return;
-    }
-
-    let db=loadUsersDB();
-
-    if(db[user]){
-
-        msg.style.color="#be123c";
-        msg.textContent=
-            "El usuario ya existe. Inicia sesión.";
-
-        return;
-    }
-
-    db[user]={
-
-        password:pass,
-
-        slots:[
-            createEmptyState(),
-            createEmptyState(),
-            createEmptyState()
-        ]
-
-    };
-
-    saveUsersDB(db);
-
-    msg.style.color="#22c55e";
-    msg.textContent=
-        "¡Registro exitoso! Ya puedes iniciar sesión.";
-}
-
-function handleLogin(){
-
-    const user =
-        document.getElementById("usernameInput")
-            .value.trim();
-
-    const pass =
-        document.getElementById("passwordInput")
-            .value;
-
-    const msg =
-        document.getElementById("authMessage");
-
-    if(user.length<3 || pass.length<4){
-
-        msg.style.color="#be123c";
-
-        msg.textContent=
-            "Usuario (mín. 3) y contraseña (mín. 4).";
-
-        return;
-    }
-
-    let db=loadUsersDB();
-
-    if(!db[user] || db[user].password!==pass){
-
-        msg.style.color="#be123c";
-
-        msg.textContent=
-            "Usuario o contraseña incorrectos.";
-
-        return;
-    }
-
-    currentUser=user;
-
-    document
-        .getElementById("authScreen")
-        .classList.add("hidden");
-
-    showSlotSelection();
-}
-
-function logoutUser(){
-
-    stopMusic();
-    running=false;
-
-    currentUser=null;
-
-    document
-        .getElementById("slotScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("authScreen")
-        .classList.remove("hidden");
-}
-
-function showSlotSelection(){
-
-    let db=loadUsersDB();
-
-    let userData=db[currentUser];
-
-    if(!userData) return;
-
-    document
-        .getElementById("slotUserBadge")
-        .textContent=
-            `Viajero: ${currentUser}`;
-
-    let container =
-        document.getElementById("slotsContainer");
-
-    container.innerHTML="";
-
-    userData.slots.forEach((slot,index)=>{
-
-        let div=document.createElement("div");
-
-        div.className="slot-card";
-
-        div.innerHTML=slot.active
-
-            ? `
-                <strong>Slot ${index+1}</strong>
-                <br>
-                <small>
-                    Capítulo: ${slot.chapter+1}
-                    |
-                    Puntuación: ${slot.score.toLocaleString("es-ES")}
-                    |
-                    Páginas: ${slot.pages}/500
-                </small>
-            `
-
-            : `
-                <strong>Slot ${index+1}</strong>
-                <br>
-                <small>
-                    Ranura Vacía (Nueva Partida)
-                </small>
-            `;
-
-        div.onclick=()=>selectSlot(index);
-
-        container.appendChild(div);
-
-    });
-
-    document
-        .getElementById("slotScreen")
-        .classList.remove("hidden");
-}
-
-function selectSlot(index){
-
-    currentSlotIndex=index;
-
-    let db=loadUsersDB();
-
-    let slot=db[currentUser].slots[index];
-
-    if(slot.active){
-
-        state={
-            ...createEmptyState(),
-            ...slot
-        };
-
-    }else{
-
-        state=createEmptyState();
-    }
-
-    document
-        .getElementById("slotScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("startScreen")
-        .classList.remove("hidden");
-
-    document
-        .getElementById("activeSlotBadge")
-        .textContent=
-            `Slot ${index+1} (${currentUser})`;
-
-    document
-        .getElementById("difficultySetting")
-        .value=state.difficulty;
-
-    document
-        .getElementById("musicTrackSetting")
-        .value=String(state.musicTrack);
-
-    resolveDatabase();
-}
-
-function returnToSlots(){
-
-    stopMusic();
-
-    document
-        .getElementById("startScreen")
-        .classList.add("hidden");
-
-    showSlotSelection();
-}
-
-function saveState(){
-
-    if(!currentUser) return;
-
-    let db=loadUsersDB();
-
-    if(!db[currentUser]) return;
-
-    db[currentUser].slots[currentSlotIndex]={
-
-        active:true,
-
-        chapter:state.chapter,
-        score:state.score,
-        best:state.best,
-        pages:state.pages,
-
-        totalDeaths:state.totalDeaths,
-        totalFruits:state.totalFruits,
-
-        musicTrack:state.musicTrack,
-        difficulty:state.difficulty,
-
-        achievements:state.achievements
-
-    };
-
-    saveUsersDB(db);
-}
-
-
-/* =====================================================
-   CAPÍTULOS
-===================================================== */
-
-const chapters=[
-
-    {
-        title:"El Jardín de los Suspiros",
-        icon:"🌹",
-        desc:"Donde los primeros rastros del recuerdo comienzan a florecer.",
-        enemyTypes:["👾","🌿"],
-        boss:"Guardián de Zarzas"
-    },
-
-    {
-        title:"La Ciudad Sumergida",
-        icon:"🌊",
-        desc:"Corrientes marinas, zonas inundadas y templos olvidados.",
-        enemyTypes:["🌊","🦑"],
-        boss:"Leviatán de las Mareas"
-    },
-
-    {
-        title:"El Bosque de los Recuerdos",
-        icon:"🌲",
-        desc:"Sombras boscosas que imitan cada uno de tus pasos.",
-        enemyTypes:["🌲","🐺"],
-        boss:"Sombra del Espejo"
-    },
-
-    {
-        title:"El Reino de los Sueños",
-        icon:"🌙",
-        desc:"Un laberinto onírico donde las paredes mutan constantemente.",
-        enemyTypes:["🌙","👁️"],
-        boss:"Señor de las Pesadillas"
-    },
-
-    {
-        title:"La Biblioteca Prohibida",
-        icon:"📚",
-        desc:"Páginas falsas, puertas secretas y acertijos arcanos.",
-        enemyTypes:["📚","👻"],
-        boss:"Archivero Ancestral"
-    },
-
-    {
-        title:"El Laberinto del Tiempo",
-        icon:"⏳",
-        desc:"Salas que se modifican con el paso inexorable de los segundos.",
-        enemyTypes:["⏳","⚡"],
-        boss:"Cronomante Estelar"
-    },
-
-    {
-        title:"El Palacio de las Estrellas",
-        icon:"⭐",
-        desc:"Enemigos de élite protegiendo los tesoros celestiales.",
-        enemyTypes:["⭐","🛡️"],
-        boss:"Centinela del Firmamento"
-    },
-
-    {
-        title:"El Corazón del Códice",
-        icon:"❤️",
-        desc:"El origen de todo. El encuentro definitivo con la eternidad.",
-        enemyTypes:["❤️","✨"],
-        boss:"El Códice Vivo"
-    }
-
-];
-
-
-/* =====================================================
+/* ============================================================
    AUDIO
-===================================================== */
+============================================================ */
 
-const musicTracks=[
+let audioCtx = null;
+let musicTimer = null;
+let musicStep = 0;
+
+const musicTracks = [
 
     {
         name:"Armonía Estelar",
@@ -1815,56 +1383,33 @@ const musicTracks=[
 
 ];
 
-let audioCtx=null;
-
-let musicTimer=null;
-
-let musicStep=0;
-
-let musicGain=null;
-
-let sfxGain=null;
-
-let activeMusicOscillators=[];
-
 function initAudio(){
 
-    try{
+    if(!audioCtx){
 
-        if(!audioCtx){
+        try{
 
-            audioCtx=
+            audioCtx =
                 new (
                     window.AudioContext ||
                     window.webkitAudioContext
                 )();
 
-            musicGain=
-                audioCtx.createGain();
+        }catch(e){
 
-            sfxGain=
-                audioCtx.createGain();
-
-            musicGain.gain.value=.13;
-            sfxGain.gain.value=.35;
-
-            musicGain.connect(
-                audioCtx.destination
+            console.warn(
+                "Web Audio API no disponible."
             );
 
-            sfxGain.connect(
-                audioCtx.destination
-            );
         }
 
-        if(audioCtx.state==="suspended"){
+    }
 
-            audioCtx.resume().catch(()=>{});
-        }
-
-    }catch(e){
-
-        console.warn("Audio no disponible",e);
+    if(
+        audioCtx &&
+        audioCtx.state === "suspended"
+    ){
+        audioCtx.resume();
     }
 }
 
@@ -1877,22 +1422,23 @@ function tone(
 
     initAudio();
 
-    if(!audioCtx) return;
+    if(
+        !audioCtx ||
+        state.musicTrack === "off"
+    ){
+        return;
+    }
 
     try{
 
-        const osc=
+        const osc =
             audioCtx.createOscillator();
 
-        const gain=
+        const gain =
             audioCtx.createGain();
 
-        osc.type=type;
-
-        osc.frequency.setValueAtTime(
-            freq,
-            audioCtx.currentTime
-        );
+        osc.type = type;
+        osc.frequency.value = freq;
 
         gain.gain.setValueAtTime(
             vol,
@@ -1901,164 +1447,20 @@ function tone(
 
         gain.gain.exponentialRampToValueAtTime(
             .001,
-            audioCtx.currentTime+duration
+            audioCtx.currentTime + duration
         );
 
         osc.connect(gain);
-        gain.connect(sfxGain);
+        gain.connect(audioCtx.destination);
 
         osc.start();
 
         osc.stop(
-            audioCtx.currentTime+duration+.02
+            audioCtx.currentTime + duration
         );
 
     }catch(e){}
-}
 
-function stopMusic(){
-
-    if(musicTimer){
-
-        clearTimeout(musicTimer);
-
-        musicTimer=null;
-    }
-
-    activeMusicOscillators.forEach(osc=>{
-
-        try{
-            osc.stop();
-        }catch(e){}
-
-    });
-
-    activeMusicOscillators=[];
-
-    musicStep=0;
-}
-
-function playMusicNote(){
-
-    if(
-        !audioCtx ||
-        state.musicTrack==="off"
-    ){
-        return;
-    }
-
-    const trackIndex=
-        Number(state.musicTrack);
-
-    const track=
-        musicTracks[
-            trackIndex
-        ] || musicTracks[0];
-
-    const freq=
-        track.notes[
-            musicStep%track.notes.length
-        ];
-
-    try{
-
-        const now=audioCtx.currentTime;
-
-        const osc=
-            audioCtx.createOscillator();
-
-        const gain=
-            audioCtx.createGain();
-
-        osc.type="sine";
-
-        osc.frequency.setValueAtTime(
-            freq,
-            now
-        );
-
-        gain.gain.setValueAtTime(
-            .0001,
-            now
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            .22,
-            now+.04
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            .0001,
-            now+.55
-        );
-
-        osc.connect(gain);
-        gain.connect(musicGain);
-
-        osc.start(now);
-        osc.stop(now+.58);
-
-        activeMusicOscillators.push(osc);
-
-        osc.onended=()=>{
-
-            activeMusicOscillators=
-                activeMusicOscillators.filter(
-                    x=>x!==osc
-                );
-        };
-
-        if(musicStep%4===0){
-
-            const bass=
-                audioCtx.createOscillator();
-
-            const bassGain=
-                audioCtx.createGain();
-
-            bass.type="triangle";
-
-            bass.frequency.value=
-                freq/2;
-
-            bassGain.gain.setValueAtTime(
-                .0001,
-                now
-            );
-
-            bassGain.gain.exponentialRampToValueAtTime(
-                .12,
-                now+.04
-            );
-
-            bassGain.gain.exponentialRampToValueAtTime(
-                .0001,
-                now+.7
-            );
-
-            bass.connect(bassGain);
-            bassGain.connect(musicGain);
-
-            bass.start(now);
-            bass.stop(now+.72);
-
-            activeMusicOscillators.push(bass);
-        }
-
-        musicStep++;
-
-    }catch(e){}
-
-    if(
-        state.musicTrack!=="off"
-    ){
-
-        musicTimer=
-            setTimeout(
-                playMusicNote,
-                430
-            );
-    }
 }
 
 function startMusic(){
@@ -2068,156 +1470,799 @@ function startMusic(){
     stopMusic();
 
     if(
-        state.musicTrack==="off"
+        state.musicTrack === "off" ||
+        !audioCtx
     ){
         return;
     }
 
-    musicStep=0;
+    let trackIndex =
+        Number(state.musicTrack);
 
-    playMusicNote();
+    if(
+        !Number.isInteger(trackIndex) ||
+        !musicTracks[trackIndex]
+    ){
+        trackIndex = 0;
+        state.musicTrack = 0;
+    }
+
+    musicStep = 0;
+
+    musicTimer = setInterval(() => {
+
+        if(
+            state.musicTrack === "off"
+        ){
+            return;
+        }
+
+        const track =
+            musicTracks[
+                Number(state.musicTrack)
+            ];
+
+        if(!track){
+            return;
+        }
+
+        const note =
+            track.notes[
+                musicStep % track.notes.length
+            ];
+
+        tone(
+            note,
+            .32,
+            "sine",
+            .045
+        );
+
+        if(musicStep % 4 === 0){
+
+            tone(
+                note / 2,
+                .55,
+                "triangle",
+                .028
+            );
+
+        }
+
+        if(musicStep % 8 === 6){
+
+            const harmony =
+                track.notes[
+                    (musicStep + 2) %
+                    track.notes.length
+                ];
+
+            tone(
+                harmony,
+                .2,
+                "sine",
+                .018
+            );
+
+        }
+
+        musicStep++;
+
+    },360);
+}
+
+function stopMusic(){
+
+    if(musicTimer){
+
+        clearInterval(
+            musicTimer
+        );
+
+    }
+
+    musicTimer = null;
 }
 
 function cycleMusicTrack(){
 
     initAudio();
 
+    let current;
+
     if(
-        state.musicTrack==="off"
+        state.musicTrack === "off"
     ){
 
-        state.musicTrack=0;
+        current = -1;
 
     }else{
 
-        state.musicTrack=
-            Number(state.musicTrack)+1;
+        current =
+            Number(state.musicTrack);
 
         if(
-            state.musicTrack>=musicTracks.length
+            !Number.isFinite(current)
         ){
-
-            state.musicTrack="off";
+            current = 0;
         }
+
+    }
+
+    current++;
+
+    if(
+        current >= musicTracks.length
+    ){
+        current = -1;
+    }
+
+    if(current === -1){
+
+        state.musicTrack = "off";
+
+        stopMusic();
+
+        document.getElementById(
+            "message"
+        ).textContent =
+            "🔇 Música desactivada";
+
+    }else{
+
+        state.musicTrack = current;
+
+        musicStep = 0;
+
+        stopMusic();
+
+        startMusic();
+
+        document.getElementById(
+            "message"
+        ).textContent =
+            `🎵 ${musicTracks[current].name}`;
+
+        tone(
+            musicTracks[current].notes[0],
+            .15,
+            "triangle",
+            .06
+        );
+
     }
 
     saveState();
+}
+
+/* ============================================================
+   FULLSCREEN
+============================================================ */
+
+function toggleFullScreen(){
+
+    if(!document.fullscreenElement){
+
+        document.documentElement
+            .requestFullscreen()
+            .catch(err => {
+                console.log(
+                    "Fullscreen:",
+                    err.message
+                );
+            });
+
+    }else{
+
+        if(document.exitFullscreen){
+            document.exitFullscreen();
+        }
+
+    }
+
+}
+
+/* ============================================================
+   DATABASE USUARIOS
+============================================================ */
+
+function loadUsersDB(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem(
+                USERS_DB_KEY
+            )
+        ) || {};
+
+    }catch(e){
+
+        return {};
+
+    }
+
+}
+
+function saveUsersDB(db){
+
+    try{
+
+        localStorage.setItem(
+            USERS_DB_KEY,
+            JSON.stringify(db)
+        );
+
+    }catch(e){
+
+        console.warn(
+            "No se pudo guardar."
+        );
+
+    }
+
+}
+
+/* ============================================================
+   AUTH
+============================================================ */
+
+function handleRegister(){
+
+    const user =
+        document
+            .getElementById(
+                "usernameInput"
+            )
+            .value
+            .trim();
+
+    const pass =
+        document
+            .getElementById(
+                "passwordInput"
+            )
+            .value;
+
+    const msg =
+        document.getElementById(
+            "authMessage"
+        );
+
+    if(user.length < 3){
+
+        msg.textContent =
+            "El usuario debe tener al menos 3 caracteres.";
+
+        return;
+
+    }
+
+    if(pass.length < 4){
+
+        msg.textContent =
+            "La contraseña debe tener al menos 4 caracteres.";
+
+        return;
+
+    }
+
+    let db =
+        loadUsersDB();
+
+    if(db[user]){
+
+        msg.textContent =
+            "El usuario ya existe.";
+
+        return;
+
+    }
+
+    db[user] = {
+
+        password:pass,
+
+        slots:[
+
+            createEmptySlot(),
+            createEmptySlot(),
+            createEmptySlot()
+
+        ]
+
+    };
+
+    saveUsersDB(db);
+
+    msg.style.color =
+        "#22c55e";
+
+    msg.textContent =
+        "¡Registro exitoso! Ya puedes iniciar sesión.";
+
+}
+
+function createEmptySlot(){
+
+    return {
+
+        active:false,
+        chapter:0,
+        score:0,
+        best:0,
+        pages:1,
+        totalDeaths:0,
+        totalFruits:0,
+        musicTrack:0,
+        difficulty:"normal",
+        achievements:{}
+
+    };
+
+}
+
+function handleLogin(){
+
+    const user =
+        document
+            .getElementById(
+                "usernameInput"
+            )
+            .value
+            .trim();
+
+    const pass =
+        document
+            .getElementById(
+                "passwordInput"
+            )
+            .value;
+
+    const msg =
+        document.getElementById(
+            "authMessage"
+        );
+
+    if(
+        user.length < 3 ||
+        pass.length < 4
+    ){
+
+        msg.textContent =
+            "Usuario o contraseña demasiado cortos.";
+
+        return;
+
+    }
+
+    const db =
+        loadUsersDB();
+
+    if(
+        !db[user] ||
+        db[user].password !== pass
+    ){
+
+        msg.textContent =
+            "Usuario o contraseña incorrectos.";
+
+        return;
+
+    }
+
+    currentUser = user;
+
+    document
+        .getElementById("authScreen")
+        .classList
+        .add("hidden");
+
+    showSlotSelection();
+
+}
+
+function logoutUser(){
+
+    currentUser = null;
+
+    stopMusic();
+
+    document
+        .getElementById("slotScreen")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("authScreen")
+        .classList
+        .remove("hidden");
+
+}
+
+function showSlotSelection(){
+
+    const db =
+        loadUsersDB();
+
+    const userData =
+        db[currentUser];
+
+    document.getElementById(
+        "slotUserBadge"
+    ).textContent =
+        `Viajero: ${currentUser}`;
+
+    const container =
+        document.getElementById(
+            "slotsContainer"
+        );
+
+    container.innerHTML = "";
+
+    userData.slots.forEach(
+        (slot,index) => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            div.className =
+                "slot-card";
+
+            if(slot.active){
+
+                div.innerHTML = `
+                    <strong>Slot ${index+1}</strong>
+                    <br>
+                    <small>
+                        Capítulo: ${slot.chapter+1}
+                        |
+                        Puntuación:
+                        ${slot.score.toLocaleString("es-ES")}
+                        |
+                        Páginas:
+                        ${slot.pages}/500
+                    </small>
+                `;
+
+            }else{
+
+                div.innerHTML = `
+                    <strong>Slot ${index+1}</strong>
+                    <br>
+                    <small>
+                        Ranura vacía — Nueva partida
+                    </small>
+                `;
+
+            }
+
+            div.onclick =
+                () => selectSlot(index);
+
+            container.appendChild(div);
+
+        }
+    );
+
+    document
+        .getElementById("slotScreen")
+        .classList
+        .remove("hidden");
+
+}
+
+function selectSlot(index){
+
+    currentSlotIndex = index;
+
+    const db =
+        loadUsersDB();
+
+    const slot =
+        db[currentUser]
+            .slots[index];
+
+    if(slot.active){
+
+        state = {
+            ...state,
+            ...slot
+        };
+
+    }else{
+
+        state =
+            createEmptySlot();
+
+    }
+
+    document
+        .getElementById("slotScreen")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("startScreen")
+        .classList
+        .remove("hidden");
+
+    document.getElementById(
+        "activeSlotBadge"
+    ).textContent =
+        `Slot ${index+1} (${currentUser})`;
+
+    document.getElementById(
+        "difficultySetting"
+    ).value =
+        state.difficulty;
+
+    document.getElementById(
+        "musicTrackSetting"
+    ).value =
+        state.musicTrack;
+
+}
+
+function returnToSlots(){
+
+    stopMusic();
+
+    document
+        .getElementById("startScreen")
+        .classList
+        .add("hidden");
+
+    showSlotSelection();
+
+}
+
+function saveState(){
+
+    if(!currentUser){
+        return;
+    }
+
+    const db =
+        loadUsersDB();
+
+    if(!db[currentUser]){
+        return;
+    }
+
+    db[currentUser]
+        .slots[currentSlotIndex] = {
+
+        active:true,
+        chapter:state.chapter,
+        score:state.score,
+        best:state.best,
+        pages:state.pages,
+        totalDeaths:state.totalDeaths,
+        totalFruits:state.totalFruits,
+        musicTrack:state.musicTrack,
+        difficulty:state.difficulty,
+        achievements:state.achievements
+
+    };
+
+    saveUsersDB(db);
+
+}
+
+/* ============================================================
+   CAPÍTULOS
+============================================================ */
+
+const chapters = [
+
+    {
+        title:"El Jardín de los Suspiros",
+        icon:"🌹",
+        desc:"Donde los primeros rastros del recuerdo comienzan a florecer.",
+        enemyTypes:["👾","🌿"],
+        boss:"Guardián de Zarzas"
+    },
+
+    {
+        title:"La Ciudad Sumergida",
+        icon:"🌊",
+        desc:"Corrientes marinas, zonas inundadas y templos olvidados.",
+        enemyTypes:["🌊","🦑"],
+        boss:"Leviatán de las Mareas"
+    },
+
+    {
+        title:"El Bosque de los Recuerdos",
+        icon:"🌲",
+        desc:"Sombras boscosas que imitan cada uno de tus pasos.",
+        enemyTypes:["🌲","🐺"],
+        boss:"Sombra del Espejo"
+    },
+
+    {
+        title:"El Reino de los Sueños",
+        icon:"🌙",
+        desc:"Un laberinto onírico donde las paredes mutan.",
+        enemyTypes:["🌙","👁️"],
+        boss:"Señor de las Pesadillas"
+    },
+
+    {
+        title:"La Biblioteca Prohibida",
+        icon:"📚",
+        desc:"Páginas falsas, puertas secretas y acertijos arcanos.",
+        enemyTypes:["📚","👻"],
+        boss:"Archivero Ancestral"
+    },
+
+    {
+        title:"El Laberinto del Tiempo",
+        icon:"⏳",
+        desc:"Salas que se modifican con el paso inexorable.",
+        enemyTypes:["⏳","⚡"],
+        boss:"Cronomante Estelar"
+    },
+
+    {
+        title:"El Palacio de las Estrellas",
+        icon:"⭐",
+        desc:"Enemigos de élite protegiendo tesoros celestiales.",
+        enemyTypes:["⭐","🛡️"],
+        boss:"Centinela del Firmamento"
+    },
+
+    {
+        title:"El Corazón del Códice",
+        icon:"❤️",
+        desc:"El origen de todo. El encuentro definitivo.",
+        enemyTypes:["❤️","✨"],
+        boss:"El Códice Vivo"
+    }
+
+];
+
+function startJourney(){
+
+    initAudio();
+
+    const track =
+        document.getElementById(
+            "musicTrackSetting"
+        ).value;
+
+    state.musicTrack =
+        track === "off"
+            ? "off"
+            : Number(track);
+
+    state.difficulty =
+        document.getElementById(
+            "difficultySetting"
+        ).value;
+
+    saveState();
+
+    document
+        .getElementById("startScreen")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("chapterScreen")
+        .classList
+        .remove("hidden");
+
+    updateChapterScreen();
+
+}
+
+function updateChapterScreen(){
+
+    const chap =
+        chapters[state.chapter];
+
+    document.getElementById(
+        "chapBadge"
+    ).textContent =
+        `Capítulo ${state.chapter+1} / 8`;
+
+    document.getElementById(
+        "chapTitle"
+    ).textContent =
+        chap.title;
+
+    document.getElementById(
+        "chapDesc"
+    ).textContent =
+        chap.desc;
+
+    document.getElementById(
+        "chapIcon"
+    ).textContent =
+        chap.icon;
+
+}
+
+function enterChapterRoom(){
+
+    initAudio();
+
+    document
+        .getElementById("chapterScreen")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("game")
+        .classList
+        .remove("hidden");
+
+    const chap =
+        chapters[state.chapter];
+
+    document.getElementById(
+        "gameTitle"
+    ).textContent =
+        chap.title;
+
+    running = true;
+
+    lives =
+        state.difficulty === "legend"
+            ? 2
+            : 3;
+
+    shield =
+        state.difficulty === "hard"
+            ? 1
+            : 2;
+
+    generateDungeon();
+
+    player.x = 1;
+    player.y = 1;
+
+    clearInterval(engineTimer);
+
+    const engineSpeed =
+        Math.max(
+            260,
+            430 - state.chapter * 20
+        );
+
+    engineTimer =
+        setInterval(
+            gameEngine,
+            engineSpeed
+        );
+
+    populateSidebars();
 
     startMusic();
 
-    const name=
-        state.musicTrack==="off"
-            ? "Música desactivada"
-            : musicTracks[
-                Number(state.musicTrack)
-            ].name;
+    document.getElementById(
+        "message"
+    ).textContent =
+        "⚔️ ¡La travesía comienza!";
 
-    document
-        .getElementById("musicTrackSetting")
-        .value=String(state.musicTrack);
-
-    showMessage(
-        `🎵 ${name}`,
-        1800
-    );
 }
 
+/* ============================================================
+   DUNGEON
+============================================================ */
 
-/* =====================================================
-   ACHIEVEMENTS
-===================================================== */
-
-const achievementsList=[];
-
-const catNames=[
-    "🗺️ Exploración",
-    "⚔️ Combate",
-    "👑 Jefes",
-    "💎 Secretos",
-    "📖 Historia",
-    "⭐ Desafíos"
-];
-
-const iconsPool=[
-    "🌱","🌿","🧭","⚡",
-    "🔥","👑","💎","📖",
-    "⭐","🌌","🌙","🌊",
-    "🌲","📚","⏳","❤️"
-];
-
-for(let i=1;i<=100;i++){
-
-    let cat=
-        catNames[
-            Math.floor((i-1)/17)
-        ];
-
-    if(!cat){
-        cat="⭐ Desafíos";
-    }
-
-    achievementsList.push({
-
-        id:`ach_${i}`,
-
-        icon:
-            iconsPool[
-                i%iconsPool.length
-            ],
-
-        title:
-            `${cat.split(" ")[1]} Estelar #${i}`,
-
-        desc:
-            `Meta cumplida al alcanzar hitos avanzados en tu travesía por el Códice.`,
-
-        category:cat
-
-    });
-}
-
-function checkAchievements(){
-
-    achievementsList.forEach(a=>{
-
-        const num=
-            parseInt(
-                a.id.split("_")[1]
-            );
-
-        if(
-            num <=
-            state.chapter*12+1 ||
-
-            state.score >
-            num*200 ||
-
-            state.pages >
-            num*3
-        ){
-
-            state.achievements[a.id]=true;
-        }
-    });
-
-    saveState();
-}
-
-
-/* =====================================================
-   ESTADO DEL JUEGO
-===================================================== */
-
-let currentRoom={
+let currentRoom = {
     x:1,
     y:1
 };
 
-let dungeonMap={};
+let dungeonMap = {};
+let grid = [];
 
-let grid=[];
-
-let player={
+let player = {
     x:1,
     y:1,
     dir:{
@@ -2226,94 +2271,64 @@ let player={
     }
 };
 
-let enemies=[];
+let enemies = [];
+let boss = null;
 
-let boss=null;
+let fruits = 0;
+let lives = 3;
+let shield = 0;
 
-let fruits=0;
+let running = false;
+let engineTimer = null;
 
-let lives=3;
-
-let shield=0;
-
-let running=false;
-
-let engineTimer=null;
-
-let roomSeed=0;
-
-const mazeEl=
-    document.getElementById("maze");
-
-const starsContainer=
-    document.getElementById("stars");
-
-
-/* =====================================================
-   ESTRELLAS
-===================================================== */
-
-for(let i=0;i<120;i++){
-
-    const s=
-        document.createElement("div");
-
-    s.className="star";
-
-    s.style.left=
-        Math.random()*100+"%";
-
-    s.style.top=
-        Math.random()*100+"%";
-
-    s.style.animationDelay=
-        Math.random()*3+"s";
-
-    starsContainer.appendChild(s);
-}
-
-
-/* =====================================================
-   MAZMORRA
-===================================================== */
+const mazeEl =
+    document.getElementById(
+        "maze"
+    );
 
 function generateDungeon(){
 
-    dungeonMap={};
-
-    roomSeed=
-        Math.floor(
-            Math.random()*999999
-        );
+    dungeonMap = {};
 
     for(let y=0;y<3;y++){
 
         for(let x=0;x<3;x++){
 
-            let type="normal";
+            let type = "normal";
 
-            if(x===2 && y===2){
+            if(
+                x === 2 &&
+                y === 2
+            ){
 
-                type="boss";
+                type = "boss";
 
-            }else if(x===0 && y===0){
+            }else if(
+                x === 0 &&
+                y === 0
+            ){
 
-                type="treasure";
+                type = "treasure";
 
-            }else if(Math.random()<.35){
+            }else if(
+                Math.random() < .28
+            ){
 
-                type="secret";
+                type = "secret";
+
             }
 
             dungeonMap[
                 `${x},${y}`
-            ]={
+            ] = {
 
                 type:type,
 
                 cleared:false,
 
-                visited:false,
+                visited:
+                    x === 1 &&
+                    y === 1,
 
                 grid:
                     generateRoomGrid(
@@ -2321,42 +2336,41 @@ function generateDungeon(){
                     )
 
             };
+
         }
+
     }
 
-    currentRoom={
+    currentRoom = {
         x:1,
         y:1
     };
 
-    dungeonMap["1,1"].cleared=true;
+    loadCurrentRoomData();
 
-    loadCurrentRoomData(
-        true
-    );
 }
 
 function generateRoomGrid(type){
 
-    const size=13;
+    const size = 11;
 
-    const g=
+    const g =
         Array.from(
             {length:size},
-            ()=>Array(size).fill(1)
+            () => Array(size).fill(1)
         );
 
     function carve(x,y){
 
-        g[y][x]=0;
+        g[y][x] = 0;
 
-        const dirs=[
+        const dirs = [
             [2,0],
             [-2,0],
             [0,2],
             [0,-2]
         ].sort(
-            ()=>Math.random()-.5
+            () => Math.random()-.5
         );
 
         for(
@@ -2364,418 +2378,183 @@ function generateRoomGrid(type){
             of dirs
         ){
 
-            const nx=x+dx;
-            const ny=y+dy;
+            const nx =
+                x + dx;
+
+            const ny =
+                y + dy;
 
             if(
-                nx>0 &&
-                ny>0 &&
-                nx<size-1 &&
-                ny<size-1 &&
-                g[ny][nx]===1
+                nx > 0 &&
+                ny > 0 &&
+                nx < size-1 &&
+                ny < size-1 &&
+                g[ny][nx] === 1
             ){
 
                 g[
-                    y+dy/2
+                    y + dy/2
                 ][
-                    x+dx/2
-                ]=0;
+                    x + dx/2
+                ] = 0;
 
                 carve(nx,ny);
+
             }
+
         }
+
     }
 
     carve(1,1);
 
-
     /*
-        Abrimos bastantes caminos extra.
-        Esto evita mapas demasiado cerrados.
+       Abrimos caminos adicionales.
+       Esto evita mapas demasiado cerrados.
     */
 
-    for(let i=0;i<24;i++){
+    for(let i=0;i<18;i++){
 
-        const rx=
-            1+
-            Math.floor(
+        const rx =
+            1 + Math.floor(
                 Math.random()*(size-2)
             );
 
-        const ry=
-            1+
-            Math.floor(
+        const ry =
+            1 + Math.floor(
                 Math.random()*(size-2)
             );
 
-        g[ry][rx]=0;
+        g[ry][rx] = 0;
 
-        if(
-            rx>1 &&
-            rx<size-2 &&
-            g[ry][rx-1]===1
-        ){
-            g[ry][rx-1]=0;
-        }
-
-        if(
-            rx>1 &&
-            rx<size-2 &&
-            g[ry][rx+1]===1
-        ){
-            g[ry][rx+1]=0;
-        }
     }
 
-
     /*
-        Portales abiertos en los cuatro lados.
+       Portales.
     */
 
-    const mid=
+    const middle =
         Math.floor(size/2);
 
-    g[0][mid]=0;
-    g[1][mid]=0;
-
-    g[size-1][mid]=0;
-    g[size-2][mid]=0;
-
-    g[mid][0]=0;
-    g[mid][1]=0;
-
-    g[mid][size-1]=0;
-    g[mid][size-2]=0;
-
+    g[0][middle] = 0;
+    g[size-1][middle] = 0;
+    g[middle][0] = 0;
+    g[middle][size-1] = 0;
 
     /*
-        En la sala de jefe dejamos
-        un área central bastante abierta.
+       Abrimos conexiones alrededor
+       de los portales.
     */
 
-    if(type==="boss"){
+    g[1][middle] = 0;
+    g[size-2][middle] = 0;
+    g[middle][1] = 0;
+    g[middle][size-2] = 0;
 
-        for(
-            let y=mid-2;
-            y<=mid+2;
-            y++
-        ){
+    if(type === "boss"){
 
-            for(
-                let x=mid-2;
-                x<=mid+2;
-                x++
-            ){
+        g[middle][middle] = 5;
+
+        /*
+           Zona más abierta para boss.
+        */
+
+        for(let dy=-1;dy<=1;dy++){
+
+            for(let dx=-1;dx<=1;dx++){
+
+                const xx =
+                    middle + dx;
+
+                const yy =
+                    middle + dy;
 
                 if(
-                    y>0 &&
-                    y<size-1 &&
-                    x>0 &&
-                    x<size-1
+                    xx > 0 &&
+                    yy > 0 &&
+                    xx < size-1 &&
+                    yy < size-1
                 ){
 
-                    g[y][x]=0;
+                    g[yy][xx] = 0;
+
                 }
+
             }
+
         }
 
-        g[mid][mid]=5;
+        g[middle][middle] = 5;
 
     }else{
 
-        let fCount=
-            3+
-            Math.floor(
+        const fruitCount =
+            3 + Math.floor(
                 Math.random()*3
             );
 
-        let placed=0;
+        let placed = 0;
+
+        let attempts = 0;
 
         while(
-            placed<fCount
+            placed < fruitCount &&
+            attempts < 200
         ){
 
-            const rx=
-                1+
-                Math.floor(
+            attempts++;
+
+            const rx =
+                1 + Math.floor(
                     Math.random()*(size-2)
                 );
 
-            const ry=
-                1+
-                Math.floor(
+            const ry =
+                1 + Math.floor(
                     Math.random()*(size-2)
                 );
 
             if(
-                g[ry][rx]===0 &&
-                !(rx===1 && ry===1)
+                g[ry][rx] === 0 &&
+                !(rx === 1 && ry === 1)
             ){
 
-                g[ry][rx]=4;
+                g[ry][rx] = 4;
                 placed++;
+
             }
+
         }
+
     }
 
     return g;
+
 }
 
+/* ============================================================
+   SALA
+============================================================ */
 
-/* =====================================================
-   ENEMIGOS
-===================================================== */
+function loadCurrentRoomData(){
 
-function spawnRoomEnemies(){
+    const roomKey =
+        `${currentRoom.x},${currentRoom.y}`;
 
-    const chap=
-        chapters[state.chapter];
+    const room =
+        dungeonMap[roomKey];
 
-    const list=[];
-
-    let count=
-        state.difficulty==="legend"
-            ? 3
-            : state.difficulty==="hard"
-                ? 2
-                : 1+
-                  Math.floor(
-                      Math.random()*2
-                  );
-
-    /*
-        Evitamos colocar enemigos
-        demasiado cerca del jugador.
-    */
-
-    for(
-        let i=0;
-        i<count;
-        i++
-    ){
-
-        let rx;
-        let ry;
-        let attempts=0;
-
-        do{
-
-            rx=
-                1+
-                Math.floor(
-                    Math.random()*
-                    (grid[0].length-2)
-                );
-
-            ry=
-                1+
-                Math.floor(
-                    Math.random()*
-                    (grid.length-2)
-                );
-
-            attempts++;
-
-        }while(
-
-            attempts<100 &&
-
-            (
-                grid[ry][rx]!==0 ||
-
-                (
-                    Math.abs(rx-player.x)+
-                    Math.abs(ry-player.y)
-                )<4 ||
-
-                list.some(
-                    e=>
-                        e.x===rx &&
-                        e.y===ry
-                )
-            )
-        );
-
-        if(
-            attempts<100
-        ){
-
-            list.push({
-
-                x:rx,
-                y:ry,
-
-                icon:
-                    chap.enemyTypes[
-                        i%
-                        chap.enemyTypes.length
-                    ],
-
-                moveCooldown:
-                    Math.floor(
-                        Math.random()*3
-                    ),
-
-                lastMove:0
-
-            });
-        }
-    }
-
-    return list;
-}
-
-function getEnemyMoves(enemy){
-
-    const dirs=[
-        {x:1,y:0},
-        {x:-1,y:0},
-        {x:0,y:1},
-        {x:0,y:-1}
-    ];
-
-    const possible=[];
-
-    dirs.forEach(d=>{
-
-        const nx=
-            enemy.x+d.x;
-
-        const ny=
-            enemy.y+d.y;
-
-        if(
-            ny>=0 &&
-            ny<grid.length &&
-            nx>=0 &&
-            nx<grid[0].length &&
-            grid[ny][nx]!==1
-        ){
-
-            possible.push({
-                x:nx,
-                y:ny,
-                dx:d.x,
-                dy:d.y
-            });
-        }
-    });
-
-    return possible;
-}
-
-function moveEnemy(enemy){
-
-    const possible=
-        getEnemyMoves(enemy);
-
-    if(!possible.length){
+    if(!room){
         return;
     }
 
-    /*
-        Cuando el jugador está cerca,
-        el enemigo intenta perseguirlo.
-    */
+    room.visited = true;
 
-    const distance=
-        Math.abs(
-            player.x-enemy.x
-        )+
-        Math.abs(
-            player.y-enemy.y
-        );
+    grid = room.grid;
 
-    if(distance<=8){
+    fruits = 0;
 
-        possible.sort(
-            (a,b)=>{
-
-                const da=
-                    Math.abs(
-                        player.x-a.x
-                    )+
-                    Math.abs(
-                        player.y-a.y
-                    );
-
-                const db=
-                    Math.abs(
-                        player.x-b.x
-                    )+
-                    Math.abs(
-                        player.y-b.y
-                    );
-
-                return da-db;
-            }
-        );
-
-        /*
-            Un poco de aleatoriedad
-            para evitar movimientos
-            totalmente predecibles.
-        */
-
-        if(
-            possible.length>1 &&
-            Math.random()<.28
-        ){
-
-            const choice=
-                possible.slice(
-                    0,
-                    Math.min(
-                        3,
-                        possible.length
-                    )
-                );
-
-            return choice[
-                Math.floor(
-                    Math.random()*
-                    choice.length
-                )
-            ];
-        }
-
-        return possible[0];
-
-    }else{
-
-        return possible[
-            Math.floor(
-                Math.random()*
-                possible.length
-            )
-        ];
-    }
-}
-
-
-/* =====================================================
-   CARGAR SALA
-===================================================== */
-
-function loadCurrentRoomData(
-    preservePlayerPosition=false
-){
-
-    const roomKey=
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room=
-        dungeonMap[roomKey];
-
-    if(!room) return;
-
-    room.visited=true;
-
-    grid=room.grid;
-
-    fruits=0;
-
-    boss=null;
+    boss = null;
 
     for(
         let y=0;
@@ -2789,370 +2568,348 @@ function loadCurrentRoomData(
             x++
         ){
 
-            if(
-                grid[y][x]===4
-            ){
+            if(grid[y][x] === 4){
                 fruits++;
             }
 
-            if(
-                grid[y][x]===5
-            ){
+            if(grid[y][x] === 5){
 
-                boss={
+                boss = {
 
                     x:x,
                     y:y,
 
                     hp:
-                        12+
-                        state.chapter*4,
+                        10 +
+                        state.chapter*5,
 
                     maxHp:
-                        12+
-                        state.chapter*4,
+                        10 +
+                        state.chapter*5,
 
                     icon:
                         chapters[
                             state.chapter
                         ].icon
+
                 };
+
             }
+
         }
+
     }
+
+    /*
+       Si una sala normal se ha quedado sin fruta,
+       ponemos una de emergencia.
+    */
 
     if(
-        room.type!=="boss" &&
-        fruits===0
+        room.type !== "boss" &&
+        fruits === 0 &&
+        !room.cleared
     ){
 
-        grid[6][6]=4;
+        grid[5][5] = 4;
 
-        fruits=1;
+        fruits = 1;
+
     }
 
-    enemies=
-        room.type==="boss"
+    enemies =
+        room.type === "boss"
             ? []
             : spawnRoomEnemies();
 
-
-    /*
-        Posición del jugador al entrar
-        por un portal.
-    */
-
-    if(!preservePlayerPosition){
-
-        if(currentRoom.x===0){
-
-            player.x=
-                grid[0].length-2;
-
-            player.y=
-                Math.floor(
-                    grid.length/2
-                );
-
-        }else if(currentRoom.x===2){
-
-            player.x=1;
-
-            player.y=
-                Math.floor(
-                    grid.length/2
-                );
-
-        }else if(currentRoom.y===0){
-
-            player.x=
-                Math.floor(
-                    grid[0].length/2
-                );
-
-            player.y=
-                grid.length-2;
-
-        }else if(currentRoom.y===2){
-
-            player.x=
-                Math.floor(
-                    grid[0].length/2
-                );
-
-            player.y=1;
-
-        }else{
-
-            player.x=1;
-            player.y=1;
-        }
-    }
-
-    updateMinimap();
-
-    updateUI();
-
     updateRoomIndicator();
-
+    updateMinimap();
+    updateUI();
     render();
-
     populateSidebars();
+
 }
 
+/* ============================================================
+   ENEMIGOS
+============================================================ */
 
-/* =====================================================
-   COMENZAR
-===================================================== */
+function spawnRoomEnemies(){
 
-function startJourney(){
-
-    initAudio();
-
-    const trackVal=
-        document
-            .getElementById(
-                "musicTrackSetting"
-            )
-            .value;
-
-    state.musicTrack=
-        trackVal==="off"
-            ? "off"
-            : Number(trackVal);
-
-    state.difficulty=
-        document
-            .getElementById(
-                "difficultySetting"
-            )
-            .value;
-
-    saveState();
-
-    document
-        .getElementById("startScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("chapterScreen")
-        .classList.remove("hidden");
-
-    updateChapterScreen();
-}
-
-function updateChapterScreen(){
-
-    const chap=
+    const chap =
         chapters[state.chapter];
 
-    document
-        .getElementById("chapBadge")
-        .textContent=
-            `Capítulo ${state.chapter+1} / 8`;
-
-    document
-        .getElementById("chapTitle")
-        .textContent=
-            chap.title;
-
-    document
-        .getElementById("chapDesc")
-        .textContent=
-            chap.desc;
-
-    document
-        .getElementById("chapIcon")
-        .textContent=
-            chap.icon;
-}
-
-function enterChapterRoom(){
-
-    initAudio();
-
-    document
-        .getElementById("chapterScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("game")
-        .classList.remove("hidden");
-
-    const chap=
-        chapters[state.chapter];
-
-    document
-        .getElementById("gameTitle")
-        .textContent=
-            chap.title;
-
-    running=true;
-
-    lives=
-        state.difficulty==="legend"
-            ? 2
-            : state.difficulty==="hard"
-                ? 3
-                : 3;
-
-    shield=
-        state.difficulty==="legend"
-            ? 0
-            : 1;
-
-    player.x=1;
-    player.y=1;
-
-    generateDungeon();
-
-    clearInterval(engineTimer);
-
-    /*
-        Motor mucho más rápido.
-        Los enemigos se mueven de forma
-        independiente de la velocidad
-        del jugador.
-    */
-
-    engineTimer=
-        setInterval(
-            gameEngine,
-            330
+    const count =
+        Math.min(
+            4,
+            1 +
+            Math.floor(
+                Math.random()*2
+            ) +
+            Math.floor(
+                state.chapter/3
+            )
         );
 
-    populateSidebars();
+    const list = [];
 
-    startMusic();
+    for(
+        let i=0;
+        i<count;
+        i++
+    ){
 
-    showMessage(
-        "⚔️ ¡La aventura comienza!",
-        1800
-    );
+        let rx;
+        let ry;
+        let attempts = 0;
+
+        do{
+
+            rx =
+                2 +
+                Math.floor(
+                    Math.random()*
+                    (grid[0].length-4)
+                );
+
+            ry =
+                2 +
+                Math.floor(
+                    Math.random()*
+                    (grid.length-4)
+                );
+
+            attempts++;
+
+        }while(
+
+            attempts < 100 &&
+
+            (
+                grid[ry][rx] !== 0 ||
+                (
+                    Math.abs(
+                        rx-player.x
+                    ) < 3 &&
+                    Math.abs(
+                        ry-player.y
+                    ) < 3
+                )
+            )
+
+        );
+
+        if(attempts < 100){
+
+            list.push({
+
+                x:rx,
+                y:ry,
+
+                icon:
+                    chap.enemyTypes[
+                        i %
+                        chap.enemyTypes.length
+                    ],
+
+                lastDirection:null
+
+            });
+
+        }
+
+    }
+
+    return list;
+
 }
 
-
-/* =====================================================
-   MOVIMIENTO DEL JUGADOR
-===================================================== */
+/* ============================================================
+   MOVIMIENTO
+============================================================ */
 
 function movePlayer(dx,dy){
 
-    if(!running) return;
+    if(!running){
+        return;
+    }
 
-    const nx=
-        player.x+dx;
+    initAudio();
 
-    const ny=
-        player.y+dy;
+    const nx =
+        player.x + dx;
 
-    const cols=
+    const ny =
+        player.y + dy;
+
+    const cols =
         grid[0].length;
 
-    const rows=
+    const rows =
         grid.length;
 
-
     /*
-        PORTAL IZQUIERDO
+       PORTAL IZQUIERDO
     */
 
-    if(nx<0){
+    if(nx < 0){
 
-        currentRoom.x=
-            currentRoom.x>0
-                ? currentRoom.x-1
+        currentRoom.x =
+            currentRoom.x > 0
+                ? currentRoom.x - 1
                 : 2;
 
         loadCurrentRoomData();
 
-        player.x=cols-2;
+        player.x =
+            cols - 2;
+
+        player.y =
+            Math.max(
+                1,
+                Math.min(
+                    rows-2,
+                    player.y
+                )
+            );
 
         render();
         updateUI();
 
-        tone(440,.08,"triangle",.05);
+        tone(
+            440,
+            .1,
+            "sine",
+            .04
+        );
 
         return;
+
     }
 
-
     /*
-        PORTAL DERECHO
+       PORTAL DERECHO
     */
 
-    if(nx>=cols){
+    if(nx >= cols){
 
-        currentRoom.x=
-            currentRoom.x<2
-                ? currentRoom.x+1
+        currentRoom.x =
+            currentRoom.x < 2
+                ? currentRoom.x + 1
                 : 0;
 
         loadCurrentRoomData();
 
-        player.x=1;
+        player.x = 1;
+
+        player.y =
+            Math.max(
+                1,
+                Math.min(
+                    rows-2,
+                    player.y
+                )
+            );
 
         render();
         updateUI();
 
-        tone(440,.08,"triangle",.05);
+        tone(
+            440,
+            .1,
+            "sine",
+            .04
+        );
 
         return;
+
     }
 
-
     /*
-        PORTAL SUPERIOR
+       PORTAL SUPERIOR
     */
 
-    if(ny<0){
+    if(ny < 0){
 
-        currentRoom.y=
-            currentRoom.y>0
-                ? currentRoom.y-1
+        currentRoom.y =
+            currentRoom.y > 0
+                ? currentRoom.y - 1
                 : 2;
 
         loadCurrentRoomData();
 
-        player.y=rows-2;
+        player.y =
+            rows - 2;
+
+        player.x =
+            Math.max(
+                1,
+                Math.min(
+                    cols-2,
+                    player.x
+                )
+            );
 
         render();
         updateUI();
 
-        tone(440,.08,"triangle",.05);
+        tone(
+            440,
+            .1,
+            "sine",
+            .04
+        );
 
         return;
+
     }
 
-
     /*
-        PORTAL INFERIOR
+       PORTAL INFERIOR
     */
 
-    if(ny>=rows){
+    if(ny >= rows){
 
-        currentRoom.y=
-            currentRoom.y<2
-                ? currentRoom.y+1
+        currentRoom.y =
+            currentRoom.y < 2
+                ? currentRoom.y + 1
                 : 0;
 
         loadCurrentRoomData();
 
-        player.y=1;
+        player.y = 1;
+
+        player.x =
+            Math.max(
+                1,
+                Math.min(
+                    cols-2,
+                    player.x
+                )
+            );
 
         render();
         updateUI();
 
-        tone(440,.08,"triangle",.05);
+        tone(
+            440,
+            .1,
+            "sine",
+            .04
+        );
 
         return;
+
     }
 
+    /*
+       PARED
+    */
 
     if(
         !grid[ny] ||
-        grid[ny][nx]===1 ||
-        grid[ny][nx]===undefined
+        grid[ny][nx] === 1 ||
+        grid[ny][nx] === undefined
     ){
 
         tone(
@@ -3163,32 +2920,32 @@ function movePlayer(dx,dy){
         );
 
         return;
+
     }
 
-    player.dir={
+    player.dir = {
         x:dx,
         y:dy
     };
 
-    player.x=nx;
-    player.y=ny;
-
+    player.x = nx;
+    player.y = ny;
 
     /*
-        FRUTA
+       FRUTA
     */
 
     if(
-        grid[ny][nx]===4
+        grid[ny][nx] === 4
     ){
 
-        grid[ny][nx]=0;
+        grid[ny][nx] = 0;
 
         fruits--;
 
         state.totalFruits++;
 
-        state.score+=150;
+        state.score += 150;
 
         tone(
             660,
@@ -3197,47 +2954,41 @@ function movePlayer(dx,dy){
             .08
         );
 
-        setTimeout(
-            ()=>{
-                tone(
-                    880,
-                    .12,
-                    "sine",
-                    .06
-                );
-            },
-            60
-        );
+        setTimeout(() => {
 
-        showMessage(
-            "🍈 ¡Fruta Gomu Gomu recogida!",
-            1000
-        );
+            tone(
+                880,
+                .12,
+                "sine",
+                .06
+            );
+
+        },60);
+
     }
 
-
-    const roomKey=
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room=
-        dungeonMap[roomKey];
-
-
     /*
-        BOSS
+       BOSS
     */
 
+    const roomKey =
+        `${currentRoom.x},${currentRoom.y}`;
+
+    const room =
+        dungeonMap[roomKey];
+
     if(
-        room.type==="boss" &&
+        room &&
+        room.type === "boss" &&
         boss
     ){
 
         if(
-            player.x===boss.x &&
-            player.y===boss.y
+            player.x === boss.x &&
+            player.y === boss.y
         ){
 
-            boss.hp-=2;
+            boss.hp -= 2;
 
             tone(
                 200,
@@ -3247,121 +2998,198 @@ function movePlayer(dx,dy){
             );
 
             if(
-                boss.hp<=0
+                boss.hp <= 0
             ){
+
+                room.cleared = true;
 
                 victoryChapter();
 
                 return;
+
             }
+
         }
+
     }
-
-
-    /*
-        VICTORIA DEL DUNGEON
-    */
-
-    if(
-        room.type==="boss" &&
-        fruits===0
-    ){
-
-        victoryChapter();
-
-        return;
-    }
-
 
     checkCollisions();
 
     render();
 
     updateUI();
+
 }
 
-
-/* =====================================================
-   MOTOR DE JUEGO
-===================================================== */
+/* ============================================================
+   MOTOR ENEMIGOS
+============================================================ */
 
 function gameEngine(){
 
-    if(!running) return;
+    if(
+        !running ||
+        !grid.length
+    ){
+        return;
+    }
 
-    /*
-        Cada enemigo decide su movimiento.
-    */
+    enemies.forEach(enemy => {
 
-    enemies.forEach(enemy=>{
+        const possibleMoves = [
 
-        enemy.lastMove++;
+            {x:1,y:0},
+            {x:-1,y:0},
+            {x:0,y:1},
+            {x:0,y:-1}
 
-        /*
-            No todos se mueven exactamente
-            en cada tick.
-        */
+        ];
 
-        const interval=
-            enemy.moveCooldown%2===0
-                ? 1
-                : 2;
+        const validMoves =
+            possibleMoves.filter(
+                move => {
 
-        if(
-            enemy.lastMove<interval
-        ){
+                    const nx =
+                        enemy.x +
+                        move.x;
+
+                    const ny =
+                        enemy.y +
+                        move.y;
+
+                    return (
+
+                        ny >= 0 &&
+                        ny < grid.length &&
+                        nx >= 0 &&
+                        nx < grid[0].length &&
+
+                        grid[ny][nx] !== 1 &&
+                        grid[ny][nx] !== undefined
+
+                    );
+
+                }
+            );
+
+        if(!validMoves.length){
             return;
         }
 
-        enemy.lastMove=0;
-
-        const move=
-            moveEnemy(enemy);
-
-        if(!move) return;
-
-        /*
-            Evita que un enemigo
-            atraviese a otro.
-        */
-
-        const occupied=
-            enemies.some(
-                other=>
-                    other!==enemy &&
-                    other.x===move.x &&
-                    other.y===move.y
+        const distance =
+            Math.abs(
+                player.x -
+                enemy.x
+            ) +
+            Math.abs(
+                player.y -
+                enemy.y
             );
 
-        if(!occupied){
+        let chosenMove;
 
-            enemy.x=move.x;
-            enemy.y=move.y;
+        /*
+           PERSECUCIÓN
+        */
+
+        if(distance <= 8){
+
+            const chaseMoves =
+                validMoves
+                    .map(move => {
+
+                        const nx =
+                            enemy.x +
+                            move.x;
+
+                        const ny =
+                            enemy.y +
+                            move.y;
+
+                        return {
+
+                            move:move,
+
+                            distance:
+                                Math.abs(
+                                    player.x-nx
+                                ) +
+                                Math.abs(
+                                    player.y-ny
+                                )
+
+                        };
+
+                    })
+                    .sort(
+                        (a,b) =>
+                            a.distance -
+                            b.distance
+                    );
+
+            /*
+               82% persecución.
+               18% error natural.
+            */
+
+            if(Math.random() < .82){
+
+                chosenMove =
+                    chaseMoves[0].move;
+
+            }else{
+
+                chosenMove =
+                    validMoves[
+                        Math.floor(
+                            Math.random()*
+                            validMoves.length
+                        )
+                    ];
+
+            }
+
+        }else{
+
+            /*
+               Movimiento aleatorio.
+            */
+
+            chosenMove =
+                validMoves[
+                    Math.floor(
+                        Math.random()*
+                        validMoves.length
+                    )
+                ];
+
         }
+
+        enemy.x +=
+            chosenMove.x;
+
+        enemy.y +=
+            chosenMove.y;
+
     });
-
-
-    /*
-        Colisión después del movimiento.
-    */
 
     checkCollisions();
 
     render();
+
 }
 
-
-/* =====================================================
+/* ============================================================
    COLISIONES
-===================================================== */
+============================================================ */
 
 function checkCollisions(){
 
-    const hit=
+    const hit =
         enemies.some(
-            e=>
-                e.x===player.x &&
-                e.y===player.y
+            enemy =>
+                enemy.x === player.x &&
+                enemy.y === player.y
         );
 
     if(!hit){
@@ -3369,54 +3197,41 @@ function checkCollisions(){
     }
 
     /*
-        El escudo absorbe el primer golpe.
+       ESCUDO
     */
 
-    if(shield>0){
+    if(shield > 0){
 
         shield--;
 
         tone(
-            520,
-            .15,
+            700,
+            .12,
             "triangle",
-            .1
+            .08
         );
 
-        showMessage(
-            "🛡️ ¡El escudo ha absorbido el impacto!",
-            1400
-        );
+        document.getElementById(
+            "message"
+        ).textContent =
+            "🛡️ ¡El escudo absorbió el golpe!";
 
-        enemies.forEach(e=>{
+        /*
+           Alejamos al jugador.
+        */
 
-            if(
-                e.x===player.x &&
-                e.y===player.y
-            ){
+        player.x = 1;
+        player.y = 1;
 
-                const moves=
-                    getEnemyMoves(e);
-
-                if(moves.length){
-
-                    const safe=
-                        moves[
-                            Math.floor(
-                                Math.random()*
-                                moves.length
-                            )
-                        ];
-
-                    e.x=safe.x;
-                    e.y=safe.y;
-                }
-            }
-        });
+        updateUI();
 
         return;
+
     }
 
+    /*
+       DAÑO
+    */
 
     lives--;
 
@@ -3429,72 +3244,203 @@ function checkCollisions(){
         .1
     );
 
-    if(lives<=0){
+    if(lives <= 0){
 
-        clearInterval(engineTimer);
+        clearInterval(
+            engineTimer
+        );
 
-        running=false;
+        running = false;
 
         stopMusic();
 
-        document
-            .getElementById("deathText")
-            .textContent=
-                GAME_DATABASE.getRandomDefeatPhrase();
+        state.totalDeaths++;
+
+        let defeat =
+            "«El abismo te ha alcanzado...»";
+
+        if(
+            window.GAME_DATABASE &&
+            typeof GAME_DATABASE.getRandomDefeatPhrase ===
+                "function"
+        ){
+
+            defeat =
+                GAME_DATABASE
+                    .getRandomDefeatPhrase();
+
+        }
+
+        document.getElementById(
+            "deathText"
+        ).textContent =
+            defeat;
 
         document
             .getElementById("game")
-            .classList.add("hidden");
+            .classList
+            .add("hidden");
 
         document
             .getElementById("deathScreen")
-            .classList.remove("hidden");
+            .classList
+            .remove("hidden");
 
         saveState();
 
     }else{
 
         /*
-            Respawn seguro.
+           Respawn.
         */
 
-        player.x=1;
-        player.y=1;
+        player.x = 1;
+        player.y = 1;
 
-        shield=1;
+        document.getElementById(
+            "message"
+        ).textContent =
+            `💔 Golpe recibido. Te quedan ${lives} vidas.`;
 
-        showMessage(
-            `💥 ¡Golpe recibido! Te quedan ${lives} vidas.`,
-            1600
-        );
     }
 
     updateUI();
+
 }
 
+/* ============================================================
+   REINICIAR SALA
+============================================================ */
 
-/* =====================================================
+function restartRoom(){
+
+    if(!running){
+        return;
+    }
+
+    const roomKey =
+        `${currentRoom.x},${currentRoom.y}`;
+
+    const room =
+        dungeonMap[roomKey];
+
+    if(!room){
+        return;
+    }
+
+    /*
+       Generamos una sala nueva.
+    */
+
+    room.grid =
+        generateRoomGrid(
+            room.type
+        );
+
+    room.visited = true;
+
+    /*
+       Reiniciamos jugador.
+    */
+
+    player.x = 1;
+    player.y = 1;
+
+    player.dir = {
+        x:1,
+        y:0
+    };
+
+    /*
+       Reiniciamos vida.
+    */
+
+    lives =
+        state.difficulty === "legend"
+            ? 2
+            : 3;
+
+    shield =
+        state.difficulty === "hard"
+            ? 1
+            : 2;
+
+    /*
+       Recargamos todo.
+    */
+
+    loadCurrentRoomData();
+
+    document.getElementById(
+        "message"
+    ).textContent =
+        "🔄 Sala reiniciada. ¡Vuelve a intentarlo!";
+
+    tone(
+        330,
+        .08,
+        "triangle",
+        .05
+    );
+
+    setTimeout(() => {
+
+        tone(
+            440,
+            .1,
+            "triangle",
+            .04
+        );
+
+    },70);
+
+}
+
+/* ============================================================
    RENDER
-===================================================== */
+============================================================ */
 
 function render(){
 
-    if(!grid.length) return;
+    if(
+        !grid.length ||
+        !grid[0]
+    ){
+        return;
+    }
 
-    const rows=
+    const rows =
         grid.length;
 
-    const cols=
+    const cols =
         grid[0].length;
 
-    mazeEl.innerHTML="";
+    mazeEl.innerHTML = "";
 
-    mazeEl.style.gridTemplateColumns=
+    mazeEl.style.gridTemplateColumns =
         `repeat(${cols},1fr)`;
 
-    mazeEl.style.gridTemplateRows=
+    mazeEl.style.gridTemplateRows =
         `repeat(${rows},1fr)`;
 
+    /*
+       Creamos una búsqueda rápida de enemigos.
+       Evita hacer find() 121 veces.
+    */
+
+    const enemyMap =
+        new Map();
+
+    enemies.forEach(
+        enemy => {
+
+            enemyMap.set(
+                `${enemy.x},${enemy.y}`,
+                enemy
+            );
+
+        }
+    );
 
     for(
         let y=0;
@@ -3508,120 +3454,151 @@ function render(){
             x++
         ){
 
-            const c=
-                document.createElement("div");
+            const c =
+                document.createElement(
+                    "div"
+                );
 
-            c.className="cell";
+            c.className =
+                "cell";
 
             if(
-                grid[y][x]===1
+                grid[y][x] === 1
             ){
 
-                c.classList.add("wall");
+                c.classList.add(
+                    "wall"
+                );
 
             }else{
 
-                c.classList.add("path");
+                c.classList.add(
+                    "path"
+                );
+
             }
 
-            let content="";
-
+            let content = "";
 
             /*
-                JUGADOR
+               JUGADOR
             */
 
             if(
-                player.x===x &&
-                player.y===y
+                player.x === x &&
+                player.y === y
             ){
 
-                content="❤️";
+                content = "❤️";
 
                 c.classList.add(
                     "player"
                 );
 
+            }
 
             /*
-                BOSS
+               BOSS
             */
 
-            }else if(
+            else if(
                 boss &&
-                boss.x===x &&
-                boss.y===y
+                boss.x === x &&
+                boss.y === y
             ){
 
-                content=
+                content =
                     boss.icon;
 
                 c.classList.add(
-                    "enemy",
-                    "boss-visual"
+                    "enemy"
                 );
 
+                c.classList.add(
+                    "boss-cell"
+                );
 
-            }else{
-
-                const enemy=
-                    enemies.find(
-                        e=>
-                            e.x===x &&
-                            e.y===y
-                    );
-
-                if(enemy){
-
-                    content=
-                        enemy.icon;
-
-                    c.classList.add(
-                        "enemy"
-                    );
-
-                }else if(
-                    grid[y][x]===4
-                ){
-
-                    content="🍈";
-
-                    c.classList.add(
-                        "fruit"
-                    );
-
-                }else if(
-                    grid[y][x]===5
-                ){
-
-                    content="👑";
-
-                    c.classList.add(
-                        "boss-cell"
-                    );
-                }
             }
 
-            c.textContent=content;
+            /*
+               ENEMIGO
+            */
+
+            else if(
+                enemyMap.has(
+                    `${x},${y}`
+                )
+            ){
+
+                const enemy =
+                    enemyMap.get(
+                        `${x},${y}`
+                    );
+
+                content =
+                    enemy.icon;
+
+                c.classList.add(
+                    "enemy"
+                );
+
+            }
+
+            /*
+               FRUTA
+            */
+
+            else if(
+                grid[y][x] === 4
+            ){
+
+                content = "🍈";
+
+                c.classList.add(
+                    "fruit"
+                );
+
+            }
+
+            /*
+               BOSS CELL
+            */
+
+            else if(
+                grid[y][x] === 5
+            ){
+
+                content = "👑";
+
+                c.classList.add(
+                    "boss-cell"
+                );
+
+            }
+
+            c.textContent =
+                content;
 
             mazeEl.appendChild(c);
+
         }
+
     }
+
 }
 
-
-/* =====================================================
+/* ============================================================
    MINIMAPA
-===================================================== */
+============================================================ */
 
 function updateMinimap(){
 
-    const mapEl=
+    const mapEl =
         document.getElementById(
             "minimap"
         );
 
-    mapEl.innerHTML="";
+    mapEl.innerHTML = "";
 
     for(
         let y=0;
@@ -3635,18 +3612,18 @@ function updateMinimap(){
             x++
         ){
 
-            const m=
+            const m =
                 document.createElement(
                     "div"
                 );
 
-            m.className=
+            m.className =
                 "mini-room";
 
-            const key=
+            const key =
                 `${x},${y}`;
 
-            const room=
+            const room =
                 dungeonMap[key];
 
             if(room?.visited){
@@ -3654,6 +3631,7 @@ function updateMinimap(){
                 m.classList.add(
                     "visited"
                 );
+
             }
 
             if(room?.cleared){
@@ -3661,594 +3639,630 @@ function updateMinimap(){
                 m.classList.add(
                     "cleared"
                 );
+
             }
 
             if(
-                currentRoom.x===x &&
-                currentRoom.y===y
+                currentRoom.x === x &&
+                currentRoom.y === y
             ){
 
                 m.classList.add(
                     "active"
                 );
+
             }
 
             mapEl.appendChild(m);
+
         }
+
     }
 
-    document
-        .getElementById(
-            "roomCoords"
-        )
-        .textContent=
-            `Sala: [${currentRoom.x}, ${currentRoom.y}]`;
+    document.getElementById(
+        "roomCoords"
+    ).textContent =
+        `Sala: [${currentRoom.x}, ${currentRoom.y}]`;
+
 }
-
-
-/* =====================================================
-   INDICADOR DE SALA
-===================================================== */
 
 function updateRoomIndicator(){
 
-    const room=
+    const room =
         dungeonMap[
             `${currentRoom.x},${currentRoom.y}`
         ];
 
-    const el=
+    const indicator =
         document.getElementById(
             "roomTypeIndicator"
         );
 
     if(!room){
-
-        el.textContent=
-            "Sala Normal";
-
         return;
     }
 
-    const names={
+    const names = {
 
         normal:"Sala Normal",
 
-        treasure:"💎 Sala del Tesoro",
+        treasure:"💎 Tesoro",
 
         secret:"🌌 Sala Secreta",
 
-        boss:"👑 Sala del Jefe"
+        boss:"👑 JEFE"
 
     };
 
-    el.textContent=
+    indicator.textContent =
         names[room.type] ||
-        "Sala Normal";
+        "Sala";
+
 }
 
-
-/* =====================================================
+/* ============================================================
    UI
-===================================================== */
+============================================================ */
 
 function updateUI(){
 
-    document
-        .getElementById(
-            "uiChapter"
-        )
-        .textContent=
-            state.chapter+1;
+    document.getElementById(
+        "uiChapter"
+    ).textContent =
+        state.chapter + 1;
 
-    document
-        .getElementById(
-            "uiFruit"
-        )
-        .textContent=
-            fruits;
+    document.getElementById(
+        "uiFruit"
+    ).textContent =
+        fruits;
 
-    document
-        .getElementById(
-            "uiLives"
-        )
-        .textContent=
-            lives;
+    document.getElementById(
+        "uiLives"
+    ).textContent =
+        lives;
 
-    document
-        .getElementById(
-            "uiShield"
-        )
-        .textContent=
-            shield;
+    document.getElementById(
+        "uiShield"
+    ).textContent =
+        shield;
 
-    document
-        .getElementById(
-            "uiScore"
-        )
-        .textContent=
-            state.score.toLocaleString(
-                "es-ES"
-            );
-}
-
-let messageTimer=null;
-
-function showMessage(
-    text,
-    duration=1800
-){
-
-    const el=
-        document.getElementById(
-            "message"
+    document.getElementById(
+        "uiScore"
+    ).textContent =
+        state.score.toLocaleString(
+            "es-ES"
         );
 
-    el.textContent=text;
-
-    clearTimeout(messageTimer);
-
-    messageTimer=
-        setTimeout(
-            ()=>{
-                if(running){
-
-                    el.textContent=
-                        "Explora, esquiva y encuentra el camino.";
-                }
-            },
-            duration
-        );
 }
 
-
-/* =====================================================
+/* ============================================================
    VICTORIA
-===================================================== */
+============================================================ */
 
 function victoryChapter(){
 
-    clearInterval(engineTimer);
+    clearInterval(
+        engineTimer
+    );
 
-    engineTimer=null;
-
-    running=false;
+    running = false;
 
     stopMusic();
 
-    state.pages=
+    /*
+       Página narrativa.
+       Las páginas NO van a los laterales.
+    */
+
+    state.pages =
         Math.min(
             500,
-            state.pages+1
-        );
-
-    state.score+=1000;
-
-    state.best=
-        Math.max(
-            state.best,
-            state.score
+            state.pages + 1
         );
 
     /*
-        Marcar sala como superada.
+       Bonus.
     */
 
-    const room=
-        dungeonMap[
-            `${currentRoom.x},${currentRoom.y}`
-        ];
+    state.score += 1000;
 
-    if(room){
-        room.cleared=true;
+    if(
+        state.score >
+        state.best
+    ){
+
+        state.best =
+            state.score;
+
     }
 
     checkAchievements();
 
     let pageData;
 
-    try{
+    if(
+        window.GAME_DATABASE &&
+        typeof GAME_DATABASE.getPage ===
+            "function"
+    ){
 
-        pageData=
+        pageData =
             GAME_DATABASE.getPage(
                 state.pages
             );
 
-    }catch(e){
+    }else{
 
-        pageData=
-            FALLBACK_DATABASE.getPage(
-                state.pages
-            );
+        pageData = {
+
+            title:
+                "Fragmento perdido",
+
+            author:
+                "El Códice",
+
+            text:
+                "La página no pudo ser cargada. " +
+                "Comprueba que database.js está correctamente conectado."
+
+        };
+
     }
 
     document
         .getElementById("game")
-        .classList.add("hidden");
+        .classList
+        .add("hidden");
 
     document
         .getElementById("narrativeScreen")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
-    document
-        .getElementById(
-            "pageChapterBadge"
-        )
-        .textContent=
-            pageData.title;
+    document.getElementById(
+        "pageChapterBadge"
+    ).textContent =
+        pageData.title;
 
-    document
-        .getElementById(
-            "pageTitle"
-        )
-        .textContent=
-            `Códice Estelar — Página ${state.pages}`;
+    document.getElementById(
+        "pageTitle"
+    ).textContent =
+        `Códice Estelar — Página ${state.pages}/500`;
 
-    document
-        .getElementById(
-            "pageText"
-        )
-        .textContent=
-            pageData.text;
+    document.getElementById(
+        "pageText"
+    ).textContent =
+        pageData.text;
 
-    document
-        .getElementById(
-            "pageAuthor"
-        )
-        .textContent=
-            `— ${pageData.author}`;
+    document.getElementById(
+        "pageAuthor"
+    ).textContent =
+        `— ${pageData.author}`;
 
-    document
-        .getElementById(
-            "codiceProgress"
-        )
-        .textContent=
-            `${state.pages}/500`;
+    document.getElementById(
+        "codiceProgress"
+    ).textContent =
+        `${state.pages}/500`;
 
-    document
-        .getElementById(
-            "scoreProgress"
-        )
-        .textContent=
-            state.score.toLocaleString(
-                "es-ES"
-            );
+    document.getElementById(
+        "scoreProgress"
+    ).textContent =
+        state.score.toLocaleString(
+            "es-ES"
+        );
 
     saveState();
+
 }
 
-
-/* =====================================================
+/* ============================================================
    SIGUIENTE CAPÍTULO
-===================================================== */
+============================================================ */
 
 function advanceChapter(){
 
     document
-        .getElementById(
-            "narrativeScreen"
-        )
-        .classList.add("hidden");
+        .getElementById("narrativeScreen")
+        .classList
+        .add("hidden");
 
     state.chapter++;
 
     if(
-        state.chapter>=chapters.length
+        state.chapter >=
+        chapters.length
     ){
 
+        /*
+           Completó los 8 capítulos.
+        */
+
+        state.chapter = 0;
+
+        state.score += 5000;
+
+        checkAchievements();
+
         alert(
-            "¡Has completado los 8 capítulos y restaurado El Códice de las Estrellas por completo!"
+            "🌟 ¡Has completado los 8 capítulos y restaurado el Códice de las Estrellas!"
         );
 
-        state.chapter=0;
     }
 
     saveState();
 
     document
-        .getElementById(
-            "chapterScreen"
-        )
-        .classList.remove("hidden");
+        .getElementById("chapterScreen")
+        .classList
+        .remove("hidden");
 
     updateChapterScreen();
+
 }
 
-
-/* =====================================================
-   REINTENTAR
-===================================================== */
+/* ============================================================
+   RETRY
+============================================================ */
 
 function retryChapter(){
 
     document
-        .getElementById(
-            "deathScreen"
-        )
-        .classList.add("hidden");
-
-    /*
-        Ahora se genera una mazmorra
-        completamente nueva.
-    */
+        .getElementById("deathScreen")
+        .classList
+        .add("hidden");
 
     enterChapterRoom();
+
 }
 
-
-/* =====================================================
-   REINICIAR SALA
-===================================================== */
-
-function restartRoom(){
-
-    if(!running){
-        return;
-    }
-
-    initAudio();
-
-    /*
-        Recuperamos vida/escudo
-        sin reiniciar progreso global.
-    */
-
-    lives=
-        state.difficulty==="legend"
-            ? 2
-            : 3;
-
-    shield=
-        state.difficulty==="legend"
-            ? 0
-            : 1;
-
-    player.x=1;
-    player.y=1;
-
-    /*
-        La sala actual se regenera.
-    */
-
-    const roomKey=
-        `${currentRoom.x},${currentRoom.y}`;
-
-    const room=
-        dungeonMap[roomKey];
-
-    if(room){
-
-        room.grid=
-            generateRoomGrid(
-                room.type
-            );
-
-        room.cleared=false;
-
-        room.visited=true;
-    }
-
-    loadCurrentRoomData(
-        true
-    );
-
-    /*
-        Garantizamos posición válida.
-    */
-
-    if(
-        !grid[player.y] ||
-        grid[player.y][player.x]!==0
-    ){
-
-        player.x=1;
-        player.y=1;
-
-        if(
-            grid[1][1]===1
-        ){
-
-            grid[1][1]=0;
-        }
-    }
-
-    render();
-
-    updateUI();
-
-    updateMinimap();
-
-    updateRoomIndicator();
-
-    startMusic();
-
-    showMessage(
-        "🔄 Sala reiniciada. ¡Vamos de nuevo!",
-        1600
-    );
-}
-
-
-/* =====================================================
+/* ============================================================
    MENÚ
-===================================================== */
+============================================================ */
 
 function returnMenu(){
 
-    clearInterval(engineTimer);
+    clearInterval(
+        engineTimer
+    );
 
-    engineTimer=null;
+    running = false;
 
     stopMusic();
-
-    running=false;
 
     document
         .querySelectorAll(".screen")
         .forEach(
-            s=>
-                s.classList.add(
-                    "hidden"
-                )
+            screen =>
+                screen.classList
+                    .add("hidden")
         );
 
     document
         .getElementById("game")
-        .classList.add("hidden");
+        .classList
+        .add("hidden");
 
     document
         .getElementById("startScreen")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
+
 }
 
-
-/* =====================================================
+/* ============================================================
    LOGROS
-===================================================== */
+============================================================ */
+
+const achievementsList = [];
+
+const catNames = [
+
+    "🗺️ Exploración",
+    "⚔️ Combate",
+    "👑 Jefes",
+    "💎 Secretos",
+    "📖 Historia",
+    "⭐ Desafíos"
+
+];
+
+const iconsPool = [
+
+    "🌱",
+    "🌿",
+    "🧭",
+    "⚡",
+    "🔥",
+    "👑",
+    "💎",
+    "📖",
+    "⭐",
+    "🌌",
+    "🌙",
+    "🌊",
+    "🌲",
+    "📚",
+    "⏳",
+    "❤️"
+
+];
+
+for(
+    let i=1;
+    i<=100;
+    i++
+){
+
+    const cat =
+        catNames[
+            Math.min(
+                Math.floor(
+                    (i-1)/17
+                ),
+                catNames.length-1
+            )
+        ];
+
+    achievementsList.push({
+
+        id:`ach_${i}`,
+
+        icon:
+            iconsPool[
+                i %
+                iconsPool.length
+            ],
+
+        title:
+            `${cat.split(" ")[1]} Estelar #${i}`,
+
+        desc:
+            `Meta cumplida al alcanzar hitos avanzados en tu travesía por el Códice.`,
+
+        category:cat
+
+    });
+
+}
+
+function checkAchievements(){
+
+    achievementsList.forEach(
+        achievement => {
+
+            const num =
+                parseInt(
+                    achievement.id
+                        .split("_")[1]
+                );
+
+            /*
+               Progreso por capítulo.
+            */
+
+            if(
+                num <=
+                state.chapter * 12 + 1
+            ){
+
+                state.achievements[
+                    achievement.id
+                ] = true;
+
+            }
+
+            /*
+               Progreso por puntuación.
+            */
+
+            if(
+                state.score >
+                num * 200
+            ){
+
+                state.achievements[
+                    achievement.id
+                ] = true;
+
+            }
+
+            /*
+               Progreso por páginas.
+            */
+
+            if(
+                state.pages >
+                num * 3
+            ){
+
+                state.achievements[
+                    achievement.id
+                ] = true;
+
+            }
+
+            /*
+               Logros especiales.
+            */
+
+            if(
+                num === 100 &&
+                state.chapter === 7 &&
+                state.pages >= 9
+            ){
+
+                state.achievements[
+                    achievement.id
+                ] = true;
+
+            }
+
+        }
+    );
+
+    saveState();
+
+}
 
 function showAchievements(){
 
     checkAchievements();
 
-    const container=
+    const container =
         document.getElementById(
             "achievementList"
         );
 
-    container.innerHTML="";
+    container.innerHTML = "";
 
-    achievementsList.forEach(a=>{
+    achievementsList.forEach(
+        achievement => {
 
-        const unlocked=
-            !!state.achievements[
-                a.id
-            ];
+            const unlocked =
+                !!state.achievements[
+                    achievement.id
+                ];
 
-        const d=
-            document.createElement(
-                "div"
-            );
+            const d =
+                document.createElement(
+                    "div"
+                );
 
-        d.className=
-            "achievement";
+            d.className =
+                "achievement";
 
-        d.style.opacity=
-            unlocked
-                ? 1
-                : .5;
+            d.style.opacity =
+                unlocked ? 1 : .5;
 
-        d.innerHTML=`
+            d.innerHTML = `
 
-            <div class="achievement-icon">
-                ${a.icon}
-            </div>
+                <div class="achievement-icon">
+                    ${achievement.icon}
+                </div>
 
-            <div>
+                <div>
 
-                <span
-                    style="
+                    <span style="
                         font-size:.65rem;
                         color:var(--pink2);
                         font-weight:bold;
-                    "
-                >
-                    ${a.category}
-                </span>
+                    ">
+                        ${achievement.category}
+                    </span>
 
-                <br>
+                    <br>
 
-                <b>${a.title}</b>
+                    <b>
+                        ${achievement.title}
+                    </b>
 
-                <br>
+                    <br>
 
-                <small>
-                    ${a.desc}
-                    ${
-                        unlocked
-                            ? "✅ (Desbloqueado)"
-                            : "🔒 (Bloqueado)"
-                    }
-                </small>
+                    <small>
+                        ${achievement.desc}
+                        ${
+                            unlocked
+                                ? " ✅ Desbloqueado"
+                                : " 🔒 Bloqueado"
+                        }
+                    </small>
 
-            </div>
-        `;
+                </div>
 
-        container.appendChild(d);
-    });
+            `;
 
-    document
-        .getElementById(
-            "startScreen"
-        )
-        .classList.add("hidden");
+            container.appendChild(d);
+
+        }
+    );
 
     document
-        .getElementById(
-            "achievementScreen"
-        )
-        .classList.remove("hidden");
+        .getElementById("startScreen")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("achievementScreen")
+        .classList
+        .remove("hidden");
+
 }
 
 function closeAchievements(){
 
     document
-        .getElementById(
-            "achievementScreen"
-        )
-        .classList.add("hidden");
+        .getElementById("achievementScreen")
+        .classList
+        .add("hidden");
 
     document
-        .getElementById(
-            "startScreen"
-        )
-        .classList.remove("hidden");
+        .getElementById("startScreen")
+        .classList
+        .remove("hidden");
+
 }
 
-
-/* =====================================================
-   SIDEBARS / DATABASE
-===================================================== */
+/* ============================================================
+   LATERALES
+============================================================ */
 
 function populateSidebars(){
 
-    /*
-        Esta función ya NO puede romper
-        el juego aunque database.js falle.
-    */
-
-    resolveDatabase();
-
-    const leftEl=
+    const leftEl =
         document.getElementById(
             "leftVerses"
         );
 
-    const rightEl=
+    const rightEl =
         document.getElementById(
             "rightVerses"
         );
 
-    if(!leftEl || !rightEl){
-        return;
-    }
-
-    leftEl.innerHTML="";
-    rightEl.innerHTML="";
-
-
-    let verses=
-        Array.isArray(
-            GAME_DATABASE.lateralVerses
-        )
-            ? [
-                ...GAME_DATABASE.lateralVerses
-            ]
-            : [
-                ...FALLBACK_DATABASE.lateralVerses
-            ];
+    leftEl.innerHTML = "";
+    rightEl.innerHTML = "";
 
     /*
-        Mezclado Fisher-Yates real.
+       COMPROBACIÓN DE DATABASE.JS
+    */
+
+    if(
+        !window.GAME_DATABASE ||
+        !Array.isArray(
+            GAME_DATABASE.lateralVerses
+        )
+    ){
+
+        leftEl.innerHTML = `
+            <div class="verse">
+                ⚠️ No se ha podido cargar
+                database.js
+            </div>
+        `;
+
+        rightEl.innerHTML = `
+            <div class="verse">
+                ⚠️ Base de datos no encontrada.
+            </div>
+        `;
+
+        console.error(
+            "GAME_DATABASE.lateralVerses no está disponible."
+        );
+
+        return;
+
+    }
+
+    /*
+       SOLO CITAS CORTAS.
+       NUNCA literaryMasterpieces.
+    */
+
+    const verses =
+        [...GAME_DATABASE.lateralVerses];
+
+    /*
+       Fisher-Yates.
     */
 
     for(
@@ -4257,7 +4271,7 @@ function populateSidebars(){
         i--
     ){
 
-        const j=
+        const j =
             Math.floor(
                 Math.random()*(i+1)
             );
@@ -4265,206 +4279,317 @@ function populateSidebars(){
         [
             verses[i],
             verses[j]
-        ]=[
+        ] =
+        [
             verses[j],
             verses[i]
         ];
+
     }
 
-
     /*
-        IZQUIERDA
+       IZQUIERDA
     */
 
-    for(
-        let i=0;
-        i<Math.min(4,verses.length);
-        i++
-    ){
+    verses
+        .slice(0,4)
+        .forEach(
+            quote => {
 
-        const div=
-            document.createElement(
-                "div"
-            );
+                const div =
+                    document.createElement(
+                        "div"
+                    );
 
-        div.className="verse";
+                div.className =
+                    "verse";
 
-        div.textContent=
-            `"${verses[i]}"`;
+                div.textContent =
+                    `«${quote}»`;
 
-        leftEl.appendChild(div);
-    }
+                leftEl.appendChild(
+                    div
+                );
 
+            }
+        );
 
     /*
-        DERECHA
+       DERECHA:
+       OBJETOS.
     */
 
-    const title=
+    const title =
         document.createElement(
             "div"
         );
 
-    title.className="verse";
+    title.className =
+        "verse";
 
-    title.innerHTML=
-        `<b>🎒 Objetos en Zona (Cap ${state.chapter+1}):</b>`;
+    title.innerHTML = `
+        <b>🎒 Objetos desbloqueados</b>
+        <br>
+        <small>
+            Capítulo ${state.chapter+1}
+        </small>
+    `;
 
-    rightEl.appendChild(title);
+    rightEl.appendChild(
+        title
+    );
 
+    if(
+        typeof GAME_DATABASE.queryItems ===
+            "function"
+    ){
 
-    let activeItems=[];
-
-    try{
-
-        activeItems=
+        const items =
             GAME_DATABASE.queryItems(
                 state.chapter
             );
 
-    }catch(e){
+        if(!items.length){
 
-        activeItems=
-            FALLBACK_DATABASE.queryItems(
-                state.chapter
-            );
-    }
+            const empty =
+                document.createElement(
+                    "div"
+                );
 
-    if(
-        !Array.isArray(activeItems)
-    ){
+            empty.className =
+                "verse";
 
-        activeItems=[];
-    }
+            empty.textContent =
+                "Aún no hay objetos desbloqueados.";
 
-
-    activeItems.forEach(item=>{
-
-        const itDiv=
-            document.createElement(
-                "div"
+            rightEl.appendChild(
+                empty
             );
 
-        itDiv.className="verse";
+        }else{
 
-        itDiv.innerHTML=`
-            ⭐ <b>${item.name}</b>
-            <br>
-            <small>${item.desc}</small>
-        `;
+            items.forEach(
+                item => {
 
-        rightEl.appendChild(itDiv);
-    });
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
 
+                    div.className =
+                        "verse";
 
-    for(
-        let i=4;
-        i<Math.min(7,verses.length);
-        i++
-    ){
+                    div.innerHTML = `
+                        ⭐ <b>${item.name}</b>
+                        <br>
+                        <small>${item.desc}</small>
+                    `;
 
-        const div=
-            document.createElement(
-                "div"
+                    rightEl.appendChild(
+                        div
+                    );
+
+                }
             );
 
-        div.className="verse";
+        }
 
-        div.textContent=
-            `"${verses[i]}"`;
-
-        rightEl.appendChild(div);
     }
+
+    /*
+       OTRAS CITAS CORTAS.
+    */
+
+    verses
+        .slice(4,7)
+        .forEach(
+            quote => {
+
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+                div.className =
+                    "verse";
+
+                div.textContent =
+                    `«${quote}»`;
+
+                rightEl.appendChild(
+                    div
+                );
+
+            }
+        );
+
 }
 
+/* ============================================================
+   ESTRELLAS
+============================================================ */
 
-/* =====================================================
+const starsContainer =
+    document.getElementById(
+        "stars"
+    );
+
+for(
+    let i=0;
+    i<100;
+    i++
+){
+
+    const s =
+        document.createElement(
+            "div"
+        );
+
+    s.className =
+        "star";
+
+    s.style.left =
+        Math.random()*100 + "%";
+
+    s.style.top =
+        Math.random()*100 + "%";
+
+    s.style.animationDelay =
+        Math.random()*3 + "s";
+
+    starsContainer.appendChild(
+        s
+    );
+
+}
+
+/* ============================================================
    TECLADO
-===================================================== */
+============================================================ */
 
 window.addEventListener(
     "keydown",
-    e=>{
+    e => {
 
         if(
             document.activeElement &&
-            (
-                document.activeElement.tagName==="INPUT" ||
-                document.activeElement.tagName==="SELECT" ||
-                document.activeElement.tagName==="TEXTAREA"
-            )
+            document.activeElement.tagName ===
+                "INPUT"
         ){
+
             return;
+
         }
 
+        const validKeys = [
+
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            "KeyW",
+            "KeyA",
+            "KeyS",
+            "KeyD"
+
+        ];
+
         if(
-            [
-                "ArrowUp",
-                "ArrowDown",
-                "ArrowLeft",
-                "ArrowRight",
-                "KeyW",
-                "KeyA",
-                "KeyS",
-                "KeyD"
-            ].includes(e.code)
+            validKeys.includes(e.code)
         ){
 
             e.preventDefault();
+
         }
 
         if(
-            e.code==="ArrowUp" ||
-            e.code==="KeyW"
+            e.code === "ArrowUp" ||
+            e.code === "KeyW"
         ){
 
             movePlayer(0,-1);
+
         }
 
         if(
-            e.code==="ArrowDown" ||
-            e.code==="KeyS"
+            e.code === "ArrowDown" ||
+            e.code === "KeyS"
         ){
 
             movePlayer(0,1);
+
         }
 
         if(
-            e.code==="ArrowLeft" ||
-            e.code==="KeyA"
+            e.code === "ArrowLeft" ||
+            e.code === "KeyA"
         ){
 
             movePlayer(-1,0);
+
         }
 
         if(
-            e.code==="ArrowRight" ||
-            e.code==="KeyD"
+            e.code === "ArrowRight" ||
+            e.code === "KeyD"
         ){
 
             movePlayer(1,0);
+
         }
 
-    },
-    {
-        passive:false
     }
 );
 
+/* ============================================================
+   ARRANQUE
+============================================================ */
 
-/* =====================================================
-   INICIALIZACIÓN
-===================================================== */
+window.addEventListener(
+    "load",
+    () => {
 
-resolveDatabase();
+        if(
+            !window.GAME_DATABASE
+        ){
 
-document.addEventListener(
-    "click",
-    ()=>{
-        initAudio();
-    },
-    {
-        once:true
+            console.error(
+                "ERROR: database.js no se ha cargado."
+            );
+
+            const msg =
+                document.getElementById(
+                    "authMessage"
+                );
+
+            if(msg){
+
+                msg.style.color =
+                    "#be123c";
+
+                msg.textContent =
+                    "⚠️ Error: database.js no está conectado.";
+
+            }
+
+        }else{
+
+            console.log(
+                "✅ GAME_DATABASE cargado correctamente."
+            );
+
+            console.log(
+                "📜 Citas:",
+                GAME_DATABASE.lateralVerses?.length || 0
+            );
+
+            console.log(
+                "📚 Obras:",
+                GAME_DATABASE.literaryMasterpieces?.length || 0
+            );
+
+        }
+
     }
 );
 
