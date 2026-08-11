@@ -499,7 +499,7 @@ body{
     <div class="parchment" style="max-width:420px;text-align:center;">
         <span class="chapter-badge">Acceso al Códice</span>
         <h2>Identificación</h2>
-        <p class="intro">Introduce tus credenciales (Seguridad SHA-256).</p>
+        <p class="intro">Introduce tus credenciales.</p>
         <div style="text-align:left;margin-top:15px;">
             <label style="font-size:.8rem;font-weight:bold;color:#5d4037;">Nombre de Usuario</label>
             <input type="text" id="usernameInput" class="input-field" placeholder="Ej. Viajero Estelar" minlength="3" autocomplete="username">
@@ -808,7 +808,7 @@ const GAME_DATABASE = {
 /* ============================================================
    CONFIGURACIÓN Y ESTADO DEL JUEGO
 ============================================================ */
-const USERS_DB_KEY = "codice_users_db_v6";
+const USERS_DB_KEY = "codice_users_db_v7";
 let currentUser = null;
 let currentSlotIndex = 0;
 let state = {
@@ -824,14 +824,27 @@ let state = {
 };
 
 /* ============================================================
-   UTILIDAD CRIPTOGRÁFICA (HASHING SHA-256)
+   UTILIDAD CRIPTOGRÁFICA (HASHING RESILIENTE)
 ============================================================ */
 async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Si estamos en HTTPS o localhost, usamos la API nativa y segura (SHA-256)
+    if (window.crypto && window.crypto.subtle) {
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            console.warn("Fallo WebCrypto, activando Fallback Local...");
+        }
+    }
+    // Fallback algorítmico (DJB2) para entornos HTTP sin TLS (Tu Homelab LAN)
+    let hash = 5381;
+    for (let i = 0; i < password.length; i++) {
+        hash = ((hash << 5) + hash) + password.charCodeAt(i); 
+    }
+    return "fb_" + Math.abs(hash).toString(16);
 }
 
 /* ============================================================
@@ -930,7 +943,7 @@ function toggleFullScreen(){
 }
 
 /* ============================================================
-   DATABASE USUARIOS & AUTH SEGURA (SHA-256)
+   DATABASE USUARIOS & AUTH SEGURA
 ============================================================ */
 function loadUsersDB(){
     try{ return JSON.parse(localStorage.getItem(USERS_DB_KEY)) || {}; }catch(e){ return {}; }
@@ -940,20 +953,25 @@ function saveUsersDB(db){
 }
 
 async function handleRegister(){
-    const user = document.getElementById("usernameInput").value.trim();
-    const pass = document.getElementById("passwordInput").value;
-    const msg = document.getElementById("authMessage");
-    if(user.length < 3){ msg.textContent = "El usuario debe tener al menos 3 caracteres."; return; }
-    if(pass.length < 4){ msg.textContent = "La contraseña debe tener al menos 4 caracteres."; return; }
-    let db = loadUsersDB();
-    if(db[user]){ msg.textContent = "El usuario ya existe."; return; }
-    
-    const passwordHash = await hashPassword(pass);
-    db[user] = { password: passwordHash, slots:[createEmptySlot(), createEmptySlot(), createEmptySlot()] };
-    saveUsersDB(db);
-    
-    msg.style.color = "#22c55e";
-    msg.textContent = "¡Registro exitoso! Ya puedes iniciar sesión.";
+    try {
+        const user = document.getElementById("usernameInput").value.trim();
+        const pass = document.getElementById("passwordInput").value;
+        const msg = document.getElementById("authMessage");
+        if(user.length < 3){ msg.textContent = "El usuario debe tener al menos 3 caracteres."; return; }
+        if(pass.length < 4){ msg.textContent = "La contraseña debe tener al menos 4 caracteres."; return; }
+        let db = loadUsersDB();
+        if(db[user]){ msg.textContent = "El usuario ya existe."; return; }
+        
+        const passwordHash = await hashPassword(pass);
+        db[user] = { password: passwordHash, slots:[createEmptySlot(), createEmptySlot(), createEmptySlot()] };
+        saveUsersDB(db);
+        
+        msg.style.color = "#22c55e";
+        msg.textContent = "¡Registro exitoso! Ya puedes iniciar sesión.";
+    } catch(err) {
+        document.getElementById("authMessage").textContent = "Error interno durante el registro.";
+        console.error("Error Auth:", err);
+    }
 }
 
 function createEmptySlot(){
@@ -961,18 +979,23 @@ function createEmptySlot(){
 }
 
 async function handleLogin(){
-    const user = document.getElementById("usernameInput").value.trim();
-    const pass = document.getElementById("passwordInput").value;
-    const msg = document.getElementById("authMessage");
-    if(user.length < 3 || pass.length < 4){ msg.textContent = "Usuario o contraseña demasiado cortos."; return; }
-    
-    const db = loadUsersDB();
-    const passwordHash = await hashPassword(pass);
-    
-    if(!db[user] || db[user].password !== passwordHash){ msg.textContent = "Usuario o contraseña incorrectos."; return; }
-    currentUser = user;
-    document.getElementById("authScreen").classList.add("hidden");
-    showSlotSelection();
+    try {
+        const user = document.getElementById("usernameInput").value.trim();
+        const pass = document.getElementById("passwordInput").value;
+        const msg = document.getElementById("authMessage");
+        if(user.length < 3 || pass.length < 4){ msg.textContent = "Usuario o contraseña demasiado cortos."; return; }
+        
+        const db = loadUsersDB();
+        const passwordHash = await hashPassword(pass);
+        
+        if(!db[user] || db[user].password !== passwordHash){ msg.textContent = "Usuario o contraseña incorrectos."; return; }
+        currentUser = user;
+        document.getElementById("authScreen").classList.add("hidden");
+        showSlotSelection();
+    } catch (err) {
+        document.getElementById("authMessage").textContent = "Error interno del sistema de logueo.";
+        console.error("Error Auth:", err);
+    }
 }
 
 function logoutUser(){
@@ -1673,7 +1696,7 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("load", () => {
-    console.log("✅ Códice de las Estrellas inicializado con seguridad SHA-256.");
+    console.log("✅ Códice de las Estrellas inicializado con seguridad resiliente.");
 });
 </script>
 
