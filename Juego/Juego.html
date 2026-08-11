@@ -748,7 +748,7 @@ const GAME_DATABASE = {
         { work: "El Silmarillion", author: "J.R.R. Tolkien", text: "Y el cantar de los Ainur tejió la trama del mundo, donde cada nota resuena en la eternidad estelar." },
         { work: "Las Flores del Mal", author: "Charles Baudelaire", text: "El tiempo es un jugador ávido que gana sin hacer trampas, en cada segundo que pasa robando nuestros recuerdos." },
         { work: "Pedro Páramo", author: "Juan Rulfo", text: "Vine a Comala porque me dijeron que acá vivía mi padre, un tal Pedro Páramo, y busqué su voz entre los ecos." },
-        { work: "Matar a un ruiseñor", author: "Harper Lee", text: "Nunca de verdad entiendes a una persona hasta que consideras las cosas desde su punto de vista, hasta que caminas en sus zapatos." },
+        { work: "Matar a un ruiseñor", author: "Harper Lee", text: "Nunca de verdad entiendes a una persona hasta que consideras las cosas desde su punto de vista, hasta que caminas en tus zapatos." },
         { work: "La Conjura de los Necios", author: "John Kennedy Toole", text: "Cuando un genio verdadero aparece en el mundo, lo reconocen por esta señal: todos los necios se conjuran contra él." },
         { work: "El idiota", author: "Fiódor Dostoyevski", text: "La belleza salvará al mundo si somos capaces de reconocerla en los actos más sencillos de compasión." },
         { work: "El hobbit", author: "J.R.R. Tolkien", text: "El mundo no está en tus libros y mapas; está ahí fuera, desafiando tus pasos con misterios antiguos." },
@@ -1239,6 +1239,16 @@ function movePlayer(dx,dy){
         return;
     }
 
+    // Validación estricta para el candado de salida (celda 5)
+    if(grid[ny][nx] === 5){
+        let totalFruitsLeft = getTotalRemainingFruitsInDungeon();
+        if(totalFruitsLeft > 0){
+            tone(150, .2, "sawtooth", .08);
+            document.getElementById("message").textContent = `🔒 ¡Candado Bloqueado! Faltan ${totalFruitsLeft} frutas en el dungeon.`;
+            return; // Bloquea totalmente el movimiento hacia la celda del candado si faltan frutas
+        }
+    }
+
     player.dir = { x:dx, y:dy };
     player.x = nx; player.y = ny;
 
@@ -1574,8 +1584,9 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("load", () => {
-    console.log("✅ Sistema integrado cargado correctamente con logros progresivos.");
+    console.log("✅ Sistema integrado cargado con validación estricta de candado.");
 });
 </script>
 
 </body>
+</html>
