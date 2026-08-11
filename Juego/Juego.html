@@ -573,8 +573,23 @@ body{
         </div>
         <button class="btn btn-primary" onclick="startJourney()">✨ Comenzar la Travesía</button>
         <button class="btn btn-secondary" onclick="showAchievements()">🏆 Salón de los 100 Logros</button>
+        <button class="btn btn-secondary" onclick="showRecordsMenu()">📊 Récords y Estadísticas</button>
         <button class="btn btn-secondary" onclick="toggleFullScreen()">📺 Pantalla Completa</button>
         <button class="btn btn-secondary" onclick="returnToSlots()">📁 Cambiar Slot / Cuenta</button>
+    </div>
+</div>
+
+<!-- RECORDS & STATS SCREEN -->
+<div class="screen hidden" id="recordsScreen">
+    <div class="parchment">
+        <h2>📊 Récords y Estadísticas</h2>
+        <p class="intro">Consulta la clasificación global de los Viajeros y tus métricas personales.</p>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+            <button class="btn btn-primary" onclick="switchRecordTab('global')" id="tabGlobal" style="margin-top:0;">🌍 Récords Globales</button>
+            <button class="btn btn-secondary" onclick="switchRecordTab('personal')" id="tabPersonal" style="margin-top:0;background:rgba(121,85,72,.15);">👤 Estadísticas Personales</button>
+        </div>
+        <div class="ach-grid" id="recordsContent"></div>
+        <button class="btn btn-primary" onclick="closeRecordsMenu()" style="margin-top:16px;">Volver al Menú</button>
     </div>
 </div>
 
@@ -811,6 +826,7 @@ const GAME_DATABASE = {
 const USERS_DB_KEY = "codice_users_db_v7";
 let currentUser = null;
 let currentSlotIndex = 0;
+let currentRecordTab = 'global';
 let state = {
     chapter:0,
     score:0,
@@ -827,7 +843,6 @@ let state = {
    UTILIDAD CRIPTOGRÁFICA (HASHING RESILIENTE)
 ============================================================ */
 async function hashPassword(password) {
-    // Si estamos en HTTPS o localhost, usamos la API nativa y segura (SHA-256)
     if (window.crypto && window.crypto.subtle) {
         try {
             const encoder = new TextEncoder();
@@ -839,7 +854,6 @@ async function hashPassword(password) {
             console.warn("Fallo WebCrypto, activando Fallback Local...");
         }
     }
-    // Fallback algorítmico (DJB2) para entornos HTTP sin TLS (Tu Homelab LAN)
     let hash = 5381;
     for (let i = 0; i < password.length; i++) {
         hash = ((hash << 5) + hash) + password.charCodeAt(i); 
@@ -1079,6 +1093,123 @@ function saveState(){
         musicTrack:state.musicTrack, difficulty:state.difficulty, achievements:state.achievements
     };
     saveUsersDB(db);
+}
+
+/* ============================================================
+   APARTADO DE RÉCORDS Y ESTADÍSTICAS (GLOBAL / PERSONAL)
+============================================================ */
+function showRecordsMenu() {
+    currentRecordTab = 'global';
+    updateRecordTabsStyle();
+    renderRecordsContent();
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("recordsScreen").classList.remove("hidden");
+}
+
+function switchRecordTab(tab) {
+    currentRecordTab = tab;
+    updateRecordTabsStyle();
+    renderRecordsContent();
+}
+
+function updateRecordTabsStyle() {
+    const btnGlobal = document.getElementById("tabGlobal");
+    const btnPersonal = document.getElementById("tabPersonal");
+    if(currentRecordTab === 'global') {
+        btnGlobal.className = "btn btn-primary";
+        btnGlobal.style.marginTop = "0";
+        btnPersonal.className = "btn btn-secondary";
+        btnPersonal.style.marginTop = "0";
+        btnPersonal.style.background = "rgba(121,85,72,.15)";
+    } else {
+        btnPersonal.className = "btn btn-primary";
+        btnPersonal.style.marginTop = "0";
+        btnGlobal.className = "btn btn-secondary";
+        btnGlobal.style.marginTop = "0";
+        btnGlobal.style.background = "rgba(121,85,72,.15)";
+    }
+}
+
+function renderRecordsContent() {
+    const container = document.getElementById("recordsContent");
+    container.innerHTML = "";
+    
+    if(currentRecordTab === 'global') {
+        const db = loadUsersDB();
+        const records = [];
+        for (let username in db) {
+            const userData = db[username];
+            let highestScore = 0;
+            let maxPages = 0;
+            userData.slots.forEach(slot => {
+                if (slot.best > highestScore) highestScore = slot.best;
+                if (slot.score > highestScore) highestScore = slot.score;
+                if (slot.pages > maxPages) maxPages = slot.pages;
+            });
+            records.push({ username, score: highestScore, pages: maxPages });
+        }
+        records.sort((a, b) => b.score - a.score);
+        
+        if (records.length === 0) {
+            container.innerHTML = "<p style='text-align:center;font-size:0.9rem;color:#475569;'>No hay registros globales en la base de datos.</p>";
+            return;
+        }
+
+        records.forEach((record, index) => {
+            const div = document.createElement("div");
+            div.className = "achievement";
+            let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🎖️";
+            div.innerHTML = `
+                <div class="achievement-icon">${medal}</div>
+                <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${record.username}</b><br><small style="color:#475569;">Páginas del Códice: ${record.pages}/500</small></div>
+                    <div style="text-align:right;"><b style="color:var(--pink2);">${record.score.toLocaleString("es-ES")} pts</b></div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } else {
+        const db = loadUsersDB();
+        const userData = db[currentUser] || { slots: [] };
+        let totalFruitsAllSlots = 0;
+        let totalDeathsAllSlots = 0;
+        let maxPages = 0;
+        let bestScoreAllSlots = 0;
+
+        userData.slots.forEach(slot => {
+            totalFruitsAllSlots += slot.totalFruits || 0;
+            totalDeathsAllSlots += slot.totalDeaths || 0;
+            if(slot.pages > maxPages) maxPages = slot.pages;
+            if(slot.best > bestScoreAllSlots) bestScoreAllSlots = slot.best;
+            if(slot.score > bestScoreAllSlots) bestScoreAllSlots = slot.score;
+        });
+
+        const stats = [
+            { icon: "👤", title: "Viajero Conectado", value: currentUser },
+            { icon: "⭐", title: "Mejor Puntuación Personal", value: bestScoreAllSlots.toLocaleString("es-ES") + " pts" },
+            { icon: "📖", title: "Páginas Máximas Desbloqueadas", value: maxPages + " / 500" },
+            { icon: "🍈", title: "Frutas de Plata Recolectadas", value: totalFruitsAllSlots },
+            { icon: "🌑", title: "Caídas ante el Abismo", value: totalDeathsAllSlots }
+        ];
+
+        stats.forEach(st => {
+            const div = document.createElement("div");
+            div.className = "achievement";
+            div.innerHTML = `
+                <div class="achievement-icon">${st.icon}</div>
+                <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${st.title}</b></div>
+                    <div style="text-align:right;"><b style="color:var(--pink2);">${st.value}</b></div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+}
+
+function closeRecordsMenu() {
+    document.getElementById("recordsScreen").classList.add("hidden");
+    document.getElementById("startScreen").classList.remove("hidden");
 }
 
 /* ============================================================
@@ -1411,18 +1542,25 @@ function checkCollisions(){
     lives--;
     state.totalDeaths++;
     tone(120,.2,"sawtooth",.1);
+    
     if(lives <= 0){
         clearInterval(engineTimer);
         running = false;
         stopMusic();
+        
+        if(state.score > state.best) state.best = state.score;
+        state.score = 0;
+        state.chapter = 0;
+        saveState();
+
         let defeat = "«El abismo te ha alcanzado...»";
         if(typeof GAME_DATABASE.getRandomDefeatPhrase === "function"){
             defeat = GAME_DATABASE.getRandomDefeatPhrase();
         }
+        
         document.getElementById("deathText").textContent = defeat;
         document.getElementById("game").classList.add("hidden");
         document.getElementById("deathScreen").classList.remove("hidden");
-        saveState();
     }else{
         player.x = 1; player.y = 1;
         document.getElementById("message").textContent = `💔 Golpe recibido. Te quedan ${lives} vidas.`;
@@ -1548,7 +1686,8 @@ function advanceChapter(){
 
 function retryChapter(){
     document.getElementById("deathScreen").classList.add("hidden");
-    enterChapterRoom();
+    document.getElementById("chapterScreen").classList.remove("hidden");
+    updateChapterScreen();
 }
 
 function returnMenu(){
@@ -1696,7 +1835,7 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("load", () => {
-    console.log("✅ Códice de las Estrellas inicializado con seguridad resiliente.");
+    console.log("✅ Sistema completo con apartado interactivo de Récords y Estadísticas.");
 });
 </script>
 
