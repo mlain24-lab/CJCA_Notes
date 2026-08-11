@@ -521,6 +521,18 @@ body{
         <p class="intro">Elige una ranura de guardado para continuar.</p>
         <div id="slotsContainer" style="margin:20px 0;"></div>
         <button class="btn btn-secondary" onclick="logoutUser()">🚪 Cerrar Sesión</button>
+        <button class="btn btn-secondary" onclick="confirmDeleteAccount()" style="margin-top:12px;background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4);color:#991b1b;">⚠️ Eliminar Cuenta de Usuario</button>
+    </div>
+</div>
+
+<!-- MODAL ELIMINAR CUENTA -->
+<div class="screen hidden" id="deleteAccountModal" style="background:rgba(0,0,0,.85);z-index:200;">
+    <div class="parchment" style="max-width:400px;text-align:center;">
+        <span class="chapter-badge" style="background:#be123c;">Zona de Peligro</span>
+        <h2>¿Estás seguro?</h2>
+        <p class="intro">Vas a eliminar permanentemente tu cuenta y todas tus partidas guardadas. Esta acción no se puede deshacer.</p>
+        <button class="btn btn-primary" onclick="executeDeleteAccount()" style="background:linear-gradient(135deg,#dc2626,#991b1b);">Sí, Eliminar Todo</button>
+        <button class="btn btn-secondary" onclick="cancelDeleteAccount()" style="margin-top:8px;">Cancelar</button>
     </div>
 </div>
 
@@ -536,7 +548,7 @@ body{
                 <li>500 páginas narrativas desbloqueables.</li>
                 <li>Citas cortas durante la exploración.</li>
                 <li>Objetos que aparecen según tu progreso.</li>
-                <li>100 logros.</li>
+                <li>100 logros únicos.</li>
                 <li>8 capítulos y jefes.</li>
             </ul>
         </div>
@@ -614,7 +626,7 @@ body{
 <div class="screen hidden" id="achievementScreen">
     <div class="parchment">
         <h2>🏆 Salón de las Estrellas</h2>
-        <p class="intro">100 logros para descubrir.</p>
+        <p class="intro">100 logros únicos con condiciones exclusivas.</p>
         <div class="ach-grid" id="achievementList"></div>
         <button class="btn btn-primary" onclick="closeAchievements()">Volver</button>
     </div>
@@ -743,7 +755,7 @@ const GAME_DATABASE = {
         { work: "El Viejo y el Mar", author: "Ernest Hemingway", text: "El hombre no está hecho para la derrota; un hombre puede ser destruido, pero jamás vencido por las mareas." },
         { work: "Fausto", author: "Johann Wolfgang von Goethe", text: "Quien aspira a luchar y se esfuerza sin descanso, a ese hombre podemos salvarlo de la sombra y llevarlo a la luz." },
         { work: "En busca del tiempo perdido", author: "Marcel Proust", text: "Los verdaderos paraísos son los paraísos que hemos perdido en los pasillos de la memoria y el afecto." },
-        { work: "El Nombre de la Rosa", author: "Umberto Eco", text: "Los libros no están hechos para que uno crea en ellos, sino para ser sometidos a indagación y diálogo constante." },
+        { work: "El Nombre de la Rosa", author: "Umberto Eco", text: "Los libros no están hechos para que one crea en ellos, sino para ser sometidos a indagación y diálogo constante." },
         { work: "La Eneida", author: "Virgilio", text: "Los anhelos divinos conmueven los corazones y guían a los héroes a través de los mares tempestuosos de la historia." },
         { work: "El Silmarillion", author: "J.R.R. Tolkien", text: "Y el cantar de los Ainur tejió la trama del mundo, donde cada nota resuena en la eternidad estelar." },
         { work: "Las Flores del Mal", author: "Charles Baudelaire", text: "El tiempo es un jugador ávido que gana sin hacer trampas, en cada segundo que pasa robando nuestros recuerdos." },
@@ -951,6 +963,32 @@ function logoutUser(){
     stopMusic();
     document.getElementById("slotScreen").classList.add("hidden");
     document.getElementById("authScreen").classList.remove("hidden");
+}
+
+/* ============================================================
+   ELIMINACIÓN DE CUENTA
+============================================================ */
+function confirmDeleteAccount(){
+    document.getElementById("deleteAccountModal").classList.remove("hidden");
+}
+
+function cancelDeleteAccount(){
+    document.getElementById("deleteAccountModal").classList.add("hidden");
+}
+
+function executeDeleteAccount(){
+    if(!currentUser) return;
+    let db = loadUsersDB();
+    delete db[currentUser];
+    saveUsersDB(db);
+    
+    document.getElementById("deleteAccountModal").classList.add("hidden");
+    document.getElementById("slotScreen").classList.add("hidden");
+    currentUser = null;
+    stopMusic();
+    document.getElementById("authScreen").classList.remove("hidden");
+    document.getElementById("authMessage").style.color = "#22c55e";
+    document.getElementById("authMessage").textContent = "Cuenta eliminada correctamente.";
 }
 
 function showSlotSelection(){
@@ -1239,13 +1277,12 @@ function movePlayer(dx,dy){
         return;
     }
 
-    // Validación estricta para el candado de salida (celda 5)
     if(grid[ny][nx] === 5){
         let totalFruitsLeft = getTotalRemainingFruitsInDungeon();
         if(totalFruitsLeft > 0){
             tone(150, .2, "sawtooth", .08);
             document.getElementById("message").textContent = `🔒 ¡Candado Bloqueado! Faltan ${totalFruitsLeft} frutas en el dungeon.`;
-            return; // Bloquea totalmente el movimiento hacia la celda del candado si faltan frutas
+            return;
         }
     }
 
@@ -1483,25 +1520,136 @@ function returnMenu(){
     document.getElementById("startScreen").classList.remove("hidden");
 }
 
+/* ============================================================
+   SISTEMA DE 100 LOGROS CON CONDICIONES EXCLUSIVAS
+============================================================ */
 const achievementsList = [];
 const catNames = ["🗺️ Exploración", "⚔️ Combate", "👑 Jefes", "💎 Secretos", "📖 Historia", "⭐ Desafíos"];
 const iconsPool = ["🌱","🌿","🧭","⚡","🔥","👑","💎","📖","⭐","🌌","🌙","🌊","🌲","📚","⏳","❤️"];
 
 for(let i=1; i<=100; i++){
     const cat = catNames[Math.min(Math.floor((i-1)/17), catNames.length-1)];
-    achievementsList.push({ id:`ach_${i}`, icon: iconsPool[i % iconsPool.length], title: `${cat.split(" ")[1]} Estelar #${i}`, desc: `Meta cumplida al alcanzar hitos avanzados.`, category: cat });
+    achievementsList.push({
+        id: `ach_${i}`,
+        icon: iconsPool[i % iconsPool.length],
+        title: `${cat.split(" ")[1]} Estelar #${i}`,
+        category: cat,
+        check: function() {
+            switch(i) {
+                case 1: return state.totalFruits >= 1;
+                case 2: return state.totalFruits >= 5;
+                case 3: return state.totalFruits >= 15;
+                case 4: return state.totalFruits >= 30;
+                case 5: return state.totalFruits >= 50;
+                case 6: return state.chapter >= 1;
+                case 7: return state.chapter >= 2;
+                case 8: return state.chapter >= 3;
+                case 9: return state.chapter >= 4;
+                case 10: return state.chapter >= 5;
+                case 11: return state.chapter >= 6;
+                case 12: return state.chapter >= 7;
+                case 13: return state.pages >= 10;
+                case 14: return state.pages >= 50;
+                case 15: return state.pages >= 150;
+                case 16: return state.pages >= 300;
+                case 17: return state.pages >= 500;
+
+                case 18: return state.score >= 500;
+                case 19: return state.score >= 2000;
+                case 20: return state.score >= 5000;
+                case 21: return state.score >= 10000;
+                case 22: return state.score >= 25000;
+                case 23: return state.score >= 50000;
+                case 24: return state.totalDeaths >= 1;
+                case 25: return state.totalDeaths >= 5;
+                case 26: return state.totalDeaths >= 10;
+                case 27: return state.difficulty === "hard" && state.chapter >= 1;
+                case 28: return state.difficulty === "legend" && state.chapter >= 1;
+                case 29: return state.difficulty === "hard" && state.chapter >= 4;
+                case 30: return state.difficulty === "legend" && state.chapter >= 4;
+                case 31: return state.score >= 75000;
+                case 32: return state.score >= 100000;
+                case 33: return state.score >= 150000;
+                case 34: return state.score >= 200000;
+
+                case 35: return state.chapter >= 1;
+                case 36: return state.chapter >= 2;
+                case 37: return state.chapter >= 3;
+                case 38: return state.chapter >= 4;
+                case 39: return state.chapter >= 5;
+                case 40: return state.chapter >= 6;
+                case 41: return state.chapter >= 7;
+                case 42: return state.chapter === 0 && state.score >= 5000;
+                case 43: return state.chapter >= 2 && state.totalDeaths === 0;
+                case 44: return state.chapter >= 4 && state.totalDeaths === 0;
+                case 45: return state.chapter >= 6 && state.totalDeaths === 0;
+                case 46: return state.totalFruits >= 100;
+                case 47: return state.totalFruits >= 250;
+                case 48: return state.totalFruits >= 500;
+                case 49: return state.score >= 300000;
+                case 50: return state.score >= 450000;
+                case 51: return state.score >= 600000;
+
+                case 52: return state.musicTrack !== "off";
+                case 53: return state.pages >= 20;
+                case 54: return state.pages >= 75;
+                case 55: return state.pages >= 200;
+                case 56: return state.pages >= 400;
+                case 57: return state.totalDeaths >= 15;
+                case 58: return state.totalDeaths >= 30;
+                case 59: return state.score >= 15000;
+                case 60: return state.score >= 35000;
+                case 61: return state.score >= 80000;
+                case 62: return state.totalFruits >= 20;
+                case 63: return state.totalFruits >= 60;
+                case 64: return state.totalFruits >= 120;
+                case 65: return state.chapter >= 3 && state.score >= 20000;
+                case 66: return state.chapter >= 5 && state.score >= 60000;
+                case 67: return state.chapter >= 7 && state.score >= 120000;
+                case 68: return state.score >= 750000;
+
+                case 69: return state.pages >= 5;
+                case 70: return state.pages >= 15;
+                case 71: return state.pages >= 30;
+                case 72: return state.pages >= 60;
+                case 73: return state.pages >= 90;
+                case 74: return state.pages >= 120;
+                case 75: return state.pages >= 180;
+                case 76: return state.pages >= 240;
+                case 77: return state.pages >= 310;
+                case 78: return state.pages >= 380;
+                case 79: return state.pages >= 450;
+                case 80: return state.chapter >= 2 && state.pages >= 50;
+                case 81: return state.chapter >= 4 && state.pages >= 150;
+                case 82: return state.chapter >= 6 && state.pages >= 300;
+                case 83: return state.score >= 400000;
+                case 84: return state.score >= 550000;
+                case 85: return state.score >= 850000;
+
+                case 86: return state.difficulty === "hard";
+                case 87: return state.difficulty === "legend";
+                case 88: return state.difficulty === "legend" && state.chapter >= 3;
+                case 89: return state.difficulty === "legend" && state.chapter >= 7;
+                case 90: return state.totalDeaths >= 50;
+                case 91: return state.totalFruits >= 350;
+                case 92: return state.score >= 900000;
+                case 93: return state.score >= 1000000;
+                case 94: return state.pages === 500;
+                case 95: return state.chapter >= 7 && state.totalDeaths <= 5;
+                case 96: return state.difficulty === "legend" && state.pages >= 250;
+                case 97: return state.score >= 1250000;
+                case 98: return state.score >= 1500000;
+                case 99: return state.totalFruits >= 1000;
+                case 100: return state.score >= 2000000 && state.pages === 500;
+                default: return false;
+            }
+        }
+    });
 }
 
 function checkAchievements(){
     achievementsList.forEach(achievement => {
-        const num = parseInt(achievement.id.split("_")[1]);
-        if(state.chapter > 0 && num <= state.chapter * 12){
-            state.achievements[achievement.id] = true;
-        }
-        if(state.score >= num * 200){
-            state.achievements[achievement.id] = true;
-        }
-        if(state.pages > num * 3){
+        if(typeof achievement.check === "function" && achievement.check()){
             state.achievements[achievement.id] = true;
         }
     });
@@ -1517,7 +1665,7 @@ function showAchievements(){
         const d = document.createElement("div");
         d.className = "achievement";
         d.style.opacity = unlocked ? 1 : .5;
-        d.innerHTML = `<div class="achievement-icon">${achievement.icon}</div><div><span style="font-size:.65rem;color:var(--pink2);font-weight:bold;">${achievement.category}</span><br><b>${achievement.title}</b><br><small>${achievement.desc} ${unlocked ? " ✅ Desbloqueado" : " 🔒 Bloqueado"}</small></div>`;
+        d.innerHTML = `<div class="achievement-icon">${achievement.icon}</div><div><span style="font-size:.65rem;color:var(--pink2);font-weight:bold;">${achievement.category}</span><br><b>${achievement.title}</b><br><small>${unlocked ? " ✅ Desbloqueado" : " 🔒 Bloqueado (Condición oculta)"}</small></div>`;
         container.appendChild(d);
     });
     document.getElementById("startScreen").classList.add("hidden");
@@ -1559,7 +1707,7 @@ function populateSidebars(){
         const div = document.createElement("div");
         div.className = "verse";
         div.textContent = `«${quote}»`;
-        rightEl.appendChild(div);
+        leftEl.appendChild(div);
     });
 }
 
@@ -1584,7 +1732,7 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("load", () => {
-    console.log("✅ Sistema integrado cargado con validación estricta de candado.");
+    console.log("✅ Sistema integrado con panel de borrado de cuenta y 100 logros únicos.");
 });
 </script>
 
