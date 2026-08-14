@@ -39,62 +39,97 @@ When stuck during an assessment, the issue is rarely a lack of exploitation skil
 
 # Enumeration Methodology
 
-Un enfoque estructurado y estático para procesos dinámicos de Penetration Testing (Black/White Box). Esta metodología divide el proceso de enumeración en 6 capas (*layers*) concéntricas que actúan como barreras defensivas. El objetivo es identificar vulnerabilidades (*gaps*) de forma sistemática a nivel de infraestructura, host y sistema operativo, evitando depender exclusivamente de hábitos basados en la experiencia del auditor.
+Penetration testing and enumeration are highly dynamic processes. To avoid omitting critical aspects and relying solely on unstructured, experience-based habits, we apply a **static enumeration methodology**. This framework is designed for both external and internal assessments and is nested in 6 boundaries (layers) divided into three core levels: **Infrastructure-based**, **Host-based**, and **OS-based**.
 
-## 1. Internet Presence (Infrastructure-based)
-`Target_Identification` - Identificación de la presencia online y la infraestructura accesible externamente. Incluye el mapeo de *Domains*, *Subdomains*, *vHosts*, *ASN*, *Netblocks*, direcciones IP e instancias Cloud. El objetivo es delimitar la superficie de ataque para descubrir todos los sistemas objetivo disponibles.
+## 1. Internet Presence
+* **Level:** Infrastructure-based
+* **Objective:** Identify the online presence and externally accessible infrastructure to define the attack surface.
+* **Key Components:** Domains, Subdomains, vHosts, ASN, Netblocks, IP Addresses, Cloud Instances, and external Security Measures.
 
-## 2. Gateway (Infrastructure-based)
-`Security_Measures_Mapping` - Análisis de las medidas de seguridad perimetrales e internas que protegen el *target*. Involucra la detección de *Firewalls*, *DMZ*, *IPS/IDS*, *EDR*, *Proxies*, *NAC*, segmentación de red y WAFs (ej. Cloudflare). Fundamental para entender las restricciones de red antes de interactuar directamente con los servicios.
+## 2. Gateway
+* **Level:** Infrastructure-based
+* **Objective:** Understand the target's network interface, its network topology location, and how it is protected before direct interaction.
+* **Key Components:** Firewalls, DMZs, IPS/IDS, EDRs, Proxies, NACs, Network Segmentation, VPNs, and WAFs (e.g., Cloudflare).
 
-## 3. Accessible Services (Host-based)
-`Service_Profiling` - Interrogación de interfaces y servicios accesibles, ya sean externos o internos. Se centra en enumerar el *Service Type*, *Functionality*, *Configuration*, *Port*, y *Version*. Esta capa es vital para entender la lógica del sistema y encontrar los vectores de explotación adecuados para establecer comunicación.
+## 3. Accessible Services
+* **Level:** Host-based
+* **Objective:** Interrogate accessible interfaces to understand the system's logic, functionality, and potential exploitation vectors.
+* **Key Components:** Service Type, Functionality, Configuration, Ports, Versions, and specific Interfaces.
 
-## 4. Processes (Host-based)
-`Process_Analysis` - Monitorización y análisis de los procesos internos desencadenados por los servicios interactivos. Implica rastrear el *PID* (Process ID), *Processed Data*, tareas programadas (*Tasks*), *Source* y *Destination*. Nos permite comprender el flujo de datos y las dependencias lógicas dentro del servidor comprometido.
+## 4. Processes
+* **Level:** Host-based
+* **Objective:** Analyze internal processes triggered by executed commands or services to identify logical dependencies and data flows.
+* **Key Components:** PIDs (Process IDs), Processed Data, Scheduled Tasks, Sources, and Destinations.
 
-## 5. Privileges (OS-based)
-`Permission_Mapping` - Identificación de los permisos internos vinculados a los servicios accesibles. Involucra el análisis de *Users*, *Groups*, *Permissions*, *Restrictions* y variables de entorno. Crítico en infraestructuras corporativas (como *Active Directory*) para detectar *misconfigurations* que permitan una escalada de privilegios (*Privilege Escalation*).
+## 5. Privileges
+* **Level:** OS-based
+* **Objective:** Map internal permissions linked to running services to detect misconfigurations and potential Privilege Escalation vectors (crucial in environments like Active Directory).
+* **Key Components:** Users, Groups, Permissions, Restrictions, and Environment Variables.
 
-## 6. OS Setup (OS-based)
-`System_Configuration_Review` - Auditoría de los componentes internos y la configuración del sistema operativo. Consiste en perfilar el *OS Type*, *Patch Level*, *Network config*, *OS Environment*, archivos de configuración y *sensitive private files*. Refleja el nivel de madurez de la infraestructura y nos da una visión clara de las políticas aplicadas por los *SysAdmins*.
+## 6. OS Setup
+* **Level:** OS-based
+* **Objective:** Audit the internal components and the overall operating system setup to evaluate the SysAdmins' security policies and gather sensitive internal data.
+* **Key Components:** OS Type, Patch Level, Network Configuration, OS Environment, Configuration Files, and Sensitive Private Files.
 
-## 7. Methodology Workflow
-`Labyrinth_Approach` - El *Penetration Test* es un laberinto con tiempo limitado. No todas las vulnerabilidades conducen a un compromiso total (*root/SYSTEM*). La metodología proporciona un marco de procedimientos sistemáticos, mientras que las herramientas (ej. *Nmap*, *scripts* en *Bash*) son recursos dinámicos y dependientes del contexto que se adaptan a las necesidades de cada capa.
+---
 
-# Domain Information & Passive Reconnaissance Cheatsheet
+## Methodology Workflow: The Labyrinth Approach
 
-Este recurso consolida las metodologías de recolección pasiva de información (OSINT) centradas en la enumeración de dominios, análisis de logs de *Certificate Transparency* y auditoría profunda de registros DNS. Diseñado para fases iniciales de *penetration testing* desde una perspectiva *Black-Box*, su objetivo técnico es mapear la huella digital pública de la infraestructura corporativa (*Online Presence*), aislando los *Company Hosted Servers* de los servicios *Third-Party* (AWS, SaaS) y descubriendo vectores de ataque potenciales (APIs, paneles de administración) manteniendo un perfil indetectable frente al *target*.
+A Penetration Test can be visualized as a time-limited labyrinth where the objective is to find the most effective path inside. Key takeaways include:
+
+* **Vulnerability Assessment:** Not all discovered gaps lead to an internal breach. Finding a vulnerability does not guarantee a direct path to a full system compromise (*root/SYSTEM*).
+* **Static Framework vs. Dynamic Tooling:** The *methodology* represents the static framework of systematic procedures. The *tools* (e.g., Nmap, custom Bash scripts, web fuzzers) are dynamic, context-dependent resources used to navigate each specific layer.
+
+# Domain Information & Passive Reconnaissance
+
+Passive reconnaissance is a core component of early-stage penetration testing (OSINT). It involves gathering intelligence about a target's internet presence and infrastructure without directly interacting with their systems. This stealthy approach ensures we remain undetected while mapping out the technologies, services, and third-party integrations that sustain the organization's daily operations.
 
 ## 1. Certificate Transparency (SSL/TLS Logs)
 
-`curl -s https://crt.sh/?q=domain.com&output=json | jq .` - Ejecuta una consulta a la API de `crt.sh` para extraer los registros de transparencia de certificados y formatea la salida en JSON puro mediante la utilidad `jq`. Permite auditar *Common Names* e *Issuers* (ej. Let's Encrypt, Cloudflare).
+Analyzing SSL/TLS certificates can reveal hidden subdomains and internal naming conventions. Certificate Transparency (CT) logs, such as those indexed by `crt.sh`, are invaluable for this footprinting phase.
 
-`curl -s https://crt.sh/?q=domain.com&output=json | jq . | grep name | cut -d":" -f2 | grep -v "CN=" | cut -d'"' -f2 | awk '{gsub(/\\n/,"\n");}1;' | sort -u` - Implementa un *pipeline* avanzado en Bash para parsear el JSON, limpiar la salida de artefactos (`CN=`) y generar una *wordlist* estructurada y única (*sort -u*) con todos los subdominios registrados.
+`curl -s https://crt.sh/?q=domain.com&output=json | jq .`
+This command queries the `crt.sh` API for a specific domain and parses the JSON output using `jq`. It exposes the *Common Name* (CN) and the *Issuer* (e.g., Let's Encrypt, Cloudflare), giving us a first look at the active certificates.
 
-## 2. IP & Host Resolution
+`curl -s https://crt.sh/?q=domain.com&output=json | jq . | grep name | cut -d":" -f2 | grep -v "CN=" | cut -d'"' -f2 | awk '{gsub(/\\n/,"\n");}1;' | sort -u`
+This is an advanced Bash pipeline that parses the JSON output, strips out formatting artifacts (like `CN=`), and generates a clean, deduplicated wordlist of all discovered subdomains (`sort -u`).
 
-`for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f1,4; done` - Itera sobre la *wordlist* de subdominios resolviendo sus registros A para distinguir la infraestructura *On-Premise* de la compañía frente a servicios alojados en infraestructuras de terceros (ej. *Amazon S3 buckets*).
+## 2. Infrastructure Mapping & Host Resolution
 
-`for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f4 >> ip-addresses.txt; done` - Parsea el *output* DNS extrayendo exclusivamente las direcciones IPv4 válidas y volcándolas en un fichero `.txt` para nutrir la fase de enumeración de servicios.
+Once a list of subdomains is acquired, the next step is to resolve their A records to separate company-hosted infrastructure from third-party services (e.g., AWS S3 buckets). Testing third-party hosts without explicit permission falls strictly outside the scope of engagement.
 
-## 3. Shodan CLI (Service & IoT Enumeration)
+`for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f1,4; done`
+This loop iterates through the subdomain wordlist, resolving IP addresses and filtering the output to identify hosts directly tied to the target's primary domain.
 
-`shodan host <IP>` - Audita una dirección IP específica contra la base de datos de Shodan de forma completamente pasiva, enumerando puertos TCP/UDP expuestos a Internet, servicios subyacentes (Nginx, OpenSSH, Apache) y parámetros detallados de configuración SSL/TLS.
+`for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f4 >> ip-addresses.txt; done`
+This variation extracts only the IPv4 addresses from the resolved hosts and appends them to a text file, creating a clean target list for further passive enumeration.
 
-`for i in $(cat ip-addresses.txt); do shodan host $i; done` - Automatiza el escaneo pasivo a través del *Command-Line Interface* (CLI) iterando sobre todo el *scope* de IPs recopiladas en la fase de resolución de *hosts*.
+## 3. Passive Service Enumeration (Shodan CLI)
 
-## 4. DNS Records & Infrastructure Mapping
+Shodan is a search engine designed for Internet-connected devices (IoT, servers, industrial controllers). Using the Shodan CLI allows for passive reconnaissance of open TCP/UDP ports, running services (e.g., Nginx, OpenSSH, Apache), and SSL/TLS configurations without sending direct packets to the target's firewall.
 
-`dig any domain.com` - Realiza una consulta DNS global (*ANY query*) para volcar la totalidad de registros asociados al dominio. Es un paso crítico para descubrir integraciones corporativas y delinear la arquitectura *backend* de la red.
+`shodan host <IP>`
+Performs a passive lookup of a specific IP address against the Shodan database, retrieving footprinting data, open ports, and potential known vulnerabilities.
 
-`A Record` - Mapea el *Fully Qualified Domain Name* (FQDN) a su IPv4. Su análisis es fundamental para identificar los nodos de red principales administrados directamente por la organización.
+`for i in $(cat ip-addresses.txt); do shodan host $i; done`
+Automates the Shodan CLI lookup process, iterating across the entire list of verified, company-hosted IP addresses.
 
-`MX Record` - Revela el gestor de *Mail Servers* corporativo (ej. Google Workspace, Office 365). Facilita el mapeo de infraestructuras *Cloud* asociadas (GDrive, OneDrive) y perfila la superficie para ataques de *Social Engineering* o intrusiones de *Phishing*.
+## 4. DNS Records Analysis
 
-`NS Record` - Identifica los *Name Servers* autoritativos, delatando el proveedor de *Hosting* o las soluciones perimetrales y de resolución que soporta la infraestructura de red.
+DNS records provide a blueprint of the target's backend architecture and cloud integrations. Taking a developer's perspective here helps us understand the functionality behind the services.
 
-`TXT Record` - Expone claves de verificación de *Third-Party Providers* y políticas de seguridad del correo (SPF, DMARC, DKIM). Su desglose revela el *stack* de herramientas operativas (Atlassian, LogMeIn, Mailgun), abriendo la puerta a vectores de ataque avanzados como el abuso de APIs REST (SSRF, Insecure Direct Object References) o compromisos críticos vía *Password Reuse* en portales de acceso remoto centralizados.
+`dig any domain.com`
+Performs a global DNS query to retrieve all available DNS records for the target domain.
+
+### Key DNS Records to Analyze:
+
+*   **A Records**: Maps the Fully Qualified Domain Name (FQDN) to its corresponding IPv4 address. Crucial for identifying the core infrastructure managed directly by the company.
+*   **MX Records**: Identifies the Mail Exchange servers (e.g., Google Workspace, Microsoft 365). This reveals cloud dependencies and broadens the attack surface for Social Engineering or Phishing campaigns, as well as hinting at document management systems (OneDrive, GDrive).
+*   **NS Records**: Specifies the authoritative Name Servers, which often discloses the hosting provider or perimeter security solutions in use.
+*   **TXT Records**: Used for domain verification and email security policies (SPF, DMARC, DKIM). Extracting these values can expose the internal tech stack:
+    *   *Atlassian*: Indicates the use of collaboration tools like Jira or Confluence.
+    *   *LogMeIn*: Highlights centralized remote access platforms, which are critical targets; compromising administrative access here via password reuse yields complete system control.
+    *   *Mailgun*: Reveals API dependencies for email routing, opening potential vectors for SSRF (Server-Side Request Forgery) or IDOR (Insecure Direct Object References) vulnerabilities.
 
 # Footprinting Cloud Resources: AWS, Azure & GCP
 
