@@ -207,3 +207,288 @@ Developers frequently link their open-source contributions (e.g., GitHub, GitLab
 To maximize OSINT efficiency during footprinting engagements:
 * **Targeted Filtering:** Utilize advanced search parameters on platforms like LinkedIn (filtering by company, specific IT roles, and location) to isolate high-value targets and reduce noise.
 * **Security Posture Estimation:** Focus searches on personnel within the Cybersecurity, SecOps, or IT Administration departments. Analyzing their specific skill sets (e.g., Splunk, SIEM, Firewalls, Threat Hunting) provides a reliable estimate of the defensive countermeasures and security protocols deployed by the organization.
+
+# FTP & TFTP: Service Enumeration and Configuration Assessment
+
+## 1. Protocol Overview
+
+### File Transfer Protocol (FTP)
+The File Transfer Protocol (FTP) is a legacy application-layer protocol within the TCP/IP stack (equivalent in layer to HTTP or POP). It facilitates the transfer of files between a client and a server. FTP operations require two dedicated TCP channels:
+*   **Control Channel (TCP Port 21):** Used strictly for transmitting client commands and receiving server status codes.
+*   **Data Channel (TCP Port 20):** Dedicated exclusively to the actual data transmission. The protocol monitors this channel for errors and supports connection resumption in the event of a drop.
+
+**Active vs. Passive Mode**
+*   **Active Mode:** The client establishes the control connection via Port 21 and specifies a local port for the server to connect back to for data transmission. This often fails if the client sits behind a strict firewall that drops inbound connections.
+*   **Passive Mode (PASV):** Developed to bypass client-side firewall restrictions. The server opens a random ephemeral port and announces it to the client. The client then initiates the data connection to that specific port.
+
+*Security Note:* Standard FTP is a clear-text protocol. Network conditions permitting, credentials and payloads can be easily intercepted via packet sniffing. 
+
+### Trivial File Transfer Protocol (TFTP)
+TFTP is a stripped-down alternative to FTP designed for fundamental file transfers. 
+*   **Architecture:** It relies on UDP rather than TCP, lacking built-in session reliability and falling back on application-layer recovery mechanisms.
+*   **Authentication & Security:** TFTP does not support user authentication or password-protected logins. Access controls are dictated entirely by the underlying operating system's file permissions (read/write access). Due to these critical security limitations, TFTP should only be deployed within strictly isolated and trusted Local Area Networks (LANs).
+*   **Limitations:** Unlike standard FTP clients, TFTP cannot perform directory listings. 
+
+**Standard TFTP Commands:**
+*   `connect`: Sets the target remote host (and optional port).
+*   `get`: Retrieves files from the remote host.
+*   `put`: Uploads files to the remote host.
+*   `status`: Displays the current transfer mode (ASCII/binary), timeouts, and connection state.
+*   `verbose`: Toggles detailed output during transfers.
+*   `quit`: Terminates the session.
+
+---
+
+## 2. FTP Server Configuration (vsFTPd)
+
+The `vsFTPd` (Very Secure FTP Daemon) server is a standard deployment across Linux-based distributions. Its behavior is primarily dictated by its main configuration file located at `/etc/vsftpd.conf`.
+
+### Core Configuration Parameters
+Administrators can filter active settings by ignoring commented lines:
+~~~bash
+cat /etc/vsftpd.conf | grep -v "#"
+~~~
+
+**Key Directives:**
+*   `listen=NO`: Determines if vsFTPd runs as a standalone daemon or via `inetd`.
+*   `anonymous_enable=NO`: Controls unauthenticated access.
+*   `local_enable=YES`: Permits local system users to authenticate.
+*   `xferlog_enable=YES`: Enables logging of all uploads and downloads.
+*   `connect_from_port_20=YES`: Enforces Active FTP data connections from Port 20.
+*   `chroot_local_user=YES`: Jails local users within their respective home directories (security mechanism).
+*   `ssl_enable=NO`: Toggles TLS/SSL encryption. 
+
+### Access Control via `/etc/ftpusers`
+This file acts as a denylist. Any user appended to this list is explicitly denied access to the FTP service, regardless of their existence or privileges on the underlying Linux system.
+
+---
+
+## 3. Vulnerable Configurations & Exploitation
+
+Misconfigured FTP services are prime targets for initial access or lateral movement during penetration tests.
+
+### Anonymous Access
+Internal networks often enable anonymous FTP to accelerate internal file sharing. If misconfigured, attackers can list, read, or even upload malicious payloads.
+*   `anonymous_enable=YES`: Allows login with the username `anonymous` (password can be blank or any string).
+*   `anon_upload_enable=YES`: Permits unauthenticated file uploads.
+*   `anon_mkdir_write_enable=YES`: Allows anonymous directory creation.
+*   `write_enable=YES`: Grants execution of modifying commands (STOR, DELE, MKD, RMD).
+
+**Connecting as Anonymous:**
+~~~bash
+ftp <TARGET_IP>
+# Name: anonymous
+# Password: [Enter]
+~~~
+
+### ID Obfuscation (`hide_ids=YES`)
+When enabled, the server masks the true UID/GID of files in directory listings, displaying them simply as `ftp`. While this mitigates local user enumeration (which could be leveraged for SSH brute-forcing), it obfuscates file ownership during an audit.
+
+### Recursive Listing & File Extraction
+If `ls_recurse_enable=YES` is active, users can map the entire accessible directory tree using a single command:
+~~~bash
+ftp> ls -R
+~~~
+
+**Bulk Extraction:**
+To silently map and extract all accessible files from an anonymous FTP share, `wget` can be weaponized:
+~~~bash
+wget -m --no-passive ftp://anonymous:anonymous@<TARGET_IP>
+~~~
+This mirrors the remote directory structure locally for offline analysis.
+
+### Upload Vulnerabilities
+If upload permissions are granted (e.g., to a webroot directory), attackers can upload reverse shells or use Local File Inclusion (LFI) vulnerabilities to execute system commands:
+~~~bash
+ftp> put reverse_shell.php
+~~~
+
+---
+
+## 4. Footprinting and Service Enumeration
+
+Effective service footprinting is required to identify the FTP daemon version, enabled features, and hidden configurations.
+
+### Nmap Scripting Engine (NSE)
+Ensure the local NSE database is up to date:
+~~~bash
+sudo nmap --script-updatedb
+find /usr/share/nmap/scripts/ -type f -name "ftp*"
+~~~
+
+**Aggressive Service Scan:**
+~~~bash
+sudo nmap -sV -p 21 -sC -A <TARGET_IP>
+~~~
+*   `ftp-anon.nse`: Verifies if anonymous login is permitted and lists root contents.
+*   `ftp-syst.nse`: Extracts server status, timeout limits, and detailed daemon versions via the `STAT` command.
+
+**Network-Level Tracing:**
+Appending `--script-trace` forces Nmap to output the raw TCP traffic, revealing the exact queries and FTP response codes (e.g., `220 Welcome...`) triggered by the NSE scripts.
+
+### Manual Banner Grabbing & Interaction
+When standard clients are restricted, raw socket connections can be established to interact with the service and parse banners:
+~~~bash
+nc -nv <TARGET_IP> 21
+telnet <TARGET_IP> 21
+~~~
+
+### SSL/TLS Certificate Inspection
+If the FTP server mandates encryption (FTPS), standard clients like `netcat` will fail to extract meaningful data. `OpenSSL` can be used to negotiate the TLS handshake and retrieve the server certificate. This often leaks internal hostnames, corporate email addresses, and organizational structures:
+~~~bash
+openssl s_client -connect <TARGET_IP>:21 -starttls ftp
+~~~
+
+# SMB and Samba: Protocol Analysis and Enumeration Methodology
+
+## 1. Protocol Overview
+**Server Message Block (SMB)** is a robust client-server communication protocol designed to regulate access to files, directories, and network resources such as printers and routers. While originally developed for IBM's OS/2 LAN Manager, SMB has become the standard network file-sharing protocol for the Windows operating system ecosystem, offering backward compatibility across older Microsoft architectures. 
+
+To bridge the gap between Unix/Linux distributions and Windows networks, the **Samba** software suite provides a cross-platform implementation of the SMB protocol. 
+
+### 1.1. Network Architecture and Ports
+SMB utilizes the TCP/IP suite to establish a reliable connection via a three-way handshake before data transmission.
+*   **Legacy Implementations (NetBIOS):** Older NetBIOS-dependent SMB services typically operate over **TCP ports 137, 138, and 139**.
+*   **Modern Implementations (CIFS/SMB):** The Common Internet File System (CIFS)—a Microsoft-specific dialect of SMB1—and all subsequent SMB versions operate directly over **TCP port 445** without requiring a separate NetBIOS transport layer.
+
+### 1.2. Protocol Version History
+Understanding the SMB version in use is critical during footprinting, as older iterations lack modern security mechanisms like encryption and message signing.
+
+| SMB Version | Introduced In | Key Technical Features |
+| :--- | :--- | :--- |
+| **CIFS (SMB 1.0)** | Windows NT 4.0 | Communication via NetBIOS interface. Considered highly insecure and obsolete. |
+| **SMB 1.0** | Windows 2000 | Direct connection via TCP (Port 445). |
+| **SMB 2.0** | Windows Vista / Server 2008 | Performance upgrades, improved message signing, and caching capabilities. |
+| **SMB 2.1** | Windows 7 / Server 2008 R2 | Advanced file locking mechanisms. |
+| **SMB 3.0** | Windows 8 / Server 2012 | Multichannel connections, end-to-end encryption, remote storage access. |
+| **SMB 3.0.2** | Windows 8.1 / Server 2012 R2 | Minor performance updates. |
+| **SMB 3.1.1** | Windows 10 / Server 2016 | Pre-authentication integrity checking and AES-128 encryption. |
+
+---
+
+## 2. Samba Configuration and Daemon Architecture
+
+Modern Samba versions (Version 3 and 4) can fully integrate into a Windows Active Directory infrastructure, with Version 4 capable of acting as an Active Directory Domain Controller (AD DC). Samba operates using specialized Unix background daemons:
+*   `smbd`: Manages the SMB service, file sharing, and authentication.
+*   `nmbd`: Manages NetBIOS name resolution and resource browsing.
+
+### 2.1. Analyzing `smb.conf`
+The primary configuration file for Samba is located at `/etc/samba/smb.conf`. It defines global settings and establishes granular Access Control Lists (ACLs) for individual network shares.
+
+**Viewing current clean configuration:**
+```bash
+cat /etc/samba/smb.conf | grep -v "#\|\;"
+```
+
+**Key Parameters & Security Implications:**
+Administrators often prioritize user convenience over security, leading to misconfigurations that can be leveraged during a penetration test.
+
+| Parameter | Function | Auditor/Attacker Perspective |
+| :--- | :--- | :--- |
+| `browseable = yes` | Displays the share in the list of available network shares. | Exposes directory structures to any connected user (authenticated or guest), facilitating reconnaissance. |
+| `guest ok = yes` | Permits service connection without a password. | Allows anonymous null sessions, granting unauthenticated access to the share's contents. |
+| `read only = no` / `writable = yes` | Permits users to create and modify files. | Enables unauthorized data manipulation or malware payload deployment. |
+| `map to guest = bad user` | Maps invalid login attempts to the guest account. | Prevents account lockouts during brute-force attempts and silently drops users into unauthenticated access levels. |
+| `enable privileges = yes` | Honors privileges assigned to specific SIDs. | If misconfigured, can lead to privilege escalation within the domain environment. |
+
+*Note: After modifying `/etc/samba/smb.conf`, the service must be restarted:*
+```bash
+sudo systemctl restart smbd
+```
+
+---
+
+## 3. Manual Enumeration Techniques
+
+Before relying on noisy automated scanners, manual enumeration provides precise, stealthy insights into the target's SMB infrastructure.
+
+### 3.1. Interactive Exploration via `smbclient`
+`smbclient` acts as an FTP-like client to access SMB/CIFS resources on servers.
+
+**Listing Shares with a Null Session (Anonymous Access):**
+```bash
+smbclient -N -L //10.129.14.128
+```
+
+**Connecting to a Specific Share:**
+```bash
+smbclient -N //10.129.14.128/notes
+```
+*Once logged in, you can execute interactive commands such as `ls` to list contents, `get <file>` to download data, and `!<command>` to run local shell commands without terminating the SMB session.*
+
+### 3.2. Administrative Monitoring via `smbstatus`
+If administrative or shell access is obtained on the Samba server, `smbstatus` reveals active connections, connected hosts, and locked files.
+```bash
+sudo smbstatus
+```
+
+### 3.3. Initial Footprinting via Nmap
+Nmap's default scripting engine can identify the SMB version and exact OS build, though results may sometimes be limited depending on the server's security posture.
+```bash
+sudo nmap 10.129.14.128 -sV -sC -p139,445
+```
+
+---
+
+## 4. Advanced RPC Enumeration
+
+Remote Procedure Call (RPC) functions allow for deep enumeration of domain information, user accounts, and Active Directory structures. The `rpcclient` utility is the standard tool for executing MS-RPC functions against an SMB server.
+
+**Establishing an Anonymous RPC Session:**
+```bash
+rpcclient -U "" 10.129.14.128
+```
+
+### 4.1. Core `rpcclient` Commands
+
+| Command | Output Description |
+| :--- | :--- |
+| `srvinfo` | Retrieves server details, OS version, and platform ID. |
+| `enumdomains` | Lists all domains deployed within the network. |
+| `querydominfo` | Extracts detailed domain, server, and user statistics. |
+| `netshareenumall` | Enumerates all available shares, including hidden IPC$ shares. |
+| `netsharegetinfo <share>` | Retrieves specific ACLs and permissions for a targeted share. |
+| `enumdomusers` | Dumps the full list of domain users and their RIDs. |
+| `queryuser <RID>` | Provides comprehensive account data for a specific user. |
+| `querygroup <RID>` | Retrieves information regarding a specific group. |
+
+### 4.2. Brute-Forcing User RIDs via Bash
+If direct user enumeration is restricted, Relative Identifiers (RIDs) can be brute-forced through RPC to map out the user environment logically.
+```bash
+for i in $(seq 500 1100); do \
+    rpcclient -N -U "" 10.129.14.128 -c "queryuser 0x$(printf '%x\n' $i)" | \
+    grep "User Name\|user_rid\|group_rid" && echo ""; \
+done
+```
+
+---
+
+## 5. Automated Enumeration Frameworks
+
+To expedite the reconnaissance phase, several Python-based utilities and frameworks can automate SMB mapping. Relying on multiple tools is highly recommended to cross-reference data accuracy.
+
+### 5.1. Impacket: `samrdump.py`
+Leverages the Security Account Manager Remote (SAMR) protocol to extract user endpoints, primary group IDs, and password policies.
+```bash
+samrdump.py 10.129.14.128
+```
+
+### 5.2. SMBMap
+A comprehensive utility for identifying available shares, determining user permissions across drives, and mapping overall directory structures.
+```bash
+smbmap -H 10.129.14.128
+```
+
+### 5.3. CrackMapExec (CME)
+A post-exploitation framework highly effective in Active Directory environments. It can enumerate shares, test credentials across subnets, and check for SMB signing requirements.
+```bash
+crackmapexec smb 10.129.14.128 --shares -u '' -p ''
+```
+
+### 5.4. Enum4linux-ng
+A modernized, Python3 rewrite of the legacy `enum4linux` tool. It automates RPC, LDAP, and NetBIOS queries to aggressively extract OS details, users, groups, shares, and password policies.
+```bash
+# Execution against a target with full enumeration (-A)
+./enum4linux-ng.py 10.129.14.128 -A
+```
+
