@@ -88,10 +88,10 @@ Passive reconnaissance is a core component of early-stage penetration testing (O
 
 Analyzing SSL/TLS certificates can reveal hidden subdomains and internal naming conventions. Certificate Transparency (CT) logs, such as those indexed by `crt.sh`, are invaluable for this footprinting phase.
 
-`curl -s https://crt.sh/\?q\=domain.com\&output\=json | jq .`
+`curl -s https://crt.sh/\?q\=inlanefreight.com\&output\=json | jq .`
 This command queries the `crt.sh` API for a specific domain and parses the JSON output using `jq`. It exposes the *Common Name* (CN) and the *Issuer* (e.g., Let's Encrypt, Cloudflare), giving us a first look at the active certificates.
 
-`curl -s https://crt.sh/\?q\=domain.com\&output\=json | jq . | grep name | cut -d":" -f2 | grep -v "CN=" | cut -d'"' -f2 | awk '{gsub(/\\n/,"\n");}1;' | sort -u`
+`curl -s https://crt.sh/\?q\=inlanefreight.com\&output\=json | jq . | grep name | cut -d":" -f2 | grep -v "CN=" | cut -d'"' -f2 | awk '{gsub(/\\n/,"\n");}1;' | sort -u`
 This is an advanced Bash pipeline that parses the JSON output, strips out formatting artifacts (like `CN=`), and generates a clean, deduplicated wordlist of all discovered subdomains (`sort -u`).
 
 ## 2. Infrastructure Mapping & Host Resolution
