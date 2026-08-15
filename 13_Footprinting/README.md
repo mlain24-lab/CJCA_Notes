@@ -98,7 +98,8 @@ This is an advanced Bash pipeline that parses the JSON output, strips out format
 
 Once a list of subdomains is acquired, the next step is to resolve their A records to separate company-hosted infrastructure from third-party services (e.g., AWS S3 buckets). Testing third-party hosts without explicit permission falls strictly outside the scope of engagement.
 
-`for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f1,4; done`
+`curl -s "https://crt.sh/?q=instagram.com&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u > subdomains.txt`
+`for i in $(cat subdomains.txt); do host $i | grep "has address" | grep instagram.com | cut -d" " -f1,4; done`
 This loop iterates through the subdomain wordlist, resolving IP addresses and filtering the output to identify hosts directly tied to the target's primary domain.
 
 `for i in $(cat subdomainlist); do host $i | grep "has address" | grep domain.com | cut -d" " -f4 >> ip-addresses.txt; done`
