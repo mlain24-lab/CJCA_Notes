@@ -492,3 +492,603 @@ A modernized, Python3 rewrite of the legacy `enum4linux` tool. It automates RPC,
 ./enum4linux-ng.py 10.129.14.128 -A
 ```
 
+# Network File System (NFS): Architecture, Configuration, and Enumeration
+
+## 1. Overview
+The Network File System (NFS), originally developed by Sun Microsystems, is a distributed file system protocol designed to allow client systems to access directories and files over a network as if they were mounted on local storage. While serving a similar purpose to Server Message Block (SMB), NFS relies on an entirely different underlying protocol and is the standard standard for Linux and UNIX-based architectures. Consequently, native direct communication between NFS clients and SMB servers is not inherently supported.
+
+NFS relies on the Open Network Computing Remote Procedure Call (ONC-RPC/SUN-RPC) protocol, operating primarily over TCP and UDP port 111. It utilizes External Data Representation (XDR) to ensure system-independent data exchange. 
+
+## 2. Protocol Versions and Capabilities
+
+| Version | Key Characteristics |
+| :--- | :--- |
+| **NFSv2** | Legacy version. Widely supported but operates entirely over UDP, limiting performance and reliability in modern networks. |
+| **NFSv3** | Introduces support for variable file sizes, TCP transport, and improved error reporting. It is not entirely backward-compatible with NFSv2 clients. |
+| **NFSv4** | A major overhaul introducing a stateful protocol. Integrates Kerberos authentication, facilitates traversal through firewalls/internet, eliminates the dependency on `portmapper`, supports Access Control Lists (ACLs), and delivers significant security and performance enhancements. |
+| **NFSv4.1** | Aims to provide protocol support for cluster server deployments, scalable parallel access across multiple servers (pNFS extension), and session trunking (NFS multipathing). |
+
+**Note on Port Usage:** A critical architectural advantage of NFSv4 is its consolidation of services over a single TCP/UDP port (`2049`), which drastically simplifies firewall configurations compared to the dynamic port allocation used in legacy versions.
+
+## 3. Authentication and Authorization Mechanisms
+Historically, the NFS protocol itself lacks built-in authentication or authorization mechanisms. Instead, these responsibilities are delegated to the RPC protocol options, and authorization is inferred from the underlying UNIX file system permissions. 
+
+The server maps the client's UID/GID (User ID / Group ID) and translates these into the appropriate UNIX syntax for file access. 
+* **Security Caveat:** Because the server implicitly trusts the UID/GID provided by the client without rigorous secondary verification, traditional NFS deployments should be strictly confined to trusted network segments. If the client and server do not share a centralized identity provider (like LDAP or Active Directory), authorization inconsistencies can occur.
+
+## 4. Server Configuration: The Exports File
+NFS configuration is straightforward. Access control for the physical file systems exposed to clients is defined within the `/etc/exports` file. 
+
+### 4.1. Configuration Syntax
+The `exports` file maps directories to specific hostnames, IP addresses, or subnets, followed by a set of permission flags.
+
+    cat /etc/exports
+    
+    # Example for NFSv4:
+    # /srv/nfs4        gss/krb5i(rw,sync,fsid=0,crossmnt,no_subtree_check)
+    # /srv/nfs4/homes  gss/krb5i(rw,sync,no_subtree_check)
+
+### 4.2. Standard Export Options
+
+| Option | Technical Description |
+| :--- | :--- |
+| `rw` | Grants read and write permissions to the defined host/subnet. |
+| `ro` | Restricts access to read-only. |
+| `sync` | Enforces synchronous data transfer, ensuring changes are written to the disk before replying to the client (prioritizes data integrity over speed). |
+| `async` | Permits asynchronous data transfer (prioritizes performance but risks data corruption during crashes). |
+| `secure` | Restricts connections to source ports below 1024 (privileged ports). |
+| `no_subtree_check` | Disables subtree checking, improving reliability and performance by not verifying if an accessed file belongs to a specific subdirectory of an exported volume. |
+
+### 4.3. High-Risk / Dangerous Configurations
+During security audits, specific configurations present significant privilege escalation vectors:
+
+| Option | Security Implication |
+| :--- | :--- |
+| `insecure` | Allows clients to connect from ports above 1024. Bypasses the default security measure that requires the client connection to originate from a `root`-privileged port. |
+| `nohide` | If another file system is mounted beneath an exported directory, this option explicitly exposes that secondary file system. |
+| `no_root_squash` | **Critical Vulnerability.** Disables the default `root_squash` protection. Any files created by the `root` user on the client machine will retain UID/GID 0 on the server. This effectively grants the client root-level access to the exported file system. |
+| `root_squash` | (Default mitigation). Maps requests from UID/GID 0 (`root`) to an anonymous UID/GID, preventing remote root access. |
+
+### 4.4. Applying Configuration Changes
+After modifying `/etc/exports`, the NFS server daemon must be restarted, and the exports table re-evaluated:
+
+    echo '/mnt/nfs  10.129.14.0/24(sync,no_subtree_check)' >> /etc/exports
+    systemctl restart nfs-kernel-server 
+    exportfs
+    
+    /mnt/nfs        10.129.14.0/24
+
+## 5. Footprinting and Enumeration
+When assessing an NFS infrastructure, identifying the active RPC services and querying the target's exposed endpoints is the first phase of enumeration. TCP/UDP ports `111` (RPCbind) and `2049` (NFS Daemon) are the primary targets.
+
+### 5.1. Target Scanning with Nmap
+By executing an `nmap` scan against the RPC port, the `rpcinfo` script automatically retrieves the registered RPC services, versions, and dynamically allocated ports (e.g., `mountd`, `nlockmgr`).
+
+    sudo nmap 10.129.14.128 -p111,2049 -sV -sC
+
+### 5.2. Advanced NFS NSE Scripts
+Nmap's built-in NFS scripts (`nfs*`) can query the server to enumerate the exported volumes, display internal permissions, and fetch file system statistics without mounting the share manually.
+
+    sudo nmap --script nfs* 10.129.14.128 -sV -p111,2049
+
+## 6. Mounting and Accessing NFS Shares
+Once an exported directory is identified, it can be mounted to the local system for deeper inspection. 
+
+### 6.1. Displaying Exports
+The `showmount` utility queries the `mountd` daemon on the target to list the export table.
+
+    showmount -e 10.129.14.128
+    
+    Export list for 10.129.14.128:
+    /mnt/nfs 10.129.14.0/24
+
+### 6.2. Mounting the Target Share
+To interact with the remote file system, create a local mount point and attach the share. The `-o nolock` flag is often required during penetration testing to bypass file locking mechanisms.
+
+    mkdir target-NFS
+    sudo mount -t nfs 10.129.14.128:/ ./target-NFS/ -o nolock
+    cd target-NFS
+
+### 6.3. UID/GID Mapping and Privilege Escalation Vectors
+When inspecting the mounted share, checking file ownership is crucial. Files may belong to internal network users.
+
+To view usernames and groups:
+
+    ls -l mnt/nfs/
+
+To view explicit UIDs and GIDs:
+
+    ls -n mnt/nfs/
+
+**Exploitation Concept:** If the attacker identifies specific UIDs on the NFS share, they can forge identical UIDs on their local machine. Furthermore, if `no_root_squash` is enabled, or if an attacker has initial SSH access as a low-privileged user, NFS can be leveraged for Privilege Escalation. An attacker can create a malicious binary on the locally mounted NFS share, set the SUID bit using local root, and then execute that payload via SSH on the target server to gain a privileged shell.
+
+### 6.4. Unmounting
+Post-engagement, ensure the file system is cleanly detached:
+
+    cd ..
+    sudo umount ./target-NFS
+
+    # Domain Name System (DNS): Architecture, Configuration, and Enumeration Methodology
+
+## 1. DNS Architecture and Core Concepts
+
+The Domain Name System (DNS) is a decentralized, hierarchical naming system responsible for resolving human-readable domain names (e.g., `www.hackthebox.com`) into IP addresses. It operates primarily over TCP and UDP port 53. Because it lacks a centralized database, DNS relies on a globally distributed network of servers. 
+
+While DNS traffic is historically unencrypted (posing interception risks), modern security implementations like DNS over TLS (DoT), DNS over HTTPS (DoH), and DNSCrypt are increasingly deployed to encapsulate and secure queries.
+
+### 1.1 DNS Server Typology
+The resolution process relies on several specific server roles:
+
+| Server Type | Administrative Description |
+| :--- | :--- |
+| **DNS Root Server** | The authoritative infrastructure for Top-Level Domains (TLDs). Coordinated by ICANN, there are 13 logical root name servers globally. They act as the central routing interface when lower-level servers cannot resolve a query. |
+| **Authoritative Nameserver** | Holds the definitive DNS records for a specific zone. Their responses are binding. If an authoritative server cannot answer, the request cascades up to a root server. |
+| **Non-authoritative Nameserver**| Not responsible for a specific zone. These servers accumulate DNS records by performing recursive or iterative queries on behalf of clients. |
+| **Caching DNS Server** | Temporarily stores resource records to reduce latency and upstream bandwidth. The storage duration is dictated by the Time-To-Live (TTL) defined by the authoritative server. |
+| **Forwarding Server** | A proxy-like server designated specifically to forward incoming DNS queries to upstream DNS servers. |
+| **Resolver** | The client-side component (often within local operating systems or edge routers) that initiates the name resolution process. |
+
+---
+
+## 2. DNS Resource Records
+
+Resource Records (RR) dictate how traffic is routed and provide metadata about the domain's services, validation protocols, and administrative boundaries.
+
+*   **A (Address):** Maps a hostname to an IPv4 address.
+*   **AAAA (IPv6 Address):** Maps a hostname to an IPv6 address.
+*   **MX (Mail Exchange):** Specifies the mail servers responsible for accepting email on behalf of the domain.
+*   **NS (Name Server):** Delegates a DNS zone to use the specified authoritative name servers.
+*   **TXT (Text):** Holds arbitrary text. Critically used in modern infrastructure for domain verification and email security protocols (SPF, DKIM, DMARC).
+*   **CNAME (Canonical Name):** Aliases one name to another (e.g., mapping `www.domain.com` to `domain.com`).
+*   **PTR (Pointer):** Resolves an IP address to a Fully Qualified Domain Name (FQDN) to facilitate reverse lookups.
+*   **SOA (Start of Authority):** Defines core administrative properties of the zone, including the primary nameserver, the administrator's email, and zone transfer timers. 
+
+*Note: In SOA records, the administrator's email replaces the `@` symbol with a dot (e.g., `awsdns-hostmaster.amazon.com` equates to `awsdns-hostmaster@amazon.com`).*
+
+---
+
+## 3. BIND9 Server Configuration
+
+BIND9 is the de facto standard DNS server software for Linux/Unix environments. It relies on a suite of configuration files to define global operational parameters and specific zone parameters. 
+
+### 3.1 Local Configuration Files
+The primary configuration file is `/etc/bind/named.conf`, which typically includes:
+*   `named.conf.options`: Global directives affecting all zones (e.g., forwarders, listen-on directives).
+*   `named.conf.local`: Local zone declarations.
+*   `named.conf.log`: Logging definitions.
+
+**Example `named.conf.local`:**
+```conf
+// /etc/bind/named.conf.local
+zone "inlanefreight.htb" {
+    type master;
+    file "/etc/bind/db.inlanefreight.htb";
+    allow-update { key rndc-key; };
+};
+```
+
+### 3.2 Forward and Reverse Zone Files
+Zone files adhere strictly to the BIND format (RFC 1035). A syntax error usually results in the DNS daemon returning a `SERVFAIL` state for the entire zone.
+
+**Forward Zone File (`db.inlanefreight.htb`):** maps hostnames to IP addresses.
+```conf
+$ORIGIN inlanefreight.htb.
+$TTL 86400
+@     IN     SOA    ns1.inlanefreight.htb. admin.inlanefreight.htb. (
+                    2023010501 ; Serial
+                    21600      ; Refresh
+                    3600       ; Retry
+                    604800     ; Expire
+                    86400 )    ; Minimum TTL
+
+      IN     NS     ns1.inlanefreight.htb.
+      IN     MX     10     mail.inlanefreight.htb.
+@     IN     A      10.129.14.5
+ns1   IN     A      10.129.14.2
+mail  IN     A      10.129.14.7
+www   IN     CNAME  @
+```
+
+**Reverse Zone File (`db.10.129.14`):** Uses PTR records to resolve the last octet of an IP address back to an FQDN.
+```conf
+$ORIGIN 14.129.10.in-addr.arpa.
+$TTL 86400
+@     IN     SOA    ns1.inlanefreight.htb. admin.inlanefreight.htb. (
+                    2023010501 ; Serial 
+                    ... )
+
+      IN     NS     ns1.inlanefreight.htb.
+5     IN     PTR    inlanefreight.htb.
+2     IN     PTR    ns1.inlanefreight.htb.
+7     IN     PTR    mail.inlanefreight.htb.
+```
+
+---
+
+## 4. Security Risks and Misconfigurations
+
+Administrative oversight prioritizing functionality over security often leads to severe infrastructure vulnerabilities. In BIND9, improper restriction of the following parameters can compromise the network:
+
+*   **`allow-query`**: If unrestrained, it permits external entities to arbitrarily query the server, exposing domain records.
+*   **`allow-recursion`**: Unrestricted recursion allows attackers to utilize the DNS server in distributed reflection denial-of-service (DrDoS) attacks or cache poisoning.
+*   **`allow-transfer`**: If set to `any`, it allows unauthorized clients to perform an Asynchronous Full Transfer Zone (AXFR), downloading the entire zone file and exposing internal network topologies.
+
+---
+
+## 5. Enumeration and Footprinting Methodology
+
+In an auditing or penetration testing context, DNS footprinting involves systematically querying the target's nameservers to map its infrastructure.
+
+### 5.1 Basic Enumeration (DIG)
+Extracting Name Servers (NS) and attempting to uncover all publicly available records:
+
+```bash
+# Querying Name Servers
+MikyRedHat@htb[/htb]$ dig ns inlanefreight.htb @10.129.14.128
+
+# Querying all available records (ANY)
+MikyRedHat@htb[/htb]$ dig any inlanefreight.htb @10.129.14.128
+
+# Querying BIND version via CHAOS class (Useful for vulnerability mapping)
+MikyRedHat@htb[/htb]$ dig CH TXT version.bind 10.129.120.85
+```
+
+### 5.2 Zone Transfer (AXFR)
+If the `allow-transfer` directive is misconfigured, a secondary server (or an attacker) can replicate the entire DNS database.
+
+```bash
+# Attempting a zone transfer on the external domain
+MikyRedHat@htb[/htb]$ dig axfr inlanefreight.htb @10.129.14.128
+
+# Attempting a zone transfer on the internal domain (Often yields Active Directory structures)
+MikyRedHat@htb[/htb]$ dig axfr internal.inlanefreight.htb @10.129.14.128
+```
+
+### 5.3 Subdomain Brute Forcing
+When AXFR fails, standard procedure dictates brute-forcing subdomains using a wordlist (e.g., SecLists) to discover hidden application servers, VPN endpoints, or development environments.
+
+**Using a Bash Loop:**
+```bash
+MikyRedHat@htb[/htb]$ for sub in $(cat /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt); do \
+dig $sub.inlanefreight.htb @10.129.14.128 | grep -v ';\|SOA' | sed -r '/^\s*$/d' | grep $sub | tee -a subdomains.txt; \
+done
+```
+
+**Using Automated Tools (`dnsenum`):**
+```bash
+MikyRedHat@htb[/htb]$ dnsenum --dnsserver 10.129.14.128 --enum -p 0 -s 0 -o subdomains.txt -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt inlanefreight.htb
+```
+
+# Simple Mail Transfer Protocol (SMTP): Architecture & Enumeration
+
+## 1. Overview and Core Concepts
+The **Simple Mail Transfer Protocol (SMTP)** is the standard TCP/IP protocol designated for electronic mail transmission. Operating on a client-server model, SMTP manages the delivery of email from an email client to an outgoing mail server, as well as the routing between different SMTP servers (where a server temporarily acts as a client). SMTP is inherently responsible for *sending* and *forwarding* messages and is universally deployed alongside protocols like **IMAP** or **POP3**, which handle message retrieval.
+
+### 1.1 Standard Port Configuration
+*   **Port 25 (TCP):** The default port for unencrypted, legacy SMTP relaying.
+*   **Port 587 (TCP):** Modern standard used for mail submission by authenticated users. It typically utilizes the `STARTTLS` command to opportunistically upgrade a plaintext connection to a secure SSL/TLS encrypted session.
+*   **Port 465 (TCP):** Deprecated but still encountered port for implicit SSL/TLS encrypted SMTP communication.
+
+### 1.2 Mail Delivery Architecture
+The lifecycle of an email transmission relies on several specialized agents:
+1.  **Mail User Agent (MUA):** The client application (e.g., Thunderbird, Outlook). It constructs the email (Header and Body) and initiates the upload.
+2.  **Mail Submission Agent (MSA):** Often acting as a Relay Server, it validates the email's origin and format before passing it to the MTA.
+3.  **Mail Transfer Agent (MTA):** The core software routing engine (e.g., Postfix, Exim). It evaluates attachments, performs spam filtering, resolves the destination domain via DNS (MX records), and routes the message.
+4.  **Mail Delivery Agent (MDA):** Upon reaching the destination server, the MDA parses the incoming packets, reassembles the email, and delivers it to the designated user mailbox (accessible via IMAP/POP3).
+
+**Transmission Flow:**  
+`Client (MUA) ➞ Submission Agent (MSA) ➞ Transfer Agent (MTA) ➞ Delivery Agent (MDA) ➞ Mailbox`
+
+---
+
+## 2. Inherent Vulnerabilities & ESMTP
+Legacy SMTP transmits data, routing details, and credentials in **plaintext**, presenting a severe security risk if intercepted. Additionally, the protocol suffers from two critical architectural flaws:
+1.  **Lack of Delivery Assurance:** SMTP does not natively enforce structured delivery confirmations. Bounces or failures return as raw, unformatted error messages.
+2.  **Unauthenticated Spoofing (Open Relays):** By default, legacy SMTP does not mandate user authentication. Malicious actors frequently exploit misconfigured servers (Open Relays) to spoof sender addresses (`Mail Spoofing`) and execute massive spam campaigns. 
+
+To mitigate these flaws, modern infrastructure relies on **Extended SMTP (ESMTP)**. ESMTP enforces authentication via the `AUTH PLAIN` extension and encrypts traffic through `STARTTLS`. Furthermore, verification mechanisms like **DomainKeys Identified Mail (DKIM)** and **Sender Policy Framework (SPF)** are implemented to combat domain spoofing and validate sender integrity.
+
+---
+
+## 3. Server Configuration & Dangerous Settings
+
+### 3.1 Analyzing Postfix Default Configuration
+Postfix is a widely deployed MTA. System administrators typically configure its parameters in the `/etc/postfix/main.cf` file. 
+
+```bash
+MikyRedHat@htb[/htb]$ cat /etc/postfix/main.cf | grep -v "#" | sed -r "/^\s*$/d"
+
+smtpd_banner = ESMTP Server 
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+compatibility_level = 2
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+myhostname = mail1.inlanefreight.htb
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+smtp_generic_maps = hash:/etc/postfix/generic
+mydestination = $myhostname, localhost 
+masquerade_domains = $myhostname
+mynetworks = 127.0.0.0/8 10.129.0.0/16
+mailbox_size_limit = 0
+recipient_delimiter = +
+smtp_bind_address = 0.0.0.0
+inet_protocols = ipv4
+smtpd_helo_restrictions = reject_invalid_hostname
+home_mailbox = /home/postfix
+```
+
+### 3.2 The Open Relay Misconfiguration
+A critical finding during internal or external penetration tests is a globally permissive network setting. 
+```bash
+mynetworks = 0.0.0.0/0
+```
+When an administrator lacks granular control over authorized subnets and sets `mynetworks` to `0.0.0.0/0`, the SMTP server explicitly trusts *all* IP addresses. This misconfiguration creates an **Open Relay**, allowing unauthenticated external attackers to route malicious payloads or spoofed emails through the trusted corporate infrastructure.
+
+---
+
+## 4. SMTP Command Reference
+Interaction with an SMTP server requires specific syntax. Below are the standard commands utilized during enumeration and manual relaying:
+
+| Command | Description |
+| :--- | :--- |
+| `AUTH PLAIN` | ESMTP extension used to authenticate the client credentials. |
+| `HELO` / `EHLO` | Initiates the session. `EHLO` is used for ESMTP, prompting the server to list supported extensions. |
+| `MAIL FROM` | Specifies the envelope sender address. |
+| `RCPT TO` | Specifies the envelope recipient address. |
+| `DATA` | Initiates the transmission of the email payload (headers and body). Ends with `<CR><LF>.<CR><LF>`. |
+| `RSET` | Aborts the current transaction without terminating the TCP connection. |
+| `VRFY` | Validates whether a specific user or mailbox exists on the server. |
+| `EXPN` | Expands a mailing list, checking available mailboxes similarly to `VRFY`. |
+| `NOOP` | No Operation. Keeps the session alive to prevent timeout disconnections. |
+| `QUIT` | Gracefully terminates the SMTP session. |
+
+---
+
+## 5. Interaction and User Enumeration (Telnet)
+Manual interaction via `telnet` (or `netcat`) allows an auditor to evaluate the server's banners, supported extensions, and user existence. *Note: When operating through web proxies, the syntax `CONNECT <IP>:<PORT> HTTP/1.0` can be leveraged.*
+
+### 5.1 Banner Grabbing and VRFY Enumeration
+The `VRFY` command is a primary enumeration vector. However, modern MTAs often implement anti-enumeration defenses, returning a generic `252 2.0.0` status code (indicating "cannot verify but will attempt delivery") for both valid and invalid users.
+
+```bash
+MikyRedHat@htb[/htb]$ telnet 10.129.14.128 25
+Trying 10.129.14.128...
+Connected to 10.129.14.128.
+Escape character is '^]'.
+220 ESMTP Server 
+
+EHLO mail1
+250-mail1.inlanefreight.htb
+250-PIPELINING
+250-SIZE 10240000
+250-ETRN
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250-DSN
+250-SMTPUTF8
+250 CHUNKING
+
+VRFY root
+252 2.0.0 root
+
+VRFY aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+252 2.0.0 aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+*Takeaway:* Automated enumeration tools relying solely on status codes may trigger false positives if the server applies generic `252` responses. Manual validation is recommended.
+
+### 5.2 Manual Email Transmission
+Simulating an entire MUA transaction via CLI validates whether the server permits unauthenticated relaying or internal spoofing.
+
+```bash
+MikyRedHat@htb[/htb]$ telnet 10.129.14.128 25
+Trying 10.129.14.128...
+Connected to 10.129.14.128.
+Escape character is '^]'.
+220 ESMTP Server
+
+EHLO inlanefreight.htb
+250-mail1.inlanefreight.htb
+
+MAIL FROM: <cry0l1t3@inlanefreight.htb>
+250 2.1.0 Ok
+
+RCPT TO: <mrb3n@inlanefreight.htb> NOTIFY=success,failure
+250 2.1.5 Ok
+
+DATA
+354 End data with <CR><LF>.<CR><LF>
+From: <cry0l1t3@inlanefreight.htb>
+To: <mrb3n@inlanefreight.htb>
+Subject: DB Access Troubleshooting
+Date: Tue, 28 Sept 2021 16:32:51 +0200
+
+Hey man, I am trying to access our XY-DB but the creds don't work. 
+Did you make any changes there?
+.
+250 2.0.0 Ok: queued as 6E1CF1681AB
+
+QUIT
+221 2.0.0 Bye
+Connection closed by foreign host.
+```
+
+---
+
+## 6. Footprinting with Nmap
+Nmap's NSE (Nmap Scripting Engine) provides dedicated scripts for auditing SMTP deployments.
+
+### 6.1 Capability Enumeration (`smtp-commands`)
+This script executes an `EHLO` to extract the server's supported parameters and extensions, verifying compatibility and potential attack vectors (like `VRFY` or `EXPN` availability).
+
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.14.128 -sC -sV -p 25
+
+Starting Nmap 7.80 ( [https://nmap.org](https://nmap.org) ) at 2021-09-27 17:56 CEST
+Nmap scan report for 10.129.14.128
+Host is up (0.00025s latency).
+
+PORT   STATE SERVICE VERSION
+25/tcp open  smtp    Postfix smtpd
+|_smtp-commands: mail1.inlanefreight.htb, PIPELINING, SIZE 10240000, VRFY, ETRN, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING, 
+MAC Address: 00:00:00:00:00:00 (VMware)
+```
+
+### 6.2 Open Relay Detection (`smtp-open-relay`)
+Running the `smtp-open-relay` script executes 16 rigorous routing tests to determine if the target MTA will indiscriminately forward unauthorized mail. Passing (or in an attacker's view, failing) these checks confirms a critical vulnerability.
+
+```bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.14.128 -p 25 --script smtp-open-relay -v
+
+# [...] Scan initialization omitted for brevity
+Nmap scan report for 10.129.14.128
+Host is up (0.00020s latency).
+
+PORT   STATE SERVICE
+25/tcp open  smtp
+| smtp-open-relay: Server is an open relay (16/16 tests)
+|  MAIL FROM:<> -> RCPT TO:<relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@nmap.scanme.org> -> RCPT TO:<relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@ESMTP> -> RCPT TO:<relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<relaytest%nmap.scanme.org@[10.129.14.128]>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<relaytest%nmap.scanme.org@ESMTP>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<"relaytest@nmap.scanme.org">
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<"relaytest%nmap.scanme.org">
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<relaytest@nmap.scanme.org@[10.129.14.128]>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<"relaytest@nmap.scanme.org"@[10.129.14.128]>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<relaytest@nmap.scanme.org@ESMTP>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<@[10.129.14.128]:relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<@ESMTP:relaytest@nmap.scanme.org>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<nmap.scanme.org!relaytest>
+|  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<nmap.scanme.org!relaytest@[10.129.14.128]>
+|_ MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<nmap.scanme.org!relaytest@ESMTP>
+```
+
+# Email Services Protocol Analysis: IMAP & POP3
+
+## 1. Protocol Architecture & Overview
+
+When managing email delivery and retrieval, two primary network protocols govern how a Mail User Agent (MUA) interacts with the mail server: the **Internet Message Access Protocol (IMAP)** and the **Post Office Protocol (POP3)**. 
+
+### 1.1 IMAP (Internet Message Access Protocol)
+IMAP is a stateful, client-server protocol designed for the online management of emails directly on a remote server. It functions similarly to a network file system for emails, allowing seamless synchronization across multiple independent clients. 
+* **Key Features:** Supports hierarchical folder structures, remote message manipulation (reading, deleting, moving) without downloading the entire payload, and simultaneous multi-client access.
+* **State & Synchronization:** Emails remain on the server until explicitly deleted. While primarily requiring an active connection, modern MUAs support offline caching, synchronizing changes once the connection is re-established.
+* **Ports:** 
+  * `143/TCP` (Unencrypted or STARTTLS)
+  * `993/TCP` (IMAPS - Implicit SSL/TLS)
+
+### 1.2 POP3 (Post Office Protocol version 3)
+In contrast, POP3 is a simpler, stateless protocol designed primarily for retrieving and subsequently deleting emails from the server.
+* **Key Features:** Limited to listing, retrieving, and deleting messages. It lacks the advanced synchronization and server-side folder management inherent to IMAP.
+* **Ports:** 
+  * `110/TCP` (Unencrypted or STARTTLS)
+  * `995/TCP` (POP3S - Implicit SSL/TLS)
+
+---
+
+## 2. Authentication & Security Implications
+
+By default, standard IMAP and POP3 protocols operate over unencrypted channels, transmitting commands, payloads, and authentication credentials (usernames/passwords) in cleartext ASCII format. To mitigate packet sniffing and unauthorized access, modern infrastructure enforces encrypted sessions using SSL/TLS wrappers (IMAPS/POP3S) or the `STARTTLS` command to upgrade plaintext connections.
+
+### 2.1 Dangerous Configurations (Dovecot)
+In enterprise environments, third-party mail solutions (Google Workspace, Microsoft 365) are standard, but legacy or privacy-focused organizations often maintain on-premise mail servers (e.g., using `dovecot-imapd` and `dovecot-pop3d`). Misconfigurations in these services can lead to severe information disclosure. 
+
+Notable `dovecot.conf` misconfigurations include:
+
+| Configuration Directive | Security Impact & Description |
+| :--- | :--- |
+| `auth_debug` | Enables comprehensive authentication debug logging, potentially leaking sensitive operational flow. |
+| `auth_debug_passwords` | Adjusts log verbosity to include submitted plaintext passwords and the authentication scheme used. |
+| `auth_verbose` | Logs unsuccessful authentication attempts and detailed failure reasons, aiding in user enumeration. |
+| `auth_verbose_passwords` | Logs the exact passwords used for authentication (often truncated, but still highly sensitive). |
+| `auth_anonymous_username` | Specifies the username mapped when logging in via the `ANONYMOUS` SASL mechanism, potentially allowing unauthorized mailbox access. |
+
+---
+
+## 3. Protocol Command Reference
+
+Communication with these servers relies on text-based commands. In IMAP, commands are typically prefixed with a unique identifier (e.g., `1`, `A001`) to asynchronously map server responses to client requests.
+
+### 3.1 IMAP Commands
+
+| Command Syntax | Technical Description |
+| :--- | :--- |
+| `1 LOGIN <username> <password>` | Authenticates the user session. |
+| `1 LIST "" *` | Enumerates all available directories/mailboxes. |
+| `1 CREATE "INBOX"` | Provisions a new mailbox with the specified name. |
+| `1 DELETE "INBOX"` | Removes a specified mailbox. |
+| `1 RENAME "ToRead" "Important"` | Modifies the name of an existing mailbox. |
+| `1 LSUB "" *` | Returns a subset of mailboxes the user has subscribed to or declared active. |
+| `1 SELECT INBOX` | Mounts a specific mailbox to access its messages. |
+| `1 UNSELECT INBOX` | Unmounts the currently selected mailbox. |
+| `1 FETCH <ID> all` | Retrieves the payload and metadata associated with a specific message ID. |
+| `1 CLOSE` | Purges all messages flagged for deletion in the currently selected mailbox. |
+| `1 LOGOUT` | Gracefully terminates the IMAP session. |
+
+### 3.2 POP3 Commands
+
+| Command Syntax | Technical Description |
+| :--- | :--- |
+| `USER <username>` | Submits the username identifier. |
+| `PASS <password>` | Authenticates the session using the corresponding password. |
+| `STAT` | Queries the server for the total number of stored emails and overall size. |
+| `LIST` | Enumerates message IDs and their respective sizes. |
+| `RETR <id>` | Retrieves the full payload of the specified message ID. |
+| `DELE <id>` | Flags the specified message ID for deletion. |
+| `CAPA` | Queries the server's supported capabilities and extensions. |
+| `RSET` | Resets the current session state, unflagging any messages marked for deletion. |
+| `QUIT` | Gracefully terminates the POP3 session. |
+
+---
+
+## 4. Footprinting and Enumeration Methodology
+
+During an engagement, analyzing the mail server's footprint allows auditors to map available capabilities, extract software versions (banner grabbing), and validate TLS configurations.
+
+### 4.1 Port Scanning & Capability Enumeration (Nmap)
+Leverage Nmap's default scripts to extract server capabilities and SSL/TLS certificate metadata.
+
+```bash
+# Nmap scan against standard IMAP/POP3 ports
+sudo nmap 10.129.14.128 -sV -p110,143,993,995 -sC
+
+# Output Snippet Analysis:
+# 110/tcp open  pop3      Dovecot pop3d
+# |_pop3-capabilities: AUTH-RESP-CODE SASL STLS TOP UIDL RESP-CODES CAPA PIPELINING
+# 143/tcp open  imap      Dovecot imapd
+# |_imap-capabilities: more have post-login STARTTLS Pre-login capabilities...
+```
+*Reconnaissance takeaway:* Certificate Subject details (e.g., `commonName=mail1.inlanefreight.htb`) often reveal internal domain structures and organizational data.
+
+### 4.2 Banner Grabbing and Application Interaction (cURL)
+`cURL` can be utilized to test authentication and inspect TLS handshakes natively.
+
+```bash
+# Basic authentication and mailbox enumeration
+curl -k 'imaps://10.129.14.128' --user user:p4ssw0rd
+
+# Verbose execution for TLS/SSL certificate inspection and Banner Grabbing
+curl -k 'imaps://10.129.14.128' --user robin:robin -v
+```
+
+### 4.3 Manual Secure Interaction (OpenSSL)
+To manually interact with the services over SSL-encrypted channels (simulating an MUA), utilize the `openssl s_client` module. This is critical for testing commands interactively once valid credentials (e.g., `robin:robin` obtained via SMTP enumeration) are acquired.
+
+**Connecting to POP3S (Port 995):**
+```bash
+openssl s_client -connect 10.129.14.128:995
+# Wait for the handshake to complete and the server banner:
+# +OK HTB-Academy POP3 Server
+```
+
+**Connecting to IMAPS (Port 993):**
+```bash
+openssl s_client -connect 10.129.14.128:993
+# Wait for the handshake to complete and the server banner:
+# * OK [CAPABILITY IMAP4rev1 SASL-IR LOGIN-REFERRALS ID ENABLE IDLE LITERAL+ AUTH=PLAIN] HTB-Academy IMAP4 v.0.21.4
+```
+*Note:* Once connected, you can manually issue the IMAP or POP3 commands documented in Section 3 to navigate the mailbox, read sensitive correspondence, or retrieve target data.
+
