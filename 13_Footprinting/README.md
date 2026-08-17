@@ -495,7 +495,7 @@ A modernized, Python3 rewrite of the legacy `enum4linux` tool. It automates RPC,
 # Network File System (NFS): Architecture, Configuration, and Enumeration
 
 ## 1. Overview
-The Network File System (NFS), originally developed by Sun Microsystems, is a distributed file system protocol designed to allow client systems to access directories and files over a network as if they were mounted on local storage. While serving a similar purpose to Server Message Block (SMB), NFS relies on an entirely different underlying protocol and is the standard standard for Linux and UNIX-based architectures. Consequently, native direct communication between NFS clients and SMB servers is not inherently supported.
+The Network File System (NFS), originally developed by Sun Microsystems, is a distributed file system protocol designed to allow client systems to access directories and files over a network as if they were mounted on local storage. While serving a similar purpose to Server Message Block (SMB), NFS relies on an entirely different underlying protocol and is the standard for Linux and UNIX-based architectures. Consequently, native direct communication between NFS clients and SMB servers is not inherently supported.
 
 NFS relies on the Open Network Computing Remote Procedure Call (ONC-RPC/SUN-RPC) protocol, operating primarily over TCP and UDP port 111. It utilizes External Data Representation (XDR) to ensure system-independent data exchange. 
 
