@@ -965,6 +965,43 @@ PORT   STATE SERVICE
 |  MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<nmap.scanme.org!relaytest@[10.129.14.128]>
 |_ MAIL FROM:<antispam@[10.129.14.128]> -> RCPT TO:<nmap.scanme.org!relaytest@ESMTP>
 ```
+## 7. Advanced User Enumeration: The RCPT TO Fallback Method
+
+During penetration tests, standard enumeration commands like `VRFY` and `EXPN` are frequently disabled by system administrators to prevent directory harvesting attacks. In such fortified environments, automated tools relying on these commands will yield false negatives (zero results), especially when coupled with rate-limiting or high-latency responses from the server.
+
+When `VRFY` fails, the optimal fallback strategy is to abuse the `RCPT TO` command. Because a Mail Transfer Agent (MTA) is strictly required to process destination addresses to route email, this method is significantly harder to mitigate without breaking core mail routing functionality.
+
+### 7.1 Automated Execution via smtp-user-enum
+To prevent premature TCP connection drops caused by server-side latency or rate-limiting, it is critical to increase the default query timeout. The `-M RCPT` flag shifts the tool's behavior to simulate a legitimate mail transaction (`MAIL FROM` followed by `RCPT TO`).
+
+```bash
+# Execute enumeration with the RCPT method and a 15-second timeout threshold
+MikyRedHat@htb[/htb]$ smtp-user-enum -M RCPT -U /path/to/wordlist.txt -t <TARGET_IP> -w 15
+```
+*Technical Note: The tool analyzes the server's HTTP/SMTP response codes. A `250 2.1.5 Ok` confirms a valid mailbox, whereas a `550 5.1.1 User unknown` indicates an invalid user.*
+
+### 7.2 Manual Validation (Telnet)
+If automated tools fail or require verification to eliminate false positives, the process can be manually executed by initializing an ESMTP session.
+
+```bash
+MikyRedHat@htb[/htb]$ telnet <TARGET_IP> 25
+Trying <TARGET_IP>...
+Connected to <TARGET_IP>.
+
+EHLO inlanefreight.htb
+250-mail1.inlanefreight.htb
+
+MAIL FROM: <auditor@inlanefreight.htb>
+250 2.1.0 Ok
+
+# 1. Testing an invalid user address
+RCPT TO: <nonexistent_user@inlanefreight.htb>
+550 5.1.1 <nonexistent_user@inlanefreight.htb>: Recipient address rejected: User unknown in local recipient table
+
+# 2. Testing a valid user address (Target confirmed)
+RCPT TO: <valid_user@inlanefreight.htb>
+250 2.1.5 Ok
+```
 
 # Email Services Protocol Analysis: IMAP & POP3
 
