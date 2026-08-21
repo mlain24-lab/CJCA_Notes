@@ -1213,8 +1213,8 @@ Once a valid community string is compromised, `braa` acts as an ultra-fast mass 
 
     10.129.14.128:20ms:.1.3.6.1.2.1.1.1.0:Linux htb 5.11.0-34-generic
     10.129.14.128:20ms:.1.3.6.1.2.1.1.4.0:mrb3n@inlanefreight.htb
-
-    # MySQL: Architecture, Enumeration, and Security Auditing
+    
+# MySQL: Architecture, Enumeration, and Security Auditing
 
 ## 1. Overview and Architecture
 MySQL is a highly performant, open-source Relational Database Management System (RDBMS) currently backed by Oracle. It operates on a client-server architecture, comprising the MySQL server (the core database engine responsible for data storage, processing, and distribution) and multiple MySQL clients.
@@ -1249,6 +1249,7 @@ port        = 3306
 basedir     = /usr
 datadir     = /var/lib/mysql
 tmpdir      = /tmp
+
 
 # Microsoft SQL Server (MSSQL): Architecture, Configuration, and Enumeration Methodology
 
