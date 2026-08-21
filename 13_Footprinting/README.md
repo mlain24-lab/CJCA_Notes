@@ -1213,6 +1213,35 @@ Once a valid community string is compromised, `braa` acts as an ultra-fast mass 
 
     10.129.14.128:20ms:.1.3.6.1.2.1.1.1.0:Linux htb 5.11.0-34-generic
     10.129.14.128:20ms:.1.3.6.1.2.1.1.4.0:mrb3n@inlanefreight.htb
+
+# SNMP OID Resolution and Braa Enumeration
+
+## Overview
+`braa` is an ultra-fast mass SNMP scanner that implements its own lightweight SNMP stack without relying on standard Net-SNMP libraries. Due to its minimalist design, `braa` **does not include an ASN.1 parser**, which requires operators to supply explicit numerical Object Identifiers (OIDs) rather than symbolic names (e.g., `.1.3.6.1.2.1.1.5.0` instead of `system.sysName.0`).
+
+## Methods to Determine Numerical OIDs
+
+1. **Using Common/Standard OID References:**
+   For typical security assessments, specific system branches are universally targeted based on standard MIB-2 and Host-Resources-MIB definitions:
+   - System Information: `.1.3.6.1.2.1.1`
+   - Network Interfaces: `.1.3.6.1.2.1.2`
+   - Running Processes: `.1.3.6.1.2.1.25.4.2.1.2`
+   - Installed Software: `.1.3.6.1.2.1.25.6.3.1.2`
+
+2. **Translating Symbolic Names via `snmptranslate`:**
+   When a specific MIB object name is known but its numerical OID is required, use the `snmptranslate` utility from the `snmp` package to query the local MIB database:
+
+    snmptranslate -On -m ALL system.sysName.0
+
+3. **Performing Broad Tree Walking with Wildcards:**
+   If the exact leaf node is unknown, `braa` supports wildcard syntax (`*`) to traverse entire subtrees asynchronously:
+
+    braa public@10.129.129.6:.1.3.6.1.2.1.25.*
+
+## Execution Example with Braa
+To query a specific OID branch or perform a targeted walk using `braa`:
+
+    braa public@10.129.129.6:.1.3.6.1.2.1.25.4.2.1.2.*
     
 # MySQL: Architecture, Enumeration, and Security Auditing
 
