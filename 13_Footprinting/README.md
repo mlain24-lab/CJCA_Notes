@@ -1351,6 +1351,25 @@ MySQL [sys]> select host, unique_users from host_summary;
 | localhost   |            2 |
 +-------------+--------------+
 ~~~
+# MySQL Client Interoperability: Bypassing SSL Restrictions on Kali Linux
+
+## Environment Context & Issue Identification
+During the execution of the certificate validation bypass using the `--ssl-mode=SKIP_VERIFY` flag, the client returned a fatal error: `mysql: unknown variable 'ssl-mode=SKIP_VERIFY'`.
+
+**Root Cause:** Kali Linux distributions ship with the **MariaDB** client by default, which is aliased to the `mysql` command. The MariaDB command-line utility utilizes a different parameter syntax than the official Oracle MySQL client and does not recognize the `--ssl-mode` variable.
+
+## Resolution Phase
+To resolve this compatibility issue and successfully bypass the self-signed certificate restriction using the native Kali Linux client, apply one of the following methods.
+
+### Method 1: Disabling SSL Entirely (Primary Approach)
+If the target MySQL server is not strictly configured to enforce encrypted transport, the most efficient approach is to instruct the MariaDB client to connect via plaintext, completely bypassing the SSL handshake.
+
+    mysql -u robin -probin -h 10.129.132.31 --skip-ssl
+
+### Method 2: Disabling Certificate Verification (Forced SSL Environments)
+If the target server mandates SSL connections (`require_secure_transport=ON`), the connection cannot be downgraded to plaintext. Instead, you must instruct the MariaDB client to utilize SSL but explicitly ignore the certificate validation.
+
+    mysql -u robin -probin -h 10.129.132.31 --ssl --ssl-verify-server-cert=false
 
 # Microsoft SQL Server (MSSQL): Architecture, Configuration, and Enumeration Methodology
 
