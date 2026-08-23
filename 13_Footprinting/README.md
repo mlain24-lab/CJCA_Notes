@@ -1262,9 +1262,10 @@ MySQL clients interface with the database engine by transmitting Structured Quer
 Database administration requires meticulous configuration management. The primary configuration file on Linux environments is typically located at `/etc/mysql/mysql.conf.d/mysqld.cnf`.
 
 ### Default Configuration Analysis
-```bash
+
+~~~bash
 # Extracting active configurations (ignoring comments and empty lines)
-MikyRedHat@htb[/htb]$ cat /etc/mysql/mysql.conf.d/mysqld.cnf \vert{} grep -v "#" \vert{} sed -r '/^\s*$/d'
+MikyRedHat@htb[/htb]$ cat /etc/mysql/mysql.conf.d/mysqld.cnf | grep -v "#" | sed -r '/^\s*$/d'
 
 [client]
 port        = 3306
@@ -1278,7 +1279,78 @@ port        = 3306
 basedir     = /usr
 datadir     = /var/lib/mysql
 tmpdir      = /tmp
+~~~
 
+### Critical Misconfigurations
+A compromised server or Local File Inclusion (LFI) vulnerability can expose the MySQL configuration files. If permissions are improperly restricted, threat actors can extract plain-text credentials or exploit verbose debugging variables.
+
+*   **`user`**: Defines the system account executing the MySQL daemon.
+*   **`password`**: Hardcoded service passwords (highly critical if exposed).
+*   **`admin_address`**: The specific network interface bound for administrative TCP/IP connections.
+*   **`debug` & `sql_warnings`**: If enabled in a production environment, these cause information disclosure by outputting verbose backend errors directly to the web application. This data is frequently leveraged by attackers to map database structures for SQL Injection (SQLi) attacks.
+*   **`secure_file_priv`**: Restricts data import/export operations (e.g., `LOAD DATA INFILE`). If misconfigured or disabled, it can lead to arbitrary file reads or remote code execution (RCE).
+
+## 4. Service Footprinting and Enumeration
+In secure environments, MySQL (default **TCP Port 3306**) should never be exposed to the public internet. However, temporary workarounds or administrative oversights often leave this port open.
+
+### Nmap Scanning
+To enumerate an exposed MySQL service, utilize Nmap's default scripting engine (`-sC`) and version detection (`-sV`).
+
+~~~bash
+MikyRedHat@htb[/htb]$ sudo nmap 10.129.14.128 -sV -sC -p3306 --script mysql*
+
+PORT     STATE SERVICE      VERSION
+3306/tcp open  mysql        MySQL 8.0.26-0ubuntu0.20.04.1
+| mysql-enum:
+|   Valid usernames:
+|     root:<empty> - Valid credentials
+|     admin:<empty> - Valid credentials
+| mysql-info:
+|   Protocol: 10
+|   Version: 8.0.26-0ubuntu0.20.04.1
+|   Thread ID: 13
+|_  Auth Plugin Name: caching_sha2_password
+~~~
+
+*Note: Always manually verify automated scan results. Nmap scripts may flag false positives (e.g., indicating an empty root password when a fixed password is actually enforced).*
+
+## 5. Command-Line Interaction
+If valid credentials are obtained (via enumeration, brute-forcing, or configuration file extraction), you can authenticate and interact with the database engine.
+
+~~~bash
+# Authenticate to a remote MySQL server
+# Note: Do NOT append a space between the '-p' flag and the password.
+MikyRedHat@htb[/htb]$ mysql -u root -pP4SSw0rd -h 10.129.14.128
+~~~
+
+### Essential Administrative Queries
+Once authenticated, the following SQL statements are standard for navigating and dumping database contents:
+
+| Query | Technical Description |
+| :--- | :--- |
+| `show databases;` | Lists all available databases within the server instance. |
+| `use <database>;` | Selects a specific database as the current working context. |
+| `show tables;` | Enumerates all tables within the currently selected database. |
+| `show columns from <table>;` | Displays column headers and data types for a specific table. |
+| `select * from <table>;` | Retrieves all records/rows from the specified table. |
+| `select * from <table> where <column> = "<string>";` | Executes a targeted query to filter and extract specific string values. |
+| `select version();` | Outputs the current MySQL/MariaDB version. |
+
+### System Databases
+By default, MySQL contains built-in administrative databases:
+*   **`information_schema`**: A standardized (ANSI/ISO) database containing metadata about all other databases, tables, and columns.
+*   **`sys`**: A MySQL-specific system catalog containing performance metrics, active sessions, and internal engine configurations.
+
+~~~sql
+MySQL [(none)]> use sys;
+MySQL [sys]> select host, unique_users from host_summary;
++-------------+--------------+
+| host        | unique_users |
++-------------+--------------+
+| 10.129.14.1 |            1 |
+| localhost   |            2 |
++-------------+--------------+
+~~~
 
 # Microsoft SQL Server (MSSQL): Architecture, Configuration, and Enumeration Methodology
 
