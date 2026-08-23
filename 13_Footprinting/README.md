@@ -1469,7 +1469,7 @@ Upon acquiring valid credentials, `mssqlclient.py` enables direct interaction wi
     msdb                                                                                                                             
     Transactions
 
-    # Oracle TNS (Transparent Network Substrate) Enumeration & Exploitation
+# Oracle TNS (Transparent Network Substrate) Enumeration & Exploitation
 
 ## Overview
 The Oracle Transparent Network Substrate (TNS) is a proprietary communication protocol designed to facilitate secure and efficient interaction between Oracle databases and client applications over networks. Originally introduced as a core component of the Oracle Net Services suite, TNS supports multiple networking protocols, including IPX/SPX and TCP/IP stacks. Its robust architecture—featuring built-in encryption, load balancing, and fault tolerance—makes it an industry standard for managing complex databases in highly regulated sectors such as healthcare and finance.
