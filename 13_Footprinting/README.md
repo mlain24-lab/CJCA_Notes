@@ -1469,6 +1469,50 @@ Upon acquiring valid credentials, `mssqlclient.py` enables direct interaction wi
     msdb                                                                                                                             
     Transactions
 
+# Interacting and Enumerating Microsoft SQL Server via Impacket mssqlclient
+
+## Overview
+During penetration testing and internal security assessments, interacting with Microsoft SQL Server (MSSQL) instances often requires leveraging the `impacket-mssqlclient` utility. This document outlines the correct execution syntax, distinction between local and remote operations, database enumeration methodologies, and common Transact-SQL (T-SQL) syntax considerations.
+
+---
+
+## 1. Establishing the Database Connection
+To connect to an MSSQL instance using Windows Authentication via Impacket's wrapper script, invoke the utility from the global system path:
+
+    impacket-mssqlclient backdoor@10.129.132.48 -windows-auth
+
+Upon successful authentication, the utility enters an interactive shell session, yielding a command prompt displaying the current database context (e.g., `SQL (ILF-SQL-01\backdoor dbo@master)>`).
+
+---
+
+## 2. Database Enumeration and Filtering
+By default, standard system databases (`master`, `tempdb`, `model`, `msdb`) are pre-allocated. To identify custom or non-default user databases created on the instance, operators can query the `sys.databases` catalog view.
+
+### Querying Non-Default Databases
+System databases occupy identifier slots 1 through 4. Filtering by `database_id > 4` isolates user-created databases:
+
+    SELECT name FROM sys.databases WHERE database_id > 4;
+
+---
+
+## 3. Context Switching and Schema Inspection
+Once a target database (e.g., `Employees`) is identified, switch the active execution context to inspect internal objects and tables.
+
+### Switching Database Context
+    USE Employees;
+
+### Enumerating Tables
+To list all base tables within the current database schema, query the `INFORMATION_SCHEMA` metadata views:
+
+    SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';
+
+---
+
+## 4. Common Pitfalls and Syntax Differences
+
+* **Local vs. Remote Navigation:** The `lcd` (Local Change Directory) command built into Impacket is designed to modify the local attacking machine's working directory, not the database structure. Attempting to change database contexts using `lcd` results in a `FileNotFoundError`.
+* **SQL Dialect Variations:** Standard MySQL commands such as `SHOW DATABASES;` are invalid in Microsoft SQL Server. T-SQL requires querying system catalogs like `sys.databases` or using built-in utility commands like `enum_db`.
+
 # Oracle TNS (Transparent Network Substrate) Enumeration & Exploitation
 
 ## Overview
