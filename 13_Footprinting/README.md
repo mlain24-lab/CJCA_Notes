@@ -1876,6 +1876,41 @@ There is no definitive patch for this vulnerability, as it is a core feature of 
 
 For a penetration tester, compromising a BMC often yields lateral movement opportunities. It is common to discover that a crackable IPMI password has been aggressively reused by administrators across other critical infrastructure components, granting unauthorized root access to internal servers and network monitoring tools.
 
+# Practical Lab: IPMI Enumeration and RAKP Password Cracking
+
+## 1. Overview
+This documentation outlines the practical workflow for auditing Intelligent Platform Management Interface (IPMI) services exposed over UDP port 623. By leveraging architectural flaws in the IPMI 2.0 Remote Access Key Exchange Protocol (RAKP), an assessor can request and capture password hashes for valid BMC accounts without prior authentication, subsequently performing offline dictionary attacks.
+
+## 2. Hash Extraction Phase
+During the reconnaissance phase, target systems running Baseboard Management Controllers (BMCs) can be probed to extract RAKP password hashes using automated Metasploit modules.
+
+    use auxiliary/scanner/ipmi/ipmi_dumphashes
+    set RHOSTS <target_ip>
+    run
+
+The extracted hash format includes the username, salt, and HMAC-SHA1 challenge-response strings required for offline cracking via Hashcat (Mode 7300).
+
+## 3. Offline Password Cracking via Hashcat
+Rather than executing resource-intensive brute-force mask attacks, standard administrative or default passwords can be efficiently recovered using a dictionary-based attack against the captured hash file (`ipmi.txt`).
+
+    hashcat -m 7300 ipmi.txt /usr/share/wordlists/rockyou.txt -O
+
+* **Hash Mode:** `7300` (IPMI2 RAKP HMAC-SHA1)
+* **Wordlist:** `/usr/share/wordlists/rockyou.txt`
+* **Optimized Flag (`-O`):** Applied to accelerate kernel performance on local hardware.
+
+### Lab Result
+Executing the dictionary attack successfully recovered the plaintext password for the target account:
+
+    # Cracked Credential Example:
+    Target Hash: 263cd2ad0201...
+    Recovered Password: trinity
+
+## 4. Security Impact and Mitigation
+Recovering valid BMC credentials grants high-level authorization (equivalent to physical access), enabling remote power management, BIOS configuration modifications, and potential lateral movement across critical infrastructure if passwords are reused. 
+
+**Remediation:** Enforce strict network segmentation (restricting UDP 623 access to authorized management VLANs only) and enforce strong, non-dictionary passwords exceeding standard complexity requirements.
+
 # Linux Remote Management Protocols: Security & Auditing Guide
 
 ## Introduction to Remote Systems Management
