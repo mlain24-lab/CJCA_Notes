@@ -1720,6 +1720,74 @@ Verify the successful upload via a standard HTTP GET request:
 ```bash
 curl -X GET [http://10.129.204.235/testing.txt](http://10.129.204.235/testing.txt)
 ```
+# Oracle Database Attacking Tool (ODAT) Installation and Configuration Guide for Modern Kali Linux
+
+## Overview
+The Oracle Database Attacking Tool (ODAT) is an open-source penetration testing framework engineered to audit, enumerate, and exploit vulnerabilities within Oracle RDBMS architectures. Because modern Linux distributions enforce PEP 668 externally-managed environment restrictions and deprecate legacy modules in contemporary Python runtimes, deploying ODAT requires a structured approach utilizing isolated virtual environments, specific build tools, and compatibility packages.
+
+This documentation outlines the definitive installation procedure for deploying ODAT on modern Kali Linux distributions (incorporating `libaio1t64`, compatibility bindings for Python runtimes, and optimized dependency resolution).
+
+---
+
+## System Prerequisites
+
+Before deploying ODAT, ensure that the operating system packages, compilation tools, and shared database client libraries are fully updated.
+
+### 1. System Package Installation
+Install the necessary system dependencies, development headers, and time64-compatible asynchronous input/output libraries:
+
+    sudo apt-get update
+    sudo apt-get install -y build-essential python3-dev libaio1t64 python3-scapy libgmp-dev python3-venv wget git
+
+---
+
+## Deployment Workflow
+
+To maintain system integrity and comply with modern Python packaging standards, all Python-based components and dependencies must be installed within a dedicated virtual environment.
+
+### 1. Establishing an Isolated Virtual Environment
+Create and activate a local Python virtual environment in your home directory:
+
+    cd ~
+    python3 -m venv odat_env
+    source odat_env/bin/activate
+    pip install --upgrade pip
+
+### 2. Installing Build Utilities and Cx_Oracle
+Install a compatible version of `setuptools` and the `wheel` compilation package, followed by the database connectivity driver (`cx_Oracle`) using non-isolated build flags:
+
+    pip install "setuptools==68.2.2" wheel
+    pip install --no-build-isolation cx_Oracle==8.3.0
+
+### 3. Cloning the ODAT Repository
+Clone the official upstream ODAT repository from GitHub and initialize its submodules:
+
+    cd ~
+    rm -rf odat
+    git clone [https://github.com/quentinhardy/odat.git](https://github.com/quentinhardy/odat.git)
+    cd odat/
+    git submodule init
+    git submodule update
+
+### 4. Installing Framework Dependencies
+Install all required third-party Python modules, including `pyasyncore` to ensure complete runtime compatibility with modern Python versions:
+
+    pip install colorlog termcolor passlib python-libnmap pycryptodome openpyxl pyasyncore
+
+---
+
+## Verification and Execution
+
+To verify that the framework is correctly deployed and operational, invoke the tool's help menu:
+
+    python odat.py -h
+
+### Operational Note
+Whenever you open a new terminal session to perform security audits, remember to activate the virtual environment and navigate to the application directory before execution:
+
+    source ~/odat_env/bin/activate
+    cd ~/odat
+    python odat.py all -s <TARGET_IP>
 
 # Intelligent Platform Management Interface (IPMI): Protocol Analysis and Security Auditing
 
