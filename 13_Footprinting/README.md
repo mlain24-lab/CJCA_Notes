@@ -2282,3 +2282,35 @@ With administrative database credentials harvested, we targeted the local Micros
 *   **Credential Hygiene:** Prohibit the storage of plain-text credentials, configuration files, and chat logs containing operational passwords on shared network resources or file systems.
 *   **Database Least Privilege:** Enforce strict access control lists (ACLs) on database instances, ensuring that application accounts cannot inherit or leverage over-privileged service roles (`sa`).
 
+# Technical Documentation: NIXHARD Lab Footprinting & Enumeration Roadmap
+
+This document outlines the systematic penetration testing and footprinting methodology applied against the NIXHARD target (a secondary backup and mail server within an enterprise environment). 
+
+## 1. Network Reconnaissance and Port Scanning
+
+* **Initial TCP Footprinting:** Enumeration of standard TCP services (`SSH`, `POP3`, `IMAP`). Initial credential reuse attempts against known user accounts (`alex`, `ceil`) failed, triggering server-side defensive rate-limiting mechanisms (e.g., `Too many invalid IMAP commands`).
+* **UDP Port Discovery:** Due to limited exposed TCP attack surface, scanning vectors were expanded to the UDP layer.
+* **Service Identification:** Successfully identified the active **161/UDP (SNMP)** service, representing a high-value entry point for configuration and management auditing.
+
+## 2. SNMP Enumeration and Community String Discovery
+
+* **Community String Fuzzing:** Deployed high-speed brute-forcing via `onesixtyone` utilizing customized discovery wordlists.
+* **Successful Identification:** Isolated the active SNMP community string (`backup`), exploiting default naming conventions common in backup infrastructure.
+* **MIB Tree Extraction:** Dumped system variables via `snmpwalk`, revealing internal file paths (e.g., `/opt/tom-recovery.sh`) and leaking temporary plaintext credentials (`tom` / `NMds732Js2761`).
+
+## 3. Mailbox Pivoting and Initial Access
+
+* **POP3 Authentication:** Established a direct TCP session to the POP3 service (Port 110) utilizing the harvested credentials for the user `tom`.
+* **Data Retrieval:** Queried internal mail drops (`RETR 1`), extracting an embedded **OpenSSH Private Key** from the retrieved administrative messages.
+* **SSH Authentication:** Configured local identity files with strict permissions (`chmod 600`), successfully establishing an interactive SSH session as the user `tom`.
+
+## 4. Local Enumeration and History Analysis
+
+* **System Footprinting:** Inspected directory structures (`/home`, `/opt`), confirming the absence of direct elevated privileges (`sudo` restrictions).
+* **Shell History Audit:** Analyzed the `.bash_history` file belonging to user `tom`, identifying recurrent administrative interactions with the local **MySQL** database service.
+
+## 5. Database Exploitation and Credential Harvesting
+
+* **Database Authentication:** Connected to the local MySQL database instance leveraging previously validated credentials.
+* **Schema Enumeration:** Listed available databases (`SHOW DATABASES`) and queried the `users` table within the corresponding schema.
+* **Credential Extraction:** Isolated the target record associated with the `HTB` account, successfully retrieving its plaintext authentication token/flag (`cr3n4o7rzse7rzhnckhssncif7ds`) to finalize the engagement.
