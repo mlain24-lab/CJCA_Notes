@@ -2205,3 +2205,80 @@ Upon authenticating to the custom FTP service (`2121/tcp`) using valid user cred
 *   **Service Isolation:** Ensure non-standard management or file-transfer ports (such as FTP on `2121`) are disabled or properly firewalled if not required for operational workflows.
 *   **SSH Key Hygiene:** Prevent storage of unencrypted private keys within accessible user directories or network-shared repositories. Enforce robust passphrase protection on all operational SSH keys.
 *   **DNS Security Controls:** Restrict unauthenticated DNS zone transfers (`AXFR`) to authorized secondary nameservers only, mitigating internal topology disclosure risks.
+
+# Technical Documentation: Windows Internal Footprinting, SMB Enumeration, and Database Harvesting
+
+## 1. Executive Summary & Scope
+Following initial reconnaissance of the internal Inlanefreight infrastructure, our engagement expanded to a secondary Windows-based target (`10.129.138.132`) accessible across the internal network. Because such multi-service endpoints represent primary pivoting vectors for lateral movement, we performed comprehensive service profiling. The objective was to uncover misconfigured file shares, escalate privileges, and extract specific database credentials belonging to the designated target user `HTB` to validate security controls.
+
+---
+
+## 2. Reconnaissance & Port Discovery
+To accurately map the attack surface without triggering production disruptions, we initiated an aggressive full TCP port scan using Nmap.
+
+### Target Specifications
+*   **Target IP:** `10.129.138.132`
+*   **Identified Core Services:**
+    *   `111/tcp` - RPCBind / Portmapper (Indicating active NFS mapping)
+    *   `135/tcp` - Microsoft RPC Endpoint Mapper
+    *   `139/445/tcp` - Server Message Block (SMB)
+    *   `3389/tcp` - Remote Desktop Protocol (RDP)
+    *   `5985/tcp` - Windows Remote Management (WinRM)
+    *   Dynamic RPC ports (`49664` - `49681`)
+
+---
+
+## 3. NFS Export Enumeration & Initial Harvest
+Given the exposure of port 111, we queried the target for Network File System (NFS) shares to identify unauthenticated resource accessibility.
+
+### Execution & Mounting Workflow
+1.  **Export Enumeration:** Checked available NFS shares using network mapping utilities:
+    ```bash
+    showmount -e 10.129.138.132
+    ```
+    *Result:* Identified the publicly exported share `/TechSupport`.
+2.  **Local Mounting:** Mounted the target share onto the Kali Linux workstation to inspect file contents:
+    ```bash
+    sudo mkdir -p /mnt/nfs_tech
+    sudo mount -t nfs 10.129.138.132:/TechSupport /mnt/nfs_tech -o nolock
+    ```
+3.  **Intelligence Extraction:** Traversed the directory structure and analyzed anomalous files, isolating a specific conversation ticket (`ticket4238791283782.txt`) containing development configuration notes and plain-text credentials for user `alex` (`alex:lol123!mD`).
+
+---
+
+## 4. SMB Enumeration & Credential Escalation
+Leveraging the recovered developer credentials (`alex`), we enumerated secondary SMB shares to identify administrative configuration files or database backups.
+
+### Share Discovery & File Retrieval
+1.  **List SMB Shares:** Authenticated against the target via SMB protocol:
+    ```bash
+    smbclient -L //10.129.138.132 -U 'alex%lol123!mD'
+    ```
+    *Result:* Discovered the restricted `devshare` resource.
+2.  **Accessing Devshare:** Connected to the share and extracted sensitive documentation:
+    ```bash
+    smbclient //10.129.138.132/devshare -U 'alex%lol123!mD'
+    ```
+    Downloaded and inspected `important.txt`, which exposed the privileged database administrator (`sa`) credentials: `sa:87N1ns@slls83`.
+
+---
+
+## 5. Database Enumeration & Target Data Extraction
+With administrative database credentials harvested, we targeted the local Microsoft SQL Server instance via SQL Server Management Studio (SSMS).
+
+### Execution Steps
+1.  **Authentication:** Established an authenticated connection to the database instance (`WINMEDIUM`) using SQL Server Authentication (`sa:87N1ns@slls83`).
+2.  **Query Execution:** Navigated to the internal `accounts` database and queried the target table (`dbo.devsacc`) to isolate user records:
+    ```sql
+    USE accounts;
+    SELECT * FROM devsacc WHERE name = 'HTB';
+    ```
+3.  **Proof Extraction:** Successfully retrieved the target password associated with user `HTB` (`lnch7ehrdn43i7AoqVPK4zWR`), fulfilling audit requirements.
+
+---
+
+## 6. Remediation & Hardening Recommendations
+*   **NFS Access Controls:** Restrict NFS export permissions strictly to authorized IP addresses, disabling anonymous or `everyone` wildcard mounts.
+*   **Credential Hygiene:** Prohibit the storage of plain-text credentials, configuration files, and chat logs containing operational passwords on shared network resources or file systems.
+*   **Database Least Privilege:** Enforce strict access control lists (ACLs) on database instances, ensuring that application accounts cannot inherit or leverage over-privileged service roles (`sa`).
+
