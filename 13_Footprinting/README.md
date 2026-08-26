@@ -2151,3 +2151,57 @@ In penetration testing operations, tools like `wmiexec.py` from the Impacket too
 While theoretical documentation is invaluable, proficiency in managing and auditing these protocols requires practical application. It is highly recommended to deploy custom Windows Server instances within a localized Homelab environment (e.g., using Proxmox or VirtualBox). 
 
 By actively configuring RDP encryption layers, enforcing WinRM over HTTPS, and auditing WMI event subscriptions, administrators can gain a definitive understanding of both operational deployments and defensive hardening strategies against lateral movement techniques.
+
+# Technical Documentation: Inlanefreight Internal Footprinting and Service Enumeration
+
+## 1. Client Briefing & Scenario Overview
+We were commissioned by the company **Inlanefreight Ltd** to test three different servers in their internal network. The company uses many different services, and the IT security department felt that a penetration test was necessary to gain insight into their overall security posture.
+
+The first server is an internal DNS server that needs to be investigated. In particular, our client wants to know what information we can get out of these services and how this information could be used against its infrastructure. Our goal is to gather as much information as possible about the server and find ways to use that information against the company. However, our client has made it clear that it is forbidden to attack the services aggressively using exploits, as these services are in production.
+
+Intelligence provided by the internal audit team revealed valid credentials (`ceil:qwer1234`), alongside indications that company employees had been discussing SSH key management across internal collaboration forums. The administrators stored a `flag.txt` file on the target server (`10.129.138.107`) to track our progress and measure success.
+
+---
+
+## 2. Methodology & Execution
+
+### Phase 1: Network Reconnaissance and Port Discovery
+To map the target's attack surface without triggering disruptive actions in a production environment, we initiated a two-step reconnaissance methodology. Initial standard scans failed to reveal custom service mappings, prompting a comprehensive port review.
+
+*   **Target IP:** `10.129.138.107`
+*   **Identified Core Services:**
+    *   `21/tcp` - ProFTPD (Banner leaking internal domain: `ftp.int.inlanefreight.htb`)
+    *   `22/tcp` - OpenSSH 8.2p1 (Enforcing strict public key authentication)
+    *   `53/tcp` - ISC BIND DNS (Allowing zone transfers for root namespace `inlanefreight.htb`)
+    *   `2121/tcp` - Non-standard secondary ProFTPD instance ("Ceil's FTP") hosting user provisioning data.
+
+### Phase 2: Service Enumeration & Intelligence Harvesting
+1.  **DNS Zone Transfer (AXFR):** Queried the internal DNS server to map namespace architecture and verify potential configuration records (`dig axfr @10.129.138.107 inlanefreight.htb`).
+2.  **FTP Credential Validation:** Tested the compromised credentials (`ceil:qwer1234`) across service boundaries. While the primary FTP root enforced strict access limits, enumerating non-standard ports revealed a dedicated FTP daemon running on port `2121`.
+
+### Phase 3: Access Vector & Key Extraction
+Upon authenticating to the custom FTP service (`2121/tcp`) using valid user credentials, we inspected the user's home directory layout:
+*   Located the hidden `.ssh` directory.
+*   Discovered the stored private RSA key (`id_rsa`) alongside public counterparts.
+*   Successfully retrieved the `id_rsa` file locally for asymmetric authentication.
+
+### Phase 4: SSH Authentication & Post-Exploitation
+1.  **Key Permission Hardening:** Applied strict permissions to the downloaded private key to satisfy OpenSSH client security requirements:
+    ```bash
+    chmod 600 id_rsa
+    ```
+2.  **Interactive Session Establishment:** Authenticated successfully against the target host using the recovered private key:
+    ```bash
+    ssh -i id_rsa ceil@10.129.138.107
+    ```
+3.  **Target Flag Retrieval:** Navigated the target filesystem to locate and extract the validation proof:
+    ```bash
+    cat /home/flag/flag.txt
+    ```
+
+---
+
+## 3. Remediation & Hardening Recommendations
+*   **Service Isolation:** Ensure non-standard management or file-transfer ports (such as FTP on `2121`) are disabled or properly firewalled if not required for operational workflows.
+*   **SSH Key Hygiene:** Prevent storage of unencrypted private keys within accessible user directories or network-shared repositories. Enforce robust passphrase protection on all operational SSH keys.
+*   **DNS Security Controls:** Restrict unauthenticated DNS zone transfers (`AXFR`) to authorized secondary nameservers only, mitigating internal topology disclosure risks.
