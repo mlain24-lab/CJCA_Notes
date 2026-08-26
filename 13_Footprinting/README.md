@@ -2314,3 +2314,82 @@ This document outlines the systematic penetration testing and footprinting metho
 * **Database Authentication:** Connected to the local MySQL database instance leveraging previously validated credentials.
 * **Schema Enumeration:** Listed available databases (`SHOW DATABASES`) and queried the `users` table within the corresponding schema.
 * **Credential Extraction:** Isolated the target record associated with the `HTB` account, successfully retrieving its plaintext authentication token/flag (`cr3n4o7rzse7rzhnckhssncif7ds`) to finalize the engagement.
+
+# Cheatsheet de Footprinting, Enumeración y OSINT
+
+Un recurso estructurado con las metodologías sistemáticas de reconocimiento pasivo y footprinting activo para la auditoría de infraestructuras de red. Detalla comandos y frameworks conceptuales para mapear la superficie de ataque, enumerar protocolos de red (SMB, NFS, DNS, SMTP, SNMP), analizar arquitecturas de bases de datos y evaluar configuraciones de gestión remota en entornos corporativos.
+
+## 1. Metodología de Enumeración y OSINT
+
+Un test de penetración profesional se basa en una metodología estática dividida en tres niveles centrales para evitar el sondeo desestructurado y minimizar el ruido en los IDS/IPS:
+* **Infrastructure-based:** Presencia en Internet (Dominios, ASN, Instancias Cloud) y Gateway (Firewalls, WAFs, VPNs).
+* **Host-based:** Servicios accesibles (Puertos, Versiones, Interfaces) y Procesos (PIDs, Tareas Programadas, Flujos de Datos).
+* **OS-based:** Privilegios (Usuarios, ACLs, Permisos) y Configuración del SO (Niveles de Parcheo, Configuración de Red).
+
+## 2. Reconocimiento Pasivo y Profiling
+
+* `curl -s "https://crt.sh/?q=<domain>&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u` - Consulta la API de Certificate Transparency (CT) de crt.sh y parsea el JSON para generar una lista limpia de subdominios, eliminando artefactos *wildcard*.
+* `for i in $(cat subdomains.txt); do host $i | grep "has address" | cut -d" " -f4 >> ips.txt; done` - Itera un *wordlist* de subdominios consultando registros DNS A para automatizar la extracción de direcciones IPv4, aislando la infraestructura interna de integraciones de terceros.
+* `shodan host <TARGET_IP>` - Aprovecha la CLI de Shodan para realizar *footprinting* pasivo, recuperando puertos TCP/UDP abiertos y configuraciones SSL/TLS sin generar logs directos en el firewall del perímetro.
+* `intext:"company_name" inurl:amazonaws.com` - Emplea operadores de *Google Dorking* para descubrir pasivamente *buckets* de AWS S3 indexados y activos corporativos expuestos (aplicable a `blob.core.windows.net` para Azure).
+* `Revisión de Ofertas de Empleo (Blueprinting)` - Analiza ofertas corporativas para deducir el *tech stack* (ej. Java, PostgreSQL, Docker). Se cruza con los repositorios open-source (GitHub/GitLab) de los empleados para cazar JWTs, API keys y claves `id_rsa` expuestas por error.
+
+## 3. Servicios FTP y TFTP
+
+* `ftp <TARGET_IP>` - Inicia una sesión FTP interactiva. Evalúa el acceso no autenticado utilizando el usuario `anonymous` y una contraseña en blanco.
+* `wget -m --no-passive ftp://anonymous:anonymous@<TARGET_IP>` - Ejecuta una extracción masiva y recursiva de todos los archivos accesibles desde un *share* FTP anónimo, replicando la estructura de directorios localmente.
+* `sudo nmap -sV -p 21 -sC -A <TARGET_IP>` - Despliega módulos del Nmap Scripting Engine (NSE) (`ftp-anon`, `ftp-syst`) para enumerar versiones del demonio y verificar permisos de inicio de sesión anónimo.
+* `openssl s_client -connect <TARGET_IP>:21 -starttls ftp` - Negocia el *handshake* TLS para conexiones FTPS, extrayendo el certificado del servidor y revelando *hostnames* internos.
+
+## 4. Arquitectura SMB y Samba
+
+* `smbclient -N -L //<TARGET_IP>` - Establece una *null session* (acceso anónimo) para enumerar los recursos compartidos (*shares*) y la estructura de directorios sin suministrar credenciales.
+* `smbclient -N //<TARGET_IP>/<share>` - Conecta de forma interactiva a un *share* SMB específico para navegar y descargar archivos en entornos no autenticados.
+* `rpcclient -U "" <TARGET_IP>` - Abre una sesión MS-RPC anónima para ejecutar comandos de enumeración críticos como `enumdomusers`, `srvinfo` o `netshareenumall`.
+* `samrdump.py <TARGET_IP>` - Aprovecha el framework Impacket para extraer *endpoints* de usuarios, IDs de grupos y políticas de contraseñas del dominio mediante el protocolo SAMR.
+* `crackmapexec smb <TARGET_IP> --shares -u '' -p ''` - Automatiza la enumeración SMB a través de subredes, auditando requisitos de *SMB signing* y validando *null sessions*.
+* `enum4linux-ng.py <TARGET_IP> -A` - Realiza consultas exhaustivas LDAP, RPC y NetBIOS para extraer agresivamente configuraciones de red, usuarios y grupos.
+
+## 5. Network File System (NFS)
+
+* `showmount -e <TARGET_IP>` - Consulta el demonio `mountd` del objetivo para listar los volúmenes NFS exportados y sus restricciones de Control de Acceso (ACLs).
+* `sudo mount -t nfs <TARGET_IP>:/<share> ./local_mount -o nolock` - Monta el *export* NFS remoto en un directorio local, desactivando el bloqueo de archivos para facilitar la inspección offline y el mapeo de UIDs.
+* `sudo nmap --script nfs* <TARGET_IP> -sV -p111,2049` - Ejecuta scripts NSE orientados a descubrir configuraciones NFS y estadísticas del *file system* sin montaje manual.
+
+## 6. Sistema de Nombres de Dominio (DNS)
+
+* `dig any <domain> @<TARGET_IP>` - Recupera todos los *resource records* disponibles (A, MX, NS, TXT) del *nameserver* para mapear la arquitectura *backend* e integraciones. (Analizar los registros TXT puede revelar integraciones API como Mailgun o Atlassian).
+* `dig axfr <domain> @<TARGET_IP>` - Intenta realizar una transferencia de zona completa (AXFR) para replicar la base de datos DNS, exponiendo la topología interna si está mal configurada.
+* `dnsenum --dnsserver <TARGET_IP> --enum -f subdomains.txt <domain>` - Automatiza el *brute-forcing* de subdominios para descubrir servidores de aplicaciones ocultos o *endpoints* VPN.
+
+## 7. Protocolos de Correo (SMTP, IMAP, POP3)
+
+* `telnet <TARGET_IP> 25` - Establece una conexión manual al demonio SMTP para verificar *banners* y ejecutar comandos de reconocimiento como `EHLO`, `VRFY` y `RCPT TO`.
+* `smtp-user-enum -M RCPT -U users.txt -t <TARGET_IP>` - Automatiza la enumeración de usuarios SMTP evadiendo restricciones mediante la validación de enrutamiento con `RCPT TO`.
+* `sudo nmap -p 25 --script smtp-open-relay <TARGET_IP>` - Ejecuta tests de enrutamiento para determinar si el MTA (Mail Transfer Agent) es un *open relay* vulnerable al *spoofing* no autenticado.
+* `curl -k 'imaps://<TARGET_IP>' --user user:pass` - Verifica la autenticación IMAPS y capacidades del buzón forzando la aceptación de certificados auto-firmados.
+* `openssl s_client -connect <TARGET_IP>:993` - Conecta a IMAPS (Puerto 993) para negociar el *handshake* SSL/TLS e interactuar con el servidor mediante comandos IMAP puros.
+
+## 8. Simple Network Management Protocol (SNMP)
+
+* `onesixtyone -c snmp.txt <TARGET_IP>` - Lanza ataques de diccionario a alta velocidad contra el puerto UDP 161 para descubrir *community strings* SNMP válidas.
+* `snmpwalk -v2c -c public <TARGET_IP>` - Recorre el árbol MIB (Management Information Base) para extraer tablas de enrutamiento, procesos y software instalado usando una *string* válida.
+* `braa public@<TARGET_IP>:.1.3.6.*` - Actúa como un escáner masivo para consultar asíncronamente OIDs específicos a altas velocidades y extraer datos granulares.
+
+## 9. Bases de Datos (MySQL, MSSQL, Oracle)
+
+* `mysql -u root -p -h <TARGET_IP>` - Autenticación remota en MySQL. Ejecuta comandos como `show databases;` y `select version();` post-autenticación.
+* `mysql -u user -p -h <TARGET_IP> --skip-ssl` - Conecta a una instancia MySQL forzando el protocolo en texto plano para evadir restricciones de validación de certificados (vital en clientes MariaDB de Kali).
+* `impacket-mssqlclient user@<TARGET_IP> -windows-auth` - Inicia una *shell* interactiva Transact-SQL (T-SQL) contra instancias Microsoft SQL Server empleando autenticación NTLM/Kerberos.
+* `sudo nmap -p1521 -sV <TARGET_IP> --script oracle-sid-brute` - Escanea *listeners* TNS de Oracle y realiza fuerza bruta del System Identifier (SID) requerido para interactuar.
+* `python odat.py all -s <TARGET_IP>` - Despliega el framework ODAT (Oracle Database Attacking Tool) para auditar vulnerabilidades y extraer credenciales en arquitecturas Oracle.
+
+## 10. Gestión Remota (IPMI, RDP, WinRM, WMI)
+
+* `sudo nmap -sU --script ipmi-version -p 623 <TARGET_IP>` - Enumera la versión del protocolo IPMI, mecanismos de autenticación y detalles del Baseboard Management Controller (BMC).
+* `msfconsole -x "use auxiliary/scanner/ipmi/ipmi_dumphashes; set RHOSTS <TARGET_IP>; run"` - Aprovecha Metasploit para explotar la vulnerabilidad del protocolo RAKP y extraer hashes de contraseñas IPMI sin autenticación.
+* `hashcat -m 7300 ipmi.txt rockyou.txt -O` - Rompe hashes IPMI2 RAKP HMAC-SHA1 extraídos mediante ataques de diccionario optimizados offline.
+* `xfreerdp /u:user /p:pass /v:<TARGET_IP>` - Establece una sesión RDP con *pass-through* de credenciales nativo desde un entorno de auditoría Linux.
+* `evil-winrm -i <TARGET_IP> -u user -p pass` - Instancia una sesión interactiva PowerShell sobre WinRM, crucial para post-explotación y movimientos de Pass-The-Hash (PtH).
+* `wmiexec.py user:pass@<TARGET_IP>` - Ejecuta comandos de forma semi-interactiva explotando WMI y el RPC Endpoint Mapper, técnica preferida para evadir monitorización básica de procesos.
+* `rsync -av --list-only rsync://<TARGET_IP>/share` - Identifica módulos Rsync expuestos (TCP 873) para evaluar el acceso no autenticado a backups del sistema.
