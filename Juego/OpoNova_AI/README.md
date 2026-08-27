@@ -60,3 +60,87 @@ To ensure enterprise-grade protection from day zero, OpoNova AI implements a **Z
 To guarantee high availability and prevent data loss:
 *   **Automated Database Dumps:** Scheduled daily `pg_dump` backups compressed and encrypted, pushed to an off-site secondary storage instance following the **3-2-1 Backup Rule**.
 *   **Ephemeral Sandboxing:** User-generated code execution strictly isolated within resource-constrained, ephemeral Docker containers to prevent host compromise.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# OpoNova AI - Secure Infrastructure & Deployment Architecture
+
+## 1. Project Overview
+OpoNova AI is an advanced AI-powered opposition study platform designed with a strict **Defense-in-Depth** and **Least Privilege** security model. This repository contains the complete infrastructure baseline, containerized microservices, system maintenance utilities, and database schemas supporting pilot domains: **Administrative Law (AGE)** and **Library and Information Science (Biblioteconomía)**.
+
+## 2. Directory Structure
+```text
+/projects/oponova-ai/
+├── backend/
+│   ├── Dockerfile
+│   ├── main.py
+│   └── requirements.txt
+├── database/
+│   └── init.sql
+├── frontend/
+│   ├── src/app/
+│   └── src/components/
+├── .env
+├── OpoNovaAI.sh
+└── CleanUP.sh
+```
+
+## 3. Security Baseline & Environment Variables
+The system utilizes isolated internal Docker networks and cryptographically secure environment variables generated via `openssl` and protected with strict file permissions (`chmod 600`).
+
+```env
+DB_PASSWORD=<high-entropy-random-string>
+REDIS_PASSWORD=<high-entropy-random-string>
+JWT_SECRET_KEY=<high-entropy-cryptographic-secret>
+```
+
+## 4. Container Architecture (`docker-compose.yml`)
+- **`oponova_db`**: PostgreSQL instance enhanced with the `pgvector` extension (`vector(1536)`) for semantic search and RAG capabilities over official syllabi.
+- **`oponova_redis`**: In-memory cache and session store secured with mandatory password authentication and automated expiration policies.
+- **`oponova_backend`**: FastAPI application running as a non-root user (`appuser`) within an isolated network topology to mitigate privilege escalation risks.
+
+## 5. Database Schema (`database/init.sql`)
+The core schema includes support for vector embeddings and institutional metadata:
+- **`users`**: Manages user accounts with Argon2id hash support and OAuth linkage.
+- **`subjects`**: Categorizes pilot opposition domains (*Administrativo AGE*, *Biblioteconomía y Archivos*).
+- **`knowledge_chunks`**: Stores law articles, syllabus fragments, and their corresponding AI vector embeddings.
+
+## 6. System Maintenance & Cleanup (`CleanUP.sh`)
+An automated utility designed to purge system caches, APT orphaned packages, Docker dangling layers, and user desktop/downloads junk while strictly protecting the `/projects/oponova-ai` infrastructure path.
+
+## 7. Deployment Guide
+Execute the automated deployment script on your target environment (Kali Linux / Linux VPS):
+
+```bash
+chmod +x OpoNovaAI.sh
+sudo ./OpoNovaAI.sh
+```
+
+## 8. Health Check Verification
+To verify system operational status and inter-service connectivity:
+```bash
+curl http://localhost:8000/health
+```
+Expected JSON response:
+```json
+{
+  "status": "secure_operational",
+  "system": "OpoNova AI Oposiciones Engine",
+  "database": "connected",
+  "redis": "connected"
+}
+```
