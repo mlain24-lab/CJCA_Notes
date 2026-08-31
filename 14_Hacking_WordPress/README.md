@@ -299,3 +299,52 @@ To expedite this process, SysAdmins and Pentesters typically utilize:
 *   **Fuzzing Tools:** Applications like `wfuzz` or `ffuf` to rapidly brute-force directories.
 *   **Specialized Scanners:** Frameworks like **WPScan**, which leverage extensive databases of known plugins, themes, and their associated vulnerabilities to perform both passive and active enumeration seamlessly.
 
+# WordPress Security Assessment: Directory Indexing and Inactive Plugin Risks
+
+## Introduction
+When performing a security assessment or vulnerability audit on a WordPress-based web application, the evaluation scope must extend beyond active components. A common misconfiguration and security oversight involves leaving vulnerable or legacy plugins installed in a deactivated state, assuming they are rendered inert.
+
+## The Risk of Inactive Plugins
+Deactivating a plugin via the WordPress administration dashboard merely prevents its execution within the application's runtime loop; it **does not** delete its source files or remove them from the underlying web root directory (typically located at `/wp-content/plugins/`). 
+
+If a plugin contains remote code execution (RCE), SQL injection, or local file inclusion (LFI) vulnerabilities, its codebase remains fully accessible to external attackers who can directly query its scripts and files via HTTP requests. 
+
+### Best Practices
+* **Asset Removal:** Completely delete any unused or legacy plugins from the server rather than simply deactivating them.
+* **Lifecycle Management:** Keep all active plugins, themes, and the core CMS updated to their latest security releases.
+
+## Directory Indexing Vulnerabilities
+Directory indexing (or directory listing) occurs when a web server is misconfigured to display a navigable file tree of a directory when no default index file (e.g., `index.php`, `index.html`) is present. This behavior significantly expands the attacker's reconnaissance surface by exposing internal file structures, backup archives, and hidden scripts.
+
+### Enumeration via Command Line
+Security auditors can leverage command-line utilities such as `curl` combined with text-formatting tools like `html2text` to inspect directory listings efficiently without rendering a full browser instance.
+
+    curl -s -X GET http://blog.inlanefreight.com/wp-content/plugins/mail-masta/ | html2text
+
+#### Output Analysis
+The command parses the HTML directory index and structures it into a readable hierarchy:
+
+    ****** Index of /wp-content/plugins/mail-masta ******
+    [ICO]        Name                Last_modified     Size Description
+    ===========================================================================
+    [PARENTDIR] Parent_Directory                         -  
+    [DIR]        amazon_api/          2020-05-13 18:01    -  
+    [DIR]        inc/                 2020-05-13 18:01    -  
+    [DIR]        lib/                 2020-05-13 18:01    -  
+    [    ]        plugin-interface.php 2020-05-13 18:01  88K  
+    [TXT]        readme.txt           2020-05-13 18:01 2.2K  
+    ===========================================================================
+       Apache/2.4.29 (Ubuntu) Server at blog.inlanefreight.com Port 80
+
+By analyzing this listing, an auditor can identify auxiliary components (`amazon_api/`, `lib/`), standalone scripts (`plugin-interface.php`), and documentation files (`readme.txt`, which often reveals vulnerable version numbers).
+
+## Remediation and Hardening
+To mitigate directory indexing risks and restrict direct file exposure:
+
+1. **Apache Web Server:** Disable directory listings globally or per-directory within the configuration file or `.htaccess` using the following directive:
+
+       Options -Indexes
+
+2. **Nginx Web Server:** Ensure `autoindex` is turned off in the server block configuration:
+
+       autoindex off;
